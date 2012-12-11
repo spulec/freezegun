@@ -2,11 +2,10 @@
 
 from setuptools import setup, find_packages
 
-import freezegun
 
 setup(
     name='freezegun',
-    version=freezegun.__version__,
+    version='0.0.3',
     description='Let your Python tests travel through time',
     author='Steve Pulec',
     author_email='spulec@gmail',
