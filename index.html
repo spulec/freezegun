@@ -36,32 +36,84 @@
         <span class="blc"></span><span class="trc"></span>
         </div>
         <article class="markdown-body">
-          <h3>Welcome to GitHub Pages.</h3>
+          <h1>FreezeGun: Let your Python tests travel through time</h1>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>.. image:: <a href="https://secure.travis-ci.org/spulec/freezegun.png?branch=master">https://secure.travis-ci.org/spulec/freezegun.png?branch=master</a></p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<p>FreezeGun is a library that allows your python tests to travel through time by mocking the datetime module.</p>
+
+<h2>Usage</h2>
+
+<p>Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), and datetime.date.today() will return the time that has been frozen.</p>
+
+<p>Decorator</p>
+
+<pre><code>
+.. code-block:: python
+
+    from freezegun import freeze_time
+
+    @freeze_time("2012-01-14")
+    def test():
+        assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+
+    # Or class based
+
+    @freeze_time("2012-01-14")
+    class Tester(object):
+        def test_the_class(self):
+            assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+
+Context Manager
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>.. code-block:: python</p>
 
-<h3>Designer Templates</h3>
+<pre><code>from freezegun import freeze_time
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+def test():
+    assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
+    with freeze_time("2012-01-14"):
+        assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+    assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
+</code></pre>
 
-<h3>Rather Drive Stick?</h3>
+<p>Raw use</p>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<pre><code>
+.. code-block:: python
 
-<h3>Authors and Contributors</h3>
+    from freezegun import freeze_time
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+    freezer = freeze_time("2012-01-14 12:00:01")
+    freezer.start()
+    assert datetime.datetime.now() == datetime.datetime(2012, 01, 14, 12, 00, 01)
+    freezer.stop()
 
-<h3>Support or Contact</h3>
+Timezones
+</code></pre>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<p>.. code-block:: python</p>
+
+<pre><code>from freezegun import freeze_time
+
+@freeze_time("2012-01-14 03:21:34", tz_offset=-4)
+def test():
+    assert datetime.datetime.utcnow() == datetime.datetime(2012, 01, 14, 03, 21, 34)
+    assert datetime.datetime.now() == datetime.datetime(2012, 01, 13, 23, 21, 34)
+
+    # datetime.date.today() uses local time
+    assert datetime.date.today() == datetime.datetime(2012, 01, 13)
+</code></pre>
+
+<h2>Installation</h2>
+
+<p>To install FreezeGun, simply:</p>
+
+<p>.. code-block:: bash</p>
+
+<pre><code>$ pip install freezegun
+</code></pre>
         </article>
       </div>
     </div>
