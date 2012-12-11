@@ -4,17 +4,7 @@ FreezeGun: Let your Python tests travel through time
 
 .. image:: https://secure.travis-ci.org/spulec/freezegun.png?branch=master
 
-FreezeGun is a library that allows you to travel in time with python by mocking the datetime module.
-
-Installation
-------------
-
-To install FreezeGun, simply:
-
-.. code-block:: bash
-
-    $ pip install freezegun
-
+FreezeGun is a library that allows your python tests to travel through time by mocking the datetime module.
 
 Usage
 ------------
@@ -68,4 +58,14 @@ Timezones
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14) - datetime.timedelta(hours=4)
         # datetime.date.today() uses local time
         assert datetime.date.today() == datetime.datetime(2012, 01, 13)
+
+
+Installation
+------------
+
+To install FreezeGun, simply:
+
+.. code-block:: bash
+
+    $ pip install freezegun
 
