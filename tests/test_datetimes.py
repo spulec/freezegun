@@ -24,6 +24,13 @@ def test_tz_offset():
     freezer.stop()
 
 
+def test_tz_offset_with_today():
+    freezer = freeze_time("2012-01-14", tz_offset=-4)
+    freezer.start()
+    assert datetime.date.today() == datetime.date(2012, 01, 13)
+    freezer.stop()
+
+
 def test_bad_time_argument():
     try:
         freeze_time("2012-13-14", tz_offset=-4)
@@ -31,13 +38,6 @@ def test_bad_time_argument():
         pass
     else:
         assert False, "Bad values should raise a ValueError"
-
-
-def test_tz_offset_with_today():
-    freezer = freeze_time("2012-01-14", tz_offset=-4)
-    freezer.start()
-    assert datetime.date.today() == datetime.date(2012, 01, 13)
-    freezer.stop()
 
 
 @freeze_time("2012-01-14")
