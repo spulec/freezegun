@@ -8,6 +8,7 @@ real_datetime = datetime.datetime
 
 
 class FakeDate(real_date):
+    active = False
     date_to_freeze = None
 
     def __new__(cls, *args, **kwargs):
@@ -15,10 +16,14 @@ class FakeDate(real_date):
 
     @classmethod
     def today(cls):
-        return cls.date_to_freeze
+        if cls.active:
+            return cls.date_to_freeze
+        else:
+            return real_date.today()
 
 
 class FakeDatetime(real_datetime):
+    active = False
     time_to_freeze = None
     tz_offset = None
 
@@ -27,11 +32,20 @@ class FakeDatetime(real_datetime):
 
     @classmethod
     def now(cls):
-        return cls.time_to_freeze + datetime.timedelta(hours=cls.tz_offset)
+        if cls.active:
+            return cls.time_to_freeze + datetime.timedelta(hours=cls.tz_offset)
+        else:
+            return real_datetime.now()
 
     @classmethod
     def utcnow(cls):
-        return cls.time_to_freeze
+        if cls.active:
+            return cls.time_to_freeze
+        else:
+            return real_datetime.utcnow()
+
+datetime.datetime = FakeDatetime
+datetime.date = FakeDate
 
 
 class _freeze_time():
@@ -52,19 +66,18 @@ class _freeze_time():
         self.stop()
 
     def start(self):
-        datetime.datetime = FakeDatetime
-        datetime.date = FakeDate
-
         datetime.datetime.time_to_freeze = self.time_to_freeze
         datetime.datetime.tz_offset = self.tz_offset
+        datetime.datetime.active = True
 
         # Since datetime.datetime has already been mocket, just use that for
         # calculating the date
         datetime.date.date_to_freeze = datetime.datetime.now().date()
+        datetime.date.active = True
 
     def stop(self):
-        datetime.date = real_date
-        datetime.datetime = real_datetime
+        datetime.datetime.active = False
+        datetime.date.active = False
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):

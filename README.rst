@@ -83,21 +83,8 @@ FreezeGun uses dateutil behind the scenes so you can have nice-looking datetimes
 Warning
 -------
 
-For the time being, this library only works if you use/import your datetime libraries like
+For the time being, the freezegun module must be imported before the datetime module is ever imported for this to work. I'm working on a better solution, but it will take a bit of time.
 
-.. code-block:: python
-
-    import datetime
-    now = datetime.datetime.now()
-
-not if you do the following
-
-.. code-block:: python
-
-    from datetime import datetime
-    now = datetime.now()
-
-I am working on fixing this, but it will take a bit.
 
 Installation
 ------------
