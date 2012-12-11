@@ -23,6 +23,7 @@ Simple
 ~~~~~~
 
 .. code-block:: python
+
     from freezegun import start_freeze, end_freeze
 
     start_freeze("2012-01-14")
@@ -33,6 +34,7 @@ Decorator
 ~~~~~~~~~
 
 .. code-block:: python
+
     from freezegun import freeze_time
 
     @freeze_time("2012-01-14")
@@ -44,6 +46,7 @@ Context Manager
 ~~~~~~~~~~~~~~~
 
 .. code-block:: python
+
     from freezegun import freeze_time
 
     def test():
