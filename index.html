@@ -98,6 +98,22 @@
     <span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
 </pre></div>
 
+<h2>Warning</h2>
+
+<p>For the time being, this library only works if you use/import your datetime libraries like</p>
+
+<div class="highlight"><pre><span class="kn">import</span> <span class="nn">datetime</span>
+<span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+</pre></div>
+
+<p>not if you do the following</p>
+
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+</pre></div>
+
+<p>I am working on fixing this, but it will take a bit.</p>
+
 <h2>Installation</h2>
 
 <p>To install FreezeGun, simply:</p>
