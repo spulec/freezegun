@@ -17,10 +17,10 @@ def test_simple_api():
 
 
 def test_tz_offset():
-    freezer = freeze_time("2012-01-14", tz_offset=-4)
+    freezer = freeze_time("2012-01-14 03:21:34", tz_offset=-4)
     freezer.start()
-    assert datetime.datetime.now() == datetime.datetime(2012, 01, 14) - datetime.timedelta(hours=4)
-    assert datetime.datetime.utcnow() == datetime.datetime(2012, 01, 14)
+    assert datetime.datetime.now() == datetime.datetime(2012, 01, 13, 23, 21, 34)
+    assert datetime.datetime.utcnow() == datetime.datetime(2012, 01, 14, 03, 21, 34)
     freezer.stop()
 
 

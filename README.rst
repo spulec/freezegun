@@ -59,10 +59,10 @@ Timezones
 
     from freezegun import freeze_time
 
-    @freeze_time("2012-01-14", tz_offset=-4)
+    @freeze_time("2012-01-14 03:21:34", tz_offset=-4)
     def test():
-        assert datetime.datetime.utcnow() == datetime.datetime(2012, 01, 14)
-        assert datetime.datetime.now() == datetime.datetime(2012, 01, 14) - datetime.timedelta(hours=4)
+        assert datetime.datetime.utcnow() == datetime.datetime(2012, 01, 14, 03, 21, 34)
+        assert datetime.datetime.now() == datetime.datetime(2012, 01, 13, 23, 21, 34)
 
         # datetime.date.today() uses local time
         assert datetime.date.today() == datetime.datetime(2012, 01, 13)
