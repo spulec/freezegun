@@ -1,6 +1,8 @@
 import datetime
 import functools
 
+from dateutil import parser
+
 real_date = datetime.date
 real_datetime = datetime.datetime
 
@@ -36,16 +38,7 @@ class FakeDatetime(real_datetime):
 class _freeze_time():
 
     def __init__(self, time_to_freeze_str, tz_offset):
-        time_to_freeze = None
-        formats = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d"]
-        for format in formats:
-            try:
-                time_to_freeze = datetime.datetime.strptime(time_to_freeze_str, format)
-            except ValueError:
-                pass
-
-        if not time_to_freeze:
-            raise ValueError(u"%s cannot be converted to a datetime".format(time_to_freeze_str))
+        time_to_freeze = parser.parse(time_to_freeze_str)
 
         self.time_to_freeze = time_to_freeze
         self.tz_offset = tz_offset
