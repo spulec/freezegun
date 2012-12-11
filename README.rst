@@ -69,6 +69,16 @@ Timezones
         # datetime.date.today() uses local time
         assert datetime.date.today() == datetime.datetime(2012, 01, 13)
 
+Nice inputs
+~~~~~~~~~~~
+
+FreezeGun uses dateutil behind the scenes so you can have nice-looking datetimes
+
+.. code-block:: python
+
+    @freeze_time("Jan 14th, 2012")
+    def test_nice_datetime():
+        assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
 
 Installation
 ------------

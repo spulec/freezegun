@@ -54,6 +54,11 @@ class Tester(object):
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
 
 
+@freeze_time("Jan 14th, 2012")
+def test_nice_datetime():
+    assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+
+
 def test_context_manager():
     with freeze_time("2012-01-14"):
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
