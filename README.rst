@@ -1,6 +1,9 @@
+
+.. image:: http://static.tvtropes.org/pmwiki/pub/images/mrfreeze_7548.png
+
+
 FreezeGun: Let your Python tests travel through time
 ==================================
-
 
 .. image:: https://secure.travis-ci.org/spulec/freezegun.png?branch=master
 
