@@ -1,42 +1,44 @@
 <!doctype html>
-<!-- The Time Machine GitHub pages theme was designed and developed by Jon Rohan, on Feb 7, 2012. -->
-<!-- Follow him for fun. http://twitter.com/jonrohan. Tail his code on http://github.com/jonrohan -->
 <html>
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>FreezeGun by spulec</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 
-  <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen"/>
-  <link rel="stylesheet" href="stylesheets/pygment_trac.css"/>
-  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-  <script type="text/javascript" src="javascripts/script.js"></script>
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/spulec/freezegun">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/spulec/freezegun/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/spulec/freezegun/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
 
-  <title>FreezeGun</title>
-  <meta name="description" content="Let your Python tests travel through time">
+    <div class="wrapper">
 
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-
-</head>
-
-<body>
-
-  <div class="wrapper">
-    <header>
-      <h1 class="title">FreezeGun</h1>
-    </header>
-    <div id="container">
-      <p class="tagline">Let your Python tests travel through time</p>
-      <div id="main" role="main">
-        <div class="download-bar">
-        <div class="inner">
-          <a href="https://github.com/spulec/freezegun/tarball/master" class="download-button tar"><span>Download</span></a>
-          <a href="https://github.com/spulec/freezegun/zipball/master" class="download-button zip"><span>Download</span></a>
-          <a href="https://github.com/spulec/freezegun" class="code">View FreezeGun on GitHub</a>
+      <section>
+        <div id="title">
+          <h1>FreezeGun</h1>
+          <p>Let your Python tests travel through time</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/spulec">spulec</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></span>
         </div>
-        <span class="blc"></span><span class="trc"></span>
-        </div>
-        <article class="markdown-body">
-          <h1>FreezeGun: Let your Python tests travel through time</h1>
+
+        <h1>FreezeGun: Let your Python tests travel through time</h1>
 
 <p>FreezeGun is a library that allows your python tests to travel through time by mocking the datetime module.</p>
 
@@ -44,94 +46,66 @@
 
 <p>Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), and datetime.date.today() will return the time that has been frozen.</p>
 
-<p>Decorator</p>
+<h3>Decorator</h3>
 
-<pre><code>
-.. code-block:: python
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">freezegun</span> <span class="kn">import</span> <span class="n">freeze_time</span>
 
-    from freezegun import freeze_time
+<span class="nd">@freeze_time</span><span class="p">(</span><span class="s">"2012-01-14"</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">test</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
 
-    @freeze_time("2012-01-14")
-    def test():
-        assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+<span class="c"># Or class based</span>
 
-    # Or class based
+<span class="nd">@freeze_time</span><span class="p">(</span><span class="s">"2012-01-14"</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Tester</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">test_the_class</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
+</pre></div>
 
-    @freeze_time("2012-01-14")
-    class Tester(object):
-        def test_the_class(self):
-            assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+<h3>Context Manager</h3>
 
-Context Manager
-</code></pre>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">freezegun</span> <span class="kn">import</span> <span class="n">freeze_time</span>
 
-<p>.. code-block:: python</p>
+<span class="k">def</span> <span class="nf">test</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">!=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">freeze_time</span><span class="p">(</span><span class="s">"2012-01-14"</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">!=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
+</pre></div>
 
-<pre><code>from freezegun import freeze_time
+<h3>Raw use</h3>
 
-def test():
-    assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
-    with freeze_time("2012-01-14"):
-        assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
-    assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
-</code></pre>
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">freezegun</span> <span class="kn">import</span> <span class="n">freeze_time</span>
 
-<p>Raw use</p>
+<span class="n">freezer</span> <span class="o">=</span> <span class="n">freeze_time</span><span class="p">(</span><span class="s">"2012-01-14 12:00:01"</span><span class="p">)</span>
+<span class="n">freezer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mo">00</span><span class="p">,</span> <span class="mo">01</span><span class="p">)</span>
+<span class="n">freezer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</pre></div>
 
-<pre><code>
-.. code-block:: python
+<h3>Timezones</h3>
 
-    from freezegun import freeze_time
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">freezegun</span> <span class="kn">import</span> <span class="n">freeze_time</span>
 
-    freezer = freeze_time("2012-01-14 12:00:01")
-    freezer.start()
-    assert datetime.datetime.now() == datetime.datetime(2012, 01, 14, 12, 00, 01)
-    freezer.stop()
+<span class="nd">@freeze_time</span><span class="p">(</span><span class="s">"2012-01-14 03:21:34"</span><span class="p">,</span> <span class="n">tz_offset</span><span class="o">=-</span><span class="mi">4</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">test</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mo">03</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">34</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">21</span><span class="p">,</span> <span class="mi">34</span><span class="p">)</span>
 
-Timezones
-</code></pre>
-
-<p>.. code-block:: python</p>
-
-<pre><code>from freezegun import freeze_time
-
-@freeze_time("2012-01-14 03:21:34", tz_offset=-4)
-def test():
-    assert datetime.datetime.utcnow() == datetime.datetime(2012, 01, 14, 03, 21, 34)
-    assert datetime.datetime.now() == datetime.datetime(2012, 01, 13, 23, 21, 34)
-
-    # datetime.date.today() uses local time
-    assert datetime.date.today() == datetime.datetime(2012, 01, 13)
-</code></pre>
+    <span class="c"># datetime.date.today() uses local time</span>
+    <span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">13</span><span class="p">)</span>
+</pre></div>
 
 <h2>Installation</h2>
 
 <p>To install FreezeGun, simply:</p>
 
-<p>.. code-block:: bash</p>
+<div class="highlight"><pre><span class="nv">$ </span>pip install freezegun
+</pre></div>
+      </section>
 
-<pre><code>$ pip install freezegun
-</code></pre>
-        </article>
-      </div>
     </div>
-    <footer>
-      <div class="owner">
-      <p><a href="https://github.com/spulec" class="avatar"><img src="https://secure.gravatar.com/avatar/4eaa7e60764d92c25d661fa62a0faa65?s=30&amp;d=https://a248.e.akamai.net/assets.github.com%2Fimages%2Fgravatars%2Fgravatar-user-420.png" width="48" height="48"/></a> <a href="https://github.com/spulec">spulec</a> maintains <a href="https://github.com/spulec/freezegun">FreezeGun</a></p>
-
-
-      </div>
-      <div class="creds">
-        <small>This page generated using <a href="https://pages.github.com/">GitHub Pages</a><br/>theme by <a href="http://twitter.com/jonrohan/">Jon Rohan</a></small>
-      </div>
-    </footer>
-  </div>
-  <div class="current-section">
-    <a href="#top">Scroll to top</a>
-    <a href="https://github.com/spulec/freezegun/tarball/master" class="tar">tar</a><a href="https://github.com/spulec/freezegun/zipball/master" class="zip">zip</a><a href="" class="code">source code</a>
-    <p class="name"></p>
-  </div>
-
-  
-</body>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
 </html>
