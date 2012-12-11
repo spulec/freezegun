@@ -24,11 +24,12 @@ Simple
 
 .. code-block:: python
 
-    from freezegun import start_freeze, end_freeze
+    from freezegun import freeze_time
 
-    start_freeze("2012-01-14")
+    freezer = freeze_time("2012-01-14")
+    freezer.start()
     assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
-    end_freeze()
+    freezer.stop()
 
 Decorator
 ~~~~~~~~~
