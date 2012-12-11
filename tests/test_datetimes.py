@@ -50,6 +50,9 @@ class Tester(object):
     def test_the_class(self):
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
 
+    def test_still_the_same(self):
+        assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+
 
 # Mock.patch can be used as decorator or context manager
 def test_context_manager():

@@ -32,6 +32,12 @@ Decorator
     def test():
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
 
+    # Or class based
+
+    @freeze_time("2012-01-14")
+    class Tester(object):
+        def test_the_class(self):
+            assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
 
 Context Manager
 ~~~~~~~~~~~~~~~
