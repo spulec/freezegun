@@ -54,14 +54,7 @@ class Tester(object):
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
 
 
-# Mock.patch can be used as decorator or context manager
 def test_context_manager():
     with freeze_time("2012-01-14"):
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
     assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
-
-# @current_time(*args)
-# def test_foo_bar():
-#     pass
-# @static_time - clock always returns same thing
-# @start_time - clock runs while test runs

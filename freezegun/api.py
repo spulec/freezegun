@@ -31,7 +31,6 @@ class FakeDatetime(real_datetime):
 
     @classmethod
     def utcnow(cls):
-        # TODO: fix
         return cls.time_to_freeze
 
 
