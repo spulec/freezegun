@@ -100,19 +100,7 @@
 
 <h2>Warning</h2>
 
-<p>For the time being, this library only works if you use/import your datetime libraries like</p>
-
-<div class="highlight"><pre><span class="kn">import</span> <span class="nn">datetime</span>
-<span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-</pre></div>
-
-<p>not if you do the following</p>
-
-<div class="highlight"><pre><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-</pre></div>
-
-<p>I am working on fixing this, but it will take a bit.</p>
+<p>For the time being, the freezegun module must be imported before the datetime module is ever imported for this to work. I'm working on a better solution, but it will take a bit of time.</p>
 
 <h2>Installation</h2>
 
