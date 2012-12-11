@@ -35,7 +35,18 @@ class FakeDatetime(real_datetime):
 
 class _freeze_time():
 
-    def __init__(self, time_to_freeze, tz_offset):
+    def __init__(self, time_to_freeze_str, tz_offset):
+        time_to_freeze = None
+        formats = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d"]
+        for format in formats:
+            try:
+                time_to_freeze = datetime.datetime.strptime(time_to_freeze_str, format)
+            except ValueError:
+                pass
+
+        if not time_to_freeze:
+            raise ValueError(u"%s cannot be converted to a datetime".format(time_to_freeze_str))
+
         self.time_to_freeze = time_to_freeze
         self.tz_offset = tz_offset
 
@@ -52,10 +63,11 @@ class _freeze_time():
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
 
-        time_to_freeze = datetime.datetime.strptime(self.time_to_freeze, "%Y-%m-%d")
-        datetime.datetime.time_to_freeze = time_to_freeze
+        datetime.datetime.time_to_freeze = self.time_to_freeze
         datetime.datetime.tz_offset = self.tz_offset
 
+        # Since datetime.datetime has already been mocket, just use that for
+        # calculating the date
         datetime.date.date_to_freeze = datetime.datetime.now().date()
 
     def stop(self):

@@ -10,9 +10,9 @@ def test_simple_api():
     assert datetime.date.today() == datetime.date(2012, 01, 14)
     freezer.stop()
     assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
-    freezer = freeze_time("2012-01-10")
+    freezer = freeze_time("2012-01-10 13:52:01")
     freezer.start()
-    assert datetime.datetime.now() == datetime.datetime(2012, 01, 10)
+    assert datetime.datetime.now() == datetime.datetime(2012, 01, 10, 13, 52, 01)
     freezer.stop()
 
 
@@ -22,6 +22,15 @@ def test_tz_offset():
     assert datetime.datetime.now() == datetime.datetime(2012, 01, 14) - datetime.timedelta(hours=4)
     assert datetime.datetime.utcnow() == datetime.datetime(2012, 01, 14)
     freezer.stop()
+
+
+def test_bad_time_argument():
+    try:
+        freeze_time("2012-13-14", tz_offset=-4)
+    except ValueError:
+        pass
+    else:
+        assert False, "Bad values should raise a ValueError"
 
 
 def test_tz_offset_with_today():

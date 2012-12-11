@@ -26,9 +26,9 @@ Simple
 
     from freezegun import freeze_time
 
-    freezer = freeze_time("2012-01-14")
+    freezer = freeze_time("2012-01-14 12:00:01")
     freezer.start()
-    assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+    assert datetime.datetime.now() == datetime.datetime(2012, 01, 14, 12, 00, 01)
     freezer.stop()
 
 Decorator
