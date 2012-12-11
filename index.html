@@ -31,7 +31,7 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-        <h1>Let your Python tests travel through time</h1>
+        <h1>FreezeGun: Let your Python tests travel through time</h1>
 
 <p>FreezeGun is a library that allows your python tests to travel through time by mocking the datetime module.</p>
 
@@ -87,6 +87,15 @@
 
     <span class="c"># datetime.date.today() uses local time</span>
     <span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">13</span><span class="p">)</span>
+</pre></div>
+
+<h3>Nice inputs</h3>
+
+<p>FreezeGun uses python-dateutil behind the scenes so you can have nice-looking datetimes</p>
+
+<div class="highlight"><pre><span class="nd">@freeze_time</span><span class="p">(</span><span class="s">"Jan 14th, 2012"</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">test_nice_datetime</span><span class="p">():</span>
+    <span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
 </pre></div>
 
 <h2>Installation</h2>
