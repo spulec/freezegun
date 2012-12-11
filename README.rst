@@ -9,17 +9,7 @@ FreezeGun is a library that allows your python tests to travel through time by m
 Usage
 ------------
 
-Simple
-~~~~~~
-
-.. code-block:: python
-
-    from freezegun import freeze_time
-
-    freezer = freeze_time("2012-01-14 12:00:01")
-    freezer.start()
-    assert datetime.datetime.now() == datetime.datetime(2012, 01, 14, 12, 00, 01)
-    freezer.stop()
+Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), and datetime.date.today() will return the time that has been frozen.
 
 Decorator
 ~~~~~~~~~
@@ -51,6 +41,18 @@ Context Manager
         with freeze_time("2012-01-14"):
             assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
         assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
+
+Raw use
+~~~~~~~
+
+.. code-block:: python
+
+    from freezegun import freeze_time
+
+    freezer = freeze_time("2012-01-14 12:00:01")
+    freezer.start()
+    assert datetime.datetime.now() == datetime.datetime(2012, 01, 14, 12, 00, 01)
+    freezer.stop()
 
 Timezones
 ~~~~~~~~~
