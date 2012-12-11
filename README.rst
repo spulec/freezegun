@@ -80,6 +80,25 @@ FreezeGun uses dateutil behind the scenes so you can have nice-looking datetimes
     def test_nice_datetime():
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
 
+Warning
+-------
+
+For the time being, this library only works if you use/import your datetime libraries like
+
+.. code-block:: python
+
+    import datetime
+    now = datetime.datetime.now()
+
+not if you do the following
+
+.. code-block:: python
+
+    from datetime import datetime
+    now = datetime.now()
+
+I am working on fixing this, but it will take a bit.
+
 Installation
 ------------
 
