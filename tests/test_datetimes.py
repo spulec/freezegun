@@ -16,6 +16,21 @@ def test_simple_api():
     freezer.stop()
 
 
+def test_tz_offset():
+    freezer = freeze_time("2012-01-14", tz_offset=-4)
+    freezer.start()
+    assert datetime.datetime.now() == datetime.datetime(2012, 01, 14) - datetime.timedelta(hours=4)
+    assert datetime.datetime.utcnow() == datetime.datetime(2012, 01, 14)
+    freezer.stop()
+
+
+def test_tz_offset_with_today():
+    freezer = freeze_time("2012-01-14", tz_offset=-4)
+    freezer.start()
+    assert datetime.date.today() == datetime.date(2012, 01, 13)
+    freezer.stop()
+
+
 @freeze_time("2012-01-14")
 def test_decorator():
     assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)

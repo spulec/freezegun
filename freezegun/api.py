@@ -4,23 +4,28 @@ import functools
 real_date = datetime.date
 real_datetime = datetime.datetime
 
+
 class FakeDate(real_date):
-    time_to_freeze = None
+    date_to_freeze = None
+
     def __new__(cls, *args, **kwargs):
         return real_date.__new__(real_date, *args, **kwargs)
 
     @classmethod
     def today(cls):
-        return cls.time_to_freeze
+        return cls.date_to_freeze
+
 
 class FakeDatetime(real_datetime):
     time_to_freeze = None
+    tz_offset = None
+
     def __new__(cls, *args, **kwargs):
         return real_datetime.__new__(real_datetime, *args, **kwargs)
 
     @classmethod
     def now(cls):
-        return cls.time_to_freeze
+        return cls.time_to_freeze + datetime.timedelta(hours=cls.tz_offset)
 
     @classmethod
     def utcnow(cls):
@@ -30,8 +35,9 @@ class FakeDatetime(real_datetime):
 
 class _freeze_time():
 
-    def __init__(self, time_to_freeze):
+    def __init__(self, time_to_freeze, tz_offset):
         self.time_to_freeze = time_to_freeze
+        self.tz_offset = tz_offset
 
     def __call__(self, func):
         return self.decorate_callable(func)
@@ -43,12 +49,14 @@ class _freeze_time():
         self.stop()
 
     def start(self):
-        datetime.date = FakeDate
         datetime.datetime = FakeDatetime
+        datetime.date = FakeDate
 
         time_to_freeze = datetime.datetime.strptime(self.time_to_freeze, "%Y-%m-%d")
-        datetime.date.time_to_freeze = time_to_freeze.date()
         datetime.datetime.time_to_freeze = time_to_freeze
+        datetime.datetime.tz_offset = self.tz_offset
+
+        datetime.date.date_to_freeze = datetime.datetime.now().date()
 
     def stop(self):
         datetime.date = real_date
@@ -62,5 +70,6 @@ class _freeze_time():
         functools.update_wrapper(wrapper, func)
         return wrapper
 
-def freeze_time(time_to_freeze):
-    return _freeze_time(time_to_freeze)
+
+def freeze_time(time_to_freeze, tz_offset=0):
+    return _freeze_time(time_to_freeze, tz_offset)

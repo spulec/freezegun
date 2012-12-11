@@ -55,3 +55,17 @@ Context Manager
         with freeze_time("2012-01-14"):
             assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
         assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
+
+Timezones
+~~~~~~~~~
+
+.. code-block:: python
+
+    from freezegun import freeze_time
+
+    @freeze_time("2012-01-14", tz_offset=-4)
+    def test():
+        assert datetime.datetime.now() == datetime.datetime(2012, 01, 14) - datetime.timedelta(hours=4)
+        # datetime.date.today() uses local time
+        assert datetime.date.today() == datetime.datetime(2012, 01, 13)
+
