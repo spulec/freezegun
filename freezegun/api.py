@@ -11,15 +11,16 @@ class FakeDate(real_date):
     active = False
     date_to_freeze = None
 
-    def __new__(cls, *args, **kwargs):
-        return real_date.__new__(real_date, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        return super(FakeDate, self).__init__(*args, **kwargs)
 
     @classmethod
     def today(cls):
         if cls.active:
-            return cls.date_to_freeze
+            result = cls.date_to_freeze
         else:
-            return real_date.today()
+            result = real_date.today()
+        return date_to_fakedate(result)
 
 
 class FakeDatetime(real_datetime):
@@ -27,25 +28,44 @@ class FakeDatetime(real_datetime):
     time_to_freeze = None
     tz_offset = None
 
-    def __new__(cls, *args, **kwargs):
-        return real_datetime.__new__(real_datetime, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        return super(FakeDatetime, self).__init__(*args, **kwargs)
 
     @classmethod
     def now(cls):
         if cls.active:
-            return cls.time_to_freeze + datetime.timedelta(hours=cls.tz_offset)
+            result = cls.time_to_freeze + datetime.timedelta(hours=cls.tz_offset)
         else:
-            return real_datetime.now()
+            result = real_datetime.now()
+        return datetime_to_fakedatetime(result)
 
     @classmethod
     def utcnow(cls):
         if cls.active:
-            return cls.time_to_freeze
+            result = cls.time_to_freeze
         else:
-            return real_datetime.utcnow()
+            result = real_datetime.utcnow()
+        return datetime_to_fakedatetime(result)
 
 datetime.datetime = FakeDatetime
 datetime.date = FakeDate
+
+
+def datetime_to_fakedatetime(datetime):
+    return FakeDatetime(datetime.year,
+                        datetime.month,
+                        datetime.day,
+                        datetime.hour,
+                        datetime.minute,
+                        datetime.second,
+                        datetime.microsecond,
+                        datetime.tzinfo)
+
+
+def date_to_fakedate(date):
+    return FakeDate(date.year,
+                    date.month,
+                    date.day)
 
 
 class _freeze_time():

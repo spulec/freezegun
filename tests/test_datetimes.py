@@ -63,3 +63,20 @@ def test_context_manager():
     with freeze_time("2012-01-14"):
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
     assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
+
+
+@freeze_time("Jan 14th, 2012")
+def test_isinstance_with_active():
+    now = datetime.datetime.now()
+    assert isinstance(now, datetime.datetime)
+
+    today = datetime.date.today()
+    assert isinstance(today, datetime.date)
+
+
+def test_isinstance_without_active():
+    now = datetime.datetime.now()
+    assert isinstance(now, datetime.datetime)
+
+    today = datetime.date.today()
+    assert isinstance(today, datetime.date)
