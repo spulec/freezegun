@@ -23,7 +23,7 @@ class FakeDate(real_date):
         return date_to_fakedate(result)
 
 
-class FakeDatetime(real_datetime):
+class FakeDatetime(real_datetime, FakeDate):
     active = False
     time_to_freeze = None
     tz_offset = None

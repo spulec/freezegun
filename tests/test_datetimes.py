@@ -8,6 +8,7 @@ def test_simple_api():
     assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
     assert datetime.datetime.utcnow() == datetime.datetime(2012, 01, 14)
     assert datetime.date.today() == datetime.date(2012, 01, 14)
+    assert datetime.datetime.now().today() == datetime.date(2012, 01, 14)
     freezer.stop()
     assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
     freezer = freeze_time("2012-01-10 13:52:01")
@@ -77,6 +78,7 @@ def test_isinstance_with_active():
 def test_isinstance_without_active():
     now = datetime.datetime.now()
     assert isinstance(now, datetime.datetime)
+    assert isinstance(now, datetime.date)
 
     today = datetime.date.today()
     assert isinstance(today, datetime.date)
