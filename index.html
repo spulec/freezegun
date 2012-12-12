@@ -100,7 +100,8 @@
 
 <h2>Warning</h2>
 
-<p>For the time being, the freezegun module must be imported before the datetime module is ever imported for this to work. I'm working on a better solution, but it will take a bit of time.</p>
+<p>For the time being, if you use datetime as <code>from datetime import datetime; now = datetime.now()</code> then freezegun module must be imported before the datetime module is ever imported for this to work. 
+If you use datetime as <code>import datetime; now = datetime.datetime.now()</code>, then you're good to go without worrying about import order.</p>
 
 <h2>Installation</h2>
 
