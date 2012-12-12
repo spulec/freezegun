@@ -83,8 +83,8 @@ FreezeGun uses dateutil behind the scenes so you can have nice-looking datetimes
 Warning
 -------
 
-For the time being, the freezegun module must be imported before the datetime module is ever imported for this to work. I'm working on a better solution, but it will take a bit of time.
-
+For the time being, if you use datetime as `from datetime import datetime; now = datetime.now()` then freezegun module must be imported before the datetime module is ever imported for this to work.
+If you use datetime as `import datetime; now = datetime.datetime.now()`, then you're good to go without worrying about import order.
 
 Installation
 ------------
