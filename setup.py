@@ -2,7 +2,6 @@
 
 from setuptools import setup, find_packages
 
-
 setup(
     name='freezegun',
     version='0.0.6',
@@ -11,6 +10,6 @@ setup(
     author_email='spulec@gmail',
     url='https://github.com/spulec/freezegun',
     packages=find_packages(),
-    install_requires=['python-dateutil==1.5'],
+    install_requires=['python-dateutil>=1.0, <2.0'],
     include_package_data=True,
 )
