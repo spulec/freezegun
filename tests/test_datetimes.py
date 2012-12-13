@@ -11,6 +11,7 @@ def test_simple_api():
     assert datetime.datetime.now().today() == datetime.date(2012, 01, 14)
     freezer.stop()
     assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
+    assert datetime.datetime.utcnow() != datetime.datetime(2012, 01, 14)
     freezer = freeze_time("2012-01-10 13:52:01")
     freezer.start()
     assert datetime.datetime.now() == datetime.datetime(2012, 01, 10, 13, 52, 01)
