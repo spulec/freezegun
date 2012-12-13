@@ -1,10 +1,38 @@
 import datetime
+import sys
+from calendar import timegm
 import functools
 
 from dateutil import parser
 
 real_date = datetime.date
 real_datetime = datetime.datetime
+
+
+class FakeTime(object):
+    def __init__(self):
+        import time
+        self._time_mod = time
+        self.active = False
+        self._time = 0  # frozen time to be filled in here
+
+    def time(self):
+        ''' faked time '''
+        if not self.active:
+            return self._time_mod.time()
+        return self._time
+
+    def set_time_from_datetime(self, time_to_freeze):
+        ''' set time to return '''
+        self._time = timegm(time_to_freeze.utctimetuple())
+
+    def __getattr__(self, name):
+        ''' pass through unknowns '''
+        return getattr(self._time_mod, name)
+
+
+sys.modules['time'] = FakeTime()        
+import time
 
 
 class FakeDate(real_date):
@@ -72,6 +100,7 @@ class _freeze_time():
 
     def __init__(self, time_to_freeze_str, tz_offset):
         time_to_freeze = parser.parse(time_to_freeze_str)
+        time.set_time_from_datetime(time_to_freeze)
 
         self.time_to_freeze = time_to_freeze
         self.tz_offset = tz_offset
@@ -90,14 +119,16 @@ class _freeze_time():
         datetime.datetime.tz_offset = self.tz_offset
         datetime.datetime.active = True
 
-        # Since datetime.datetime has already been mocket, just use that for
+        # Since datetime.datetime has already been mocked, just use that for
         # calculating the date
         datetime.date.date_to_freeze = datetime.datetime.now().date()
         datetime.date.active = True
+        time.active = True
 
     def stop(self):
         datetime.datetime.active = False
         datetime.date.active = False
+        time.active = False
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
