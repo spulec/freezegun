@@ -14,6 +14,18 @@ class FakeDate(real_date):
     def __init__(self, *args, **kwargs):
         return super(FakeDate, self).__init__(*args, **kwargs)
 
+    def __add__(self, other):
+        result = super(FakeDate, self).__add__(other)
+        if result is NotImplemented:
+            return result
+        return date_to_fakedate(result)
+
+    def __sub__(self, other):
+        result = super(FakeDate, self).__sub__(other)
+        if result is NotImplemented:
+            return result
+        return date_to_fakedate(result)
+
     @classmethod
     def today(cls):
         if cls.active:
@@ -31,6 +43,18 @@ class FakeDatetime(real_datetime, FakeDate):
     def __init__(self, *args, **kwargs):
         return super(FakeDatetime, self).__init__(*args, **kwargs)
 
+    def __add__(self, other):
+        result = super(FakeDatetime, self).__add__(other)
+        if result is NotImplemented:
+            return result
+        return datetime_to_fakedatetime(result)
+
+    def __sub__(self, other):
+        result = super(FakeDatetime, self).__sub__(other)
+        if result is NotImplemented:
+            return result
+        return datetime_to_fakedatetime(result)
+
     @classmethod
     def now(cls):
         if cls.active:
@@ -45,7 +69,7 @@ class FakeDatetime(real_datetime, FakeDate):
             result = cls.time_to_freeze
         else:
             result = real_datetime.utcnow()
-        return datetime_to_fakedatetime(result)
+        return result
 
 datetime.datetime = FakeDatetime
 datetime.date = FakeDate
