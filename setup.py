@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='freezegun',
-    version='0.0.7',
+    version='0.0.8',
     description='Let your Python tests travel through time',
     author='Steve Pulec',
     author_email='spulec@gmail',
