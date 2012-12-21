@@ -24,7 +24,10 @@ class FakeDate(real_date):
         result = super(FakeDate, self).__sub__(other)
         if result is NotImplemented:
             return result
-        return date_to_fakedate(result)
+        if isinstance(result, real_date):
+            return date_to_fakedate(result)
+        else:
+            return result
 
     @classmethod
     def today(cls):
@@ -53,7 +56,10 @@ class FakeDatetime(real_datetime, FakeDate):
         result = super(FakeDatetime, self).__sub__(other)
         if result is NotImplemented:
             return result
-        return datetime_to_fakedatetime(result)
+        if isinstance(result, real_datetime):
+            return datetime_to_fakedatetime(result)
+        else:
+            return result
 
     @classmethod
     def now(cls):
