@@ -21,11 +21,15 @@ def test_subtraction():
     now = datetime.datetime.now()
     before = now - datetime.timedelta(days=1)
     other_before = now - relativedelta(days=1)
+    how_long = now - before
     assert isinstance(before, datetime.datetime)
     assert isinstance(other_before, datetime.datetime)
+    assert isinstance(how_long, datetime.timedelta)
 
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
     other_yesterday = today - relativedelta(days=1)
+    how_long = today - yesterday
     assert isinstance(yesterday, datetime.date)
     assert isinstance(other_yesterday, datetime.date)
+    assert isinstance(how_long, datetime.timedelta)
