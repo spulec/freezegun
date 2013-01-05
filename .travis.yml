@@ -6,4 +6,5 @@ python:
   - 3.3
 script: make travis
 install:
+  - pip install .
   - pip install -r requirements.txt
