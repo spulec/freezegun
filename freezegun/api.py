@@ -12,7 +12,7 @@ class FakeDate(real_date):
     date_to_freeze = None
 
     def __init__(self, *args, **kwargs):
-        return super(FakeDate, self).__init__(*args, **kwargs)
+        return real_date.__init__(*args, **kwargs)
 
     def __add__(self, other):
         result = super(FakeDate, self).__add__(other)
@@ -44,7 +44,7 @@ class FakeDatetime(real_datetime, FakeDate):
     tz_offset = None
 
     def __init__(self, *args, **kwargs):
-        return super(FakeDatetime, self).__init__(*args, **kwargs)
+        return real_datetime.__init__(*args, **kwargs)
 
     def __add__(self, other):
         result = super(FakeDatetime, self).__add__(other)
