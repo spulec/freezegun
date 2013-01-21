@@ -1,4 +1,5 @@
 .coverage
 *.egg-info
+*.tox
 dist
 *.pyc
