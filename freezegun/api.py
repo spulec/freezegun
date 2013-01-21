@@ -11,8 +11,8 @@ class FakeDate(real_date):
     active = False
     date_to_freeze = None
 
-    def __init__(self, *args, **kwargs):
-        return real_date.__init__(self, *args, **kwargs)
+    def __new__(cls, *args, **kwargs):
+        return real_date.__new__(cls, *args, **kwargs)
 
     def __add__(self, other):
         result = super(FakeDate, self).__add__(other)
@@ -43,8 +43,8 @@ class FakeDatetime(real_datetime, FakeDate):
     time_to_freeze = None
     tz_offset = None
 
-    def __init__(self, *args, **kwargs):
-        return real_datetime.__init__(self, *args, **kwargs)
+    def __new__(cls, *args, **kwargs):
+        return real_datetime.__new__(cls, *args, **kwargs)
 
     def __add__(self, other):
         result = super(FakeDatetime, self).__add__(other)
