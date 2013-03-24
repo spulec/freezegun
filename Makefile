@@ -6,10 +6,10 @@ init:
 
 test:
 	rm -f .coverage
-	nosetests --with-coverage ./tests/
+	nosetests ./tests/
 
 travis:
-	nosetests --with-coverage ./tests/
+	nosetests ./tests/
 
 tdaemon:
 	tdaemon -t nose ./tests/ --custom-args="--with-growl"

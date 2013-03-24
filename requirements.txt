@@ -1,3 +1,2 @@
 coverage
 nose
-python-coveralls
