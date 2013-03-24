@@ -5,6 +5,7 @@ init:
 	pip install -r requirements.txt
 
 test:
+	rm -f .coverage
 	nosetests ./tests/
 
 travis:
