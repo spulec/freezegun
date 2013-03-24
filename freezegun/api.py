@@ -58,8 +58,11 @@ class FakeDatetime(real_datetime, FakeDate):
             return result
 
     @classmethod
-    def now(cls):
-        result = cls.time_to_freeze + datetime.timedelta(hours=cls.tz_offset)
+    def now(cls, tz=None):
+        if tz:
+            result = tz.fromutc(cls.time_to_freeze.replace(tzinfo=tz))
+        else:
+            result = cls.time_to_freeze + datetime.timedelta(hours=cls.tz_offset)
         return datetime_to_fakedatetime(result)
 
     @classmethod

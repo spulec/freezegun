@@ -1,6 +1,8 @@
 import datetime
+import sure
 from freezegun import freeze_time
 from dateutil.relativedelta import relativedelta
+from datetime import timedelta, tzinfo
 
 
 @freeze_time("2012-01-14")
@@ -35,3 +37,25 @@ def test_subtraction():
     assert isinstance(yesterday, datetime.date)
     assert isinstance(other_yesterday, datetime.date)
     assert isinstance(how_long, datetime.timedelta)
+
+
+@freeze_time("2012-01-14")
+def test_datetime_timezone_none():
+    now = datetime.datetime.now(tz=None)
+    now.should.equal(datetime.datetime(2012, 1, 14))
+
+
+class GMT5(tzinfo):
+    def utcoffset(self,dt):
+        return timedelta(hours=5)
+    def tzname(self,dt):
+        return "GMT +5"
+    def dst(self,dt):
+        return timedelta(0)
+
+
+@freeze_time("2012-01-14 2:00:00")
+def test_datetime_timezone_real():
+    now = datetime.datetime.now(tz=GMT5())
+    now.should.equal(datetime.datetime(2012, 1, 14, 7, tzinfo=GMT5()))
+    now.utcoffset().should.equal(timedelta(0, 60 * 60 * 5))
