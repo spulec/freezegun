@@ -31,6 +31,7 @@ def test_tz_offset_with_today():
     freezer.start()
     assert datetime.date.today() == datetime.date(2012, 1, 13)
     freezer.stop()
+    assert datetime.date.today() != datetime.date(2012, 1, 13)
 
 
 def test_bad_time_argument():

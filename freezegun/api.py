@@ -9,7 +9,6 @@ real_datetime = datetime.datetime
 
 
 class FakeDate(real_date):
-    active = False
     date_to_freeze = None
 
     def __new__(cls, *args, **kwargs):
@@ -32,15 +31,11 @@ class FakeDate(real_date):
 
     @classmethod
     def today(cls):
-        if cls.active:
-            result = cls.date_to_freeze
-        else:
-            result = real_date.today()
+        result = cls.date_to_freeze
         return date_to_fakedate(result)
 
 
 class FakeDatetime(real_datetime, FakeDate):
-    active = False
     time_to_freeze = None
     tz_offset = None
 
@@ -64,18 +59,12 @@ class FakeDatetime(real_datetime, FakeDate):
 
     @classmethod
     def now(cls):
-        if cls.active:
-            result = cls.time_to_freeze + datetime.timedelta(hours=cls.tz_offset)
-        else:
-            result = real_datetime.now()
+        result = cls.time_to_freeze + datetime.timedelta(hours=cls.tz_offset)
         return datetime_to_fakedatetime(result)
 
     @classmethod
     def utcnow(cls):
-        if cls.active:
-            result = cls.time_to_freeze
-        else:
-            result = real_datetime.utcnow()
+        result = cls.time_to_freeze
         return result
 
 
@@ -133,17 +122,12 @@ class _freeze_time():
 
         datetime.datetime.time_to_freeze = self.time_to_freeze
         datetime.datetime.tz_offset = self.tz_offset
-        datetime.datetime.active = True
 
         # Since datetime.datetime has already been mocket, just use that for
         # calculating the date
         datetime.date.date_to_freeze = datetime.datetime.now().date()
-        datetime.date.active = True
 
     def stop(self):
-        datetime.datetime.active = False
-        datetime.date.active = False
-
         datetime.datetime = real_datetime
         datetime.date = real_date
 
