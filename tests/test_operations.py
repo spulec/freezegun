@@ -3,6 +3,7 @@ from freezegun import freeze_time
 from dateutil.relativedelta import relativedelta
 
 
+@freeze_time("2012-01-14")
 def test_addition():
     now = datetime.datetime.now()
     later = now + datetime.timedelta(days=1)
@@ -17,6 +18,7 @@ def test_addition():
     assert isinstance(other_tomorrow, datetime.date)
 
 
+@freeze_time("2012-01-14")
 def test_subtraction():
     now = datetime.datetime.now()
     before = now - datetime.timedelta(days=1)
