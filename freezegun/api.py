@@ -1,5 +1,6 @@
 import datetime
 import functools
+import sys
 
 from dateutil import parser
 
@@ -77,9 +78,6 @@ class FakeDatetime(real_datetime, FakeDate):
             result = real_datetime.utcnow()
         return result
 
-datetime.datetime = FakeDatetime
-datetime.date = FakeDate
-
 
 def datetime_to_fakedatetime(datetime):
     return FakeDatetime(datetime.year,
@@ -116,6 +114,23 @@ class _freeze_time():
         self.stop()
 
     def start(self):
+        datetime.datetime = FakeDatetime
+        datetime.date = FakeDate
+
+        modules_for_datetime_faking = []
+        modules_for_date_faking = []
+
+        modules = sys.modules.values()
+
+        for module in modules:
+            if module is None:
+                continue
+            if module.__name__ != 'datetime':
+                if hasattr(module, 'datetime') and module.datetime == real_datetime:
+                    module.datetime = FakeDatetime
+                if hasattr(module, 'date') and module.date == real_date:
+                    module.date = FakeDate
+
         datetime.datetime.time_to_freeze = self.time_to_freeze
         datetime.datetime.tz_offset = self.tz_offset
         datetime.datetime.active = True
@@ -128,6 +143,16 @@ class _freeze_time():
     def stop(self):
         datetime.datetime.active = False
         datetime.date.active = False
+
+        datetime.datetime = real_datetime
+        datetime.date = real_date
+
+        for mod_name, module in sys.modules.items():
+            if mod_name != 'datetime':
+                if hasattr(module, 'datetime') and module.datetime == FakeDatetime:
+                    module.datetime = real_datetime
+                if hasattr(module, 'date') and module.date == FakeDate:
+                    module.date = real_date
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
