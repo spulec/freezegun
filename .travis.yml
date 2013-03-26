@@ -7,3 +7,5 @@ script: make travis
 install:
   - pip install .
   - pip install -r requirements.txt
+after_success:
+  - coveralls
