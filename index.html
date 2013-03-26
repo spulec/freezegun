@@ -98,11 +98,6 @@
     <span class="k">assert</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">==</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mo">01</span><span class="p">,</span> <span class="mi">14</span><span class="p">)</span>
 </pre></div>
 
-<h2>Warning</h2>
-
-<p>For the time being, if you use datetime as <code>from datetime import datetime; now = datetime.now()</code> then freezegun module must be imported before the datetime module is ever imported for this to work. 
-If you use datetime as <code>import datetime; now = datetime.datetime.now()</code>, then you're good to go without worrying about import order.</p>
-
 <h2>Installation</h2>
 
 <p>To install FreezeGun, simply:</p>
