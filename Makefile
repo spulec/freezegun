@@ -9,7 +9,7 @@ test:
 	nosetests ./tests/
 
 travis:
-	nosetests ./tests/
+	nosetests --with-coverage ./tests/ --cover-package=freezegun
 
 tdaemon:
 	tdaemon -t nose ./tests/ --custom-args="--with-growl"
