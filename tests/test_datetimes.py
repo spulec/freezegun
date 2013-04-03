@@ -1,17 +1,19 @@
 import datetime
 from freezegun import freeze_time
+import sure
 
 
 def test_simple_api():
     freezer = freeze_time("2012-01-14")
     freezer.start()
+
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
     assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14)
     assert datetime.date.today() == datetime.date(2012, 1, 14)
     assert datetime.datetime.now().today() == datetime.date(2012, 1, 14)
     freezer.stop()
-    assert datetime.datetime.now() != datetime.datetime(2012, 1, 14)
-    assert datetime.datetime.utcnow() != datetime.datetime(2012, 1, 14)
+    datetime.datetime.now().shouldnt.equal(datetime.datetime(2012, 1, 14))
+    datetime.datetime.utcnow().shouldnt.equal(datetime.datetime(2012, 1, 14))
     freezer = freeze_time("2012-01-10 13:52:01")
     freezer.start()
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 10, 13, 52, 1)
@@ -29,7 +31,7 @@ def test_tz_offset():
 def test_tz_offset_with_today():
     freezer = freeze_time("2012-01-14", tz_offset=-4)
     freezer.start()
-    assert datetime.date.today() == datetime.date(2012, 1, 13)
+    datetime.date.today().should.equal(datetime.date(2012, 1, 13))
     freezer.stop()
     assert datetime.date.today() != datetime.date(2012, 1, 13)
 
@@ -65,7 +67,7 @@ def test_nice_datetime():
 def test_context_manager():
     with freeze_time("2012-01-14"):
         assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
-    assert datetime.datetime.now() != datetime.datetime(2012, 1, 14)
+    datetime.datetime.now().shouldnt.equal(datetime.datetime(2012, 1, 14))
 
 
 @freeze_time("Jan 14th, 2012")
