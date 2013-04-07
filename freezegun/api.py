@@ -4,7 +4,7 @@ import functools
 import sys
 
 from dateutil import parser
-from .magic import patchable_builtin as ctype_dict
+from forbiddenfruit import curse
 
 real_date = datetime.date
 real_datetime = datetime.datetime
@@ -12,33 +12,6 @@ real_datetime = datetime.datetime
 real_datetime_now = real_datetime.now
 real_datetime_utcnow = real_datetime.utcnow
 real_date_today = real_date.today
-
-
-class FakeDate(object):
-
-    def __init__(self, date_to_freeze):
-        self.date_to_freeze = date_to_freeze
-
-    def today(self):
-        return self.date_to_freeze
-
-
-class FakeDatetime(object):
-
-
-    def __init__(self, time_to_freeze, tz_offset):
-        self.time_to_freeze = time_to_freeze
-        self.tz_offset = tz_offset
-
-    def now(self, tz=None):
-        if tz:
-            result = tz.fromutc(self.time_to_freeze.replace(tzinfo=tz)) + datetime.timedelta(hours=self.tz_offset)
-        else:
-            result = self.time_to_freeze + datetime.timedelta(hours=self.tz_offset)
-        return result
-
-    def utcnow(self):
-        return self.time_to_freeze
 
 
 class _freeze_time():
@@ -59,24 +32,31 @@ class _freeze_time():
         self.stop()
 
     def start(self):
-        fake_datetime = FakeDatetime(self.time_to_freeze, self.tz_offset)
-        datetime_dict = ctype_dict(real_datetime)
-        datetime_dict['now'] = fake_datetime.now
-        datetime_dict['utcnow'] = fake_datetime.utcnow
 
-        now = datetime.datetime.now()
-        today = real_date(now.year, now.month, now.day)
-        fake_date = FakeDate(today)
-        date_dict = ctype_dict(real_date)
-        date_dict['today'] = fake_date.today
+        def fake_now(cls, tz=None):
+            if tz:
+                result = tz.fromutc(self.time_to_freeze.replace(tzinfo=tz)) + datetime.timedelta(hours=self.tz_offset)
+            else:
+                result = self.time_to_freeze + datetime.timedelta(hours=self.tz_offset)
+            return result
+
+        def fake_utcnow(cls):
+            return self.time_to_freeze
+
+        curse(real_datetime, "now", classmethod(fake_now))
+        curse(real_datetime, "utcnow", classmethod(fake_utcnow))
+
+        def fake_today(cls):
+            now = fake_now(None)
+            today = real_date(now.year, now.month, now.day)
+            return today
+
+        curse(real_date, "today", classmethod(fake_today))
 
     def stop(self):
-        datetime_dict = ctype_dict(real_datetime)
-        datetime_dict['now'] = real_datetime_now
-        datetime_dict['utcnow'] = real_datetime_utcnow
-
-        date_dict = ctype_dict(real_date)
-        date_dict['today'] = real_date_today
+        curse(real_datetime, "now", real_datetime_now)
+        curse(real_datetime, "utcnow", real_datetime_utcnow)
+        curse(real_date, "today", real_date_today)
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):

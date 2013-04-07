@@ -1,7 +1,6 @@
 from .fake_module import fake_datetime_function, fake_date_function
 import sure
 from freezegun import freeze_time
-from freezegun.api import FakeDatetime
 from datetime import datetime
 now = datetime.now()
 
