@@ -1,4 +1,6 @@
 import datetime
+import unittest
+
 from freezegun import freeze_time
 
 
@@ -84,3 +86,8 @@ def test_isinstance_without_active():
 
     today = datetime.date.today()
     assert isinstance(today, datetime.date)
+
+@freeze_time('2013-04-09')
+class TestUnitTestClassDecorator(unittest.TestCase):
+    def test_class_decorator_works_on_unittest(self):
+        self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
