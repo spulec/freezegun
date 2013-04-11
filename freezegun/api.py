@@ -117,7 +117,7 @@ class _freeze_time():
         for module in modules:
             if module is None:
                 continue
-            if module.__name__ != 'datetime':
+            if hasattr(module, "__name__") and module.__name__ != 'datetime':
                 if hasattr(module, 'datetime') and module.datetime == real_datetime:
                     module.datetime = FakeDatetime
                 if hasattr(module, 'date') and module.date == real_date:
