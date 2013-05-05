@@ -180,7 +180,13 @@ def freeze_time(time_to_freeze, tz_offset=0):
     elif isinstance(time_to_freeze, datetime.date):
         time_to_freeze = time_to_freeze.strftime('%x')
 
-    if not isinstance(time_to_freeze, basestring):
+    # Python3 doesn't have basestring, but it does have str.
+    try:
+        string_type = basestring
+    except NameError:
+        string_type = str
+
+    if not isinstance(time_to_freeze, string_type):
         raise TypeError(('freeze_time() expected a string '
                          'but got type %s.') % type(time_to_freeze))
 
