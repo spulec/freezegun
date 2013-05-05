@@ -175,4 +175,13 @@ class _freeze_time():
 
 
 def freeze_time(time_to_freeze, tz_offset=0):
+    if isinstance(time_to_freeze, datetime.datetime):
+        time_to_freeze = time_to_freeze.strftime('%x %X')
+    elif isinstance(time_to_freeze, datetime.date):
+        time_to_freeze = time_to_freeze.strftime('%x')
+
+    if not isinstance(time_to_freeze, basestring):
+        raise TypeError(('freeze_time() expected a string '
+                         'but got type %s.') % type(time_to_freeze))
+
     return _freeze_time(time_to_freeze, tz_offset)
