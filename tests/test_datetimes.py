@@ -66,8 +66,6 @@ def test_datetime_object():
                                         hour=4, minute=15, second=30)
     datetime_freezer = freeze_time(frozen_datetime)
     regular_freezer = freeze_time('2012-11-10 04:15:30')
-    print datetime_freezer.time_to_freeze
-    print regular_freezer.time_to_freeze
     assert datetime_freezer.time_to_freeze == regular_freezer.time_to_freeze
 
 
