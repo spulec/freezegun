@@ -45,6 +45,32 @@ def test_bad_time_argument():
         assert False, "Bad values should raise a ValueError"
 
 
+def test_date_object():
+    frozen_date = datetime.date(year=2012, month=11, day=10)
+    date_freezer = freeze_time(frozen_date)
+    regular_freezer = freeze_time('2012-11-10')
+    assert date_freezer.time_to_freeze == regular_freezer.time_to_freeze
+
+
+def test_invalid_type():
+    try:
+        freeze_time(int(4))
+    except TypeError:
+        pass
+    else:
+        assert False, "Bad types should raise a TypeError"
+
+
+def test_datetime_object():
+    frozen_datetime = datetime.datetime(year=2012, month=11, day=10,
+                                        hour=4, minute=15, second=30)
+    datetime_freezer = freeze_time(frozen_datetime)
+    regular_freezer = freeze_time('2012-11-10 04:15:30')
+    print datetime_freezer.time_to_freeze
+    print regular_freezer.time_to_freeze
+    assert datetime_freezer.time_to_freeze == regular_freezer.time_to_freeze
+
+
 @freeze_time("2012-01-14")
 def test_decorator():
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
