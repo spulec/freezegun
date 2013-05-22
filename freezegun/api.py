@@ -188,6 +188,6 @@ def freeze_time(time_to_freeze, tz_offset=0):
 
     if not isinstance(time_to_freeze, string_type):
         raise TypeError(('freeze_time() expected a string, date instance, or '
-                         'datetime instance, but got type {0}.').format(time_to_freeze))
+                         'datetime instance, but got type {0}.').format(type(time_to_freeze)))
 
     return _freeze_time(time_to_freeze, tz_offset)
