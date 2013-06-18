@@ -10,7 +10,20 @@ real_date = datetime.date
 real_datetime = datetime.datetime
 
 
-class FakeDate(real_date):
+# Stolen from six
+def with_metaclass(meta, *bases):
+    """Create a base class with a metaclass."""
+    return meta("NewBase", bases, {})
+
+
+class FakeDateMeta(type):
+    @classmethod
+    def __instancecheck__(self, obj):
+        return isinstance(obj, real_date)
+
+
+class FakeDate(with_metaclass(FakeDateMeta, real_date)):
+
     date_to_freeze = None
 
     def __new__(cls, *args, **kwargs):
