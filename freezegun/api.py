@@ -23,7 +23,6 @@ class FakeDateMeta(type):
 
 
 class FakeDate(with_metaclass(FakeDateMeta, real_date)):
-
     date_to_freeze = None
 
     def __new__(cls, *args, **kwargs):
@@ -50,7 +49,13 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
         return date_to_fakedate(result)
 
 
-class FakeDatetime(real_datetime, FakeDate):
+class FakeDatetimeMeta(FakeDateMeta):
+    @classmethod
+    def __instancecheck__(self, obj):
+        return isinstance(obj, real_datetime)
+
+
+class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
     time_to_freeze = None
     tz_offset = None
 

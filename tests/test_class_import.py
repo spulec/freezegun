@@ -5,6 +5,7 @@ from freezegun.api import FakeDatetime
 import datetime
 
 
+
 @freeze_time("2012-01-14")
 def test_import_datetime_works():
     fake_datetime_function().day.should.equal(14)
@@ -40,6 +41,7 @@ def test_isinstance_works():
     freezer = freeze_time('2011-01-01')
     freezer.start()
     isinstance(date, datetime.date).should.equal(True)
+    isinstance(date, datetime.datetime).should.equal(False)
     isinstance(now, datetime.datetime).should.equal(True)
     isinstance(now, datetime.date).should.equal(True)
     freezer.stop()
