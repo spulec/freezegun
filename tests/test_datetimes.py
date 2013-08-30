@@ -1,3 +1,4 @@
+import time
 import datetime
 import unittest
 
@@ -5,13 +6,21 @@ from freezegun import freeze_time
 
 
 def test_simple_api():
+    # time to freeze is always provided in UTC
     freezer = freeze_time("2012-01-14")
+    # expected timestamp must be a timestamp, corresponding to 2012-01-14 UTC
+    local_time = datetime.datetime(2012, 1, 14)
+    utc_time = local_time - datetime.timedelta(seconds=time.timezone)
+    expected_timestamp = time.mktime(utc_time.timetuple())
+
     freezer.start()
+    assert time.time() == expected_timestamp
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
     assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14)
     assert datetime.date.today() == datetime.date(2012, 1, 14)
     assert datetime.datetime.now().today() == datetime.date(2012, 1, 14)
     freezer.stop()
+    assert time.time() != expected_timestamp
     assert datetime.datetime.now() != datetime.datetime(2012, 1, 14)
     assert datetime.datetime.utcnow() != datetime.datetime(2012, 1, 14)
     freezer = freeze_time("2012-01-10 13:52:01")
@@ -22,9 +31,17 @@ def test_simple_api():
 
 def test_tz_offset():
     freezer = freeze_time("2012-01-14 03:21:34", tz_offset=-4)
+    # expected timestamp must be a timestamp,
+    # corresponding to 2012-01-14 03:21:34 UTC
+    # and it doesn't depend on tz_offset
+    local_time = datetime.datetime(2012, 1, 14, 3, 21, 34)
+    utc_time = local_time - datetime.timedelta(seconds=time.timezone)
+    expected_timestamp = time.mktime(utc_time.timetuple())
+
     freezer.start()
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 13, 23, 21, 34)
     assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14, 3, 21, 34)
+    assert time.time() == expected_timestamp
     freezer.stop()
 
 
@@ -34,6 +51,30 @@ def test_tz_offset_with_today():
     assert datetime.date.today() == datetime.date(2012, 1, 13)
     freezer.stop()
     assert datetime.date.today() != datetime.date(2012, 1, 13)
+
+
+def test_tz_offset_with_time():
+    # we expect the system to behave like a system with UTC timezone
+    # at the beginning of the Epoch
+    freezer = freeze_time('1970-01-01')
+    freezer.start()
+    assert datetime.date.today() == datetime.date(1970, 1, 1)
+    assert datetime.datetime.now() == datetime.datetime(1970, 1, 1)
+    assert datetime.datetime.utcnow() == datetime.datetime(1970, 1, 1)
+    assert time.time() == 0.0
+    freezer.stop()
+
+
+def test_tz_offset_with_time():
+    # we expect the system to behave like a system with UTC-4 timezone
+    # at the beginning of the Epoch (wall clock should be 4 hrs late)
+    freezer = freeze_time('1970-01-01', tz_offset=-4)
+    freezer.start()
+    assert datetime.date.today() == datetime.date(1969, 12, 31)
+    assert datetime.datetime.now() == datetime.datetime(1969, 12, 31, 20)
+    assert datetime.datetime.utcnow() == datetime.datetime(1970, 1, 1)
+    assert time.time() == 0.0
+    freezer.stop()
 
 
 def test_bad_time_argument():
