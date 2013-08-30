@@ -11,7 +11,7 @@ else:
 
 setup(
     name='freezegun',
-    version='0.1.7',
+    version='0.1.8',
     description='Let your Python tests travel through time',
     author='Steve Pulec',
     author_email='spulec@gmail',
