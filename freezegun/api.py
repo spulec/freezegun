@@ -1,3 +1,4 @@
+import time
 import datetime
 import functools
 import sys
@@ -6,6 +7,7 @@ import unittest
 
 from dateutil import parser
 
+real_time = time.time
 real_date = datetime.date
 real_datetime = datetime.datetime
 
@@ -14,6 +16,16 @@ real_datetime = datetime.datetime
 def with_metaclass(meta, *bases):
     """Create a base class with a metaclass."""
     return meta("NewBase", bases, {})
+
+
+class FakeTime(object):
+
+    def __init__(self, time_to_freeze):
+        self.time_to_freeze = time_to_freeze
+
+    def __call__(self):
+        shifted_time = self.time_to_freeze - datetime.timedelta(seconds=time.timezone)
+        return time.mktime(shifted_time.timetuple())
 
 
 class FakeDateMeta(type):
@@ -150,6 +162,8 @@ class _freeze_time():
     def start(self):
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
+        fake_time = FakeTime(self.time_to_freeze)
+        time.time = fake_time
 
         modules_for_datetime_faking = []
         modules_for_date_faking = []
@@ -164,6 +178,9 @@ class _freeze_time():
                     module.datetime = FakeDatetime
                 if hasattr(module, 'date') and module.date == real_date:
                     module.date = FakeDate
+            if hasattr(module, "__name__") and module.__name__ != 'time':
+                if hasattr(module, 'time') and module.time == real_time:
+                    module.time = fake_time
 
         datetime.datetime.time_to_freeze = self.time_to_freeze
         datetime.datetime.tz_offset = self.tz_offset
@@ -175,6 +192,7 @@ class _freeze_time():
     def stop(self):
         datetime.datetime = real_datetime
         datetime.date = real_date
+        time.time = real_time
 
         for mod_name, module in sys.modules.items():
             if mod_name != 'datetime':
@@ -182,6 +200,9 @@ class _freeze_time():
                     module.datetime = real_datetime
                 if hasattr(module, 'date') and module.date == FakeDate:
                     module.date = real_date
+            if mod_name != 'time':
+                if hasattr(module, 'time') and isinstance(module.time, FakeTime):
+                    module.time = real_time
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
