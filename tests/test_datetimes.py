@@ -3,6 +3,8 @@ import datetime
 import unittest
 import locale
 
+from nose.plugins import skip
+
 from freezegun import freeze_time
 
 
@@ -18,7 +20,7 @@ class temp_locale(object):
             locale.setlocale(locale.LC_ALL, self.target)
         except locale.Error, e:
             msg = 'could not set %s locale: %s' % (self.target, e)
-            raise unittest.SkipTest(msg)
+            raise skip.SkipTest(msg)
 
     def __exit__(self, *args):
         locale.setlocale(locale.LC_ALL, self.old)
