@@ -18,8 +18,8 @@ class temp_locale(object):
         self.old = locale.setlocale(locale.LC_ALL)
         try:
             locale.setlocale(locale.LC_ALL, self.target)
-        except locale.Error, e:
-            msg = 'could not set %s locale: %s' % (self.target, e)
+        except locale.Error:
+            msg = 'could not set %s locale' % self.target
             raise skip.SkipTest(msg)
 
     def __exit__(self, *args):
