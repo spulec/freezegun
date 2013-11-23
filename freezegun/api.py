@@ -215,9 +215,9 @@ class _freeze_time():
 
 def freeze_time(time_to_freeze, tz_offset=0):
     if isinstance(time_to_freeze, datetime.datetime):
-        time_to_freeze = time_to_freeze.strftime('%x %X')
+        time_to_freeze = time_to_freeze.isoformat()
     elif isinstance(time_to_freeze, datetime.date):
-        time_to_freeze = time_to_freeze.strftime('%x')
+        time_to_freeze = time_to_freeze.isoformat()
 
     # Python3 doesn't have basestring, but it does have str.
     try:

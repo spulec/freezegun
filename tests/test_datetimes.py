@@ -1,8 +1,36 @@
 import time
 import datetime
 import unittest
+import locale
+
+from nose.plugins import skip
 
 from freezegun import freeze_time
+
+
+class temp_locale(object):
+    """Temporarily change the locale."""
+
+    def __init__(self, *targets):
+        self.targets = targets
+
+    def __enter__(self):
+        self.old = locale.setlocale(locale.LC_ALL)
+        for target in self.targets:
+            try:
+                locale.setlocale(locale.LC_ALL, target)
+                return
+            except locale.Error:
+                pass
+        msg = 'could not set locale to any of: %s' % ', '.join(self.targets)
+        raise skip.SkipTest(msg)
+
+    def __exit__(self, *args):
+        locale.setlocale(locale.LC_ALL, self.old)
+
+# Small sample of locales where '%x' expands to a dd/mm/yyyy string,
+# which can cause trouble when parsed with dateutil.
+_dd_mm_yyyy_locales = ['da_DK.UTF-8', 'de_DE.UTF-8', 'fr_FR.UTF-8']
 
 
 def test_simple_api():
@@ -92,6 +120,11 @@ def test_date_object():
     regular_freezer = freeze_time('2012-11-10')
     assert date_freezer.time_to_freeze == regular_freezer.time_to_freeze
 
+def test_date_with_locale():
+    with temp_locale(*_dd_mm_yyyy_locales):
+        frozen_date = datetime.date(year=2012, month=1, day=2)
+        date_freezer = freeze_time(frozen_date)
+        assert date_freezer.time_to_freeze.date() == frozen_date
 
 def test_invalid_type():
     try:
@@ -109,6 +142,11 @@ def test_datetime_object():
     regular_freezer = freeze_time('2012-11-10 04:15:30')
     assert datetime_freezer.time_to_freeze == regular_freezer.time_to_freeze
 
+def test_datetime_with_locale():
+    with temp_locale(*_dd_mm_yyyy_locales):
+        frozen_datetime = datetime.datetime(year=2012, month=1, day=2)
+        date_freezer = freeze_time(frozen_datetime)
+        assert date_freezer.time_to_freeze == frozen_datetime
 
 @freeze_time("2012-01-14")
 def test_decorator():
