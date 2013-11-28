@@ -1,5 +1,5 @@
 FreezeGun: Let your Python tests travel through time
-==================================
+====================================================
 
 
 .. image:: https://secure.travis-ci.org/spulec/freezegun.png?branch=master
@@ -10,7 +10,7 @@ FreezeGun: Let your Python tests travel through time
 FreezeGun is a library that allows your python tests to travel through time by mocking the datetime module.
 
 Usage
-------------
+-----
 
 Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), datetime.date.today(), and time.time() will return the time that has been frozen.
 
