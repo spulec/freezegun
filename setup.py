@@ -4,7 +4,7 @@ import sys
 from setuptools import setup, find_packages
 
 if sys.version_info[0] == 2:
-    requires = ['python-dateutil>=1.0, <2.0']
+    requires = ['python-dateutil>=1.0, <2.0, >=2.1']
 else:
     # Py3k
     requires = ['python-dateutil>=2.0']
