@@ -10,7 +10,7 @@ freezegun
 """
 
 __title__ = 'freezegun'
-__version__ = '0.1.1'
+__version__ = '0.1.10'
 __author__ = 'Steve Pulec'
 __license__ = 'Apache License 2.0'
 __copyright__ = 'Copyright 2012 Steve Pulec'
