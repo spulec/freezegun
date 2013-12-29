@@ -135,7 +135,7 @@ class FreezeMixin(object):
         super(FreezeMixin, self).tearDown()
         self._freezer.stop()
 
-class _freeze_time():
+class _freeze_time(object):
 
     def __init__(self, time_to_freeze_str, tz_offset):
         time_to_freeze = parser.parse(time_to_freeze_str)
@@ -165,11 +165,7 @@ class _freeze_time():
         fake_time = FakeTime(self.time_to_freeze)
         time.time = fake_time
 
-        modules_for_datetime_faking = []
-        modules_for_date_faking = []
-
         modules = sys.modules.values()
-
         for module in modules:
             if module is None:
                 continue
