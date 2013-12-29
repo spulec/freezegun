@@ -41,13 +41,13 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
         return real_date.__new__(cls, *args, **kwargs)
 
     def __add__(self, other):
-        result = super(FakeDate, self).__add__(other)
+        result = real_date.__add__(self, other)
         if result is NotImplemented:
             return result
         return date_to_fakedate(result)
 
     def __sub__(self, other):
-        result = super(FakeDate, self).__sub__(other)
+        result = real_date.__sub__(self, other)
         if result is NotImplemented:
             return result
         if isinstance(result, real_date):
@@ -75,13 +75,13 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
         return real_datetime.__new__(cls, *args, **kwargs)
 
     def __add__(self, other):
-        result = super(FakeDatetime, self).__add__(other)
+        result = real_datetime.__add__(self, other)
         if result is NotImplemented:
             return result
         return datetime_to_fakedatetime(result)
 
     def __sub__(self, other):
-        result = super(FakeDatetime, self).__sub__(other)
+        result = real_datetime.__sub__(self, other)
         if result is NotImplemented:
             return result
         if isinstance(result, real_datetime):
