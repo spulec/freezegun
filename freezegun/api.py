@@ -34,6 +34,23 @@ class FakeDateMeta(type):
         return isinstance(obj, real_date)
 
 
+def datetime_to_fakedatetime(datetime):
+    return FakeDatetime(datetime.year,
+                        datetime.month,
+                        datetime.day,
+                        datetime.hour,
+                        datetime.minute,
+                        datetime.second,
+                        datetime.microsecond,
+                        datetime.tzinfo)
+
+
+def date_to_fakedate(date):
+    return FakeDate(date.year,
+                    date.month,
+                    date.day)
+
+
 class FakeDate(with_metaclass(FakeDateMeta, real_date)):
     date_to_freeze = None
 
@@ -59,6 +76,9 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
     def today(cls):
         result = cls.date_to_freeze
         return date_to_fakedate(result)
+
+FakeDate.min = date_to_fakedate(real_date.min)
+FakeDate.max = date_to_fakedate(real_date.max)
 
 
 class FakeDatetimeMeta(FakeDateMeta):
@@ -102,22 +122,8 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
         result = cls.time_to_freeze
         return result
 
-
-def datetime_to_fakedatetime(datetime):
-    return FakeDatetime(datetime.year,
-                        datetime.month,
-                        datetime.day,
-                        datetime.hour,
-                        datetime.minute,
-                        datetime.second,
-                        datetime.microsecond,
-                        datetime.tzinfo)
-
-
-def date_to_fakedate(date):
-    return FakeDate(date.year,
-                    date.month,
-                    date.day)
+FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
+FakeDatetime.max = datetime_to_fakedatetime(real_datetime.max)
 
 
 class FreezeMixin(object):

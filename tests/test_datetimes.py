@@ -1,3 +1,4 @@
+import pickle
 import time
 import datetime
 import unittest
@@ -6,6 +7,7 @@ import locale
 from nose.plugins import skip
 
 from freezegun import freeze_time
+from freezegun.api import FakeDatetime, FakeDate, real_datetime, real_date
 
 
 class temp_locale(object):
@@ -194,3 +196,64 @@ def test_isinstance_without_active():
 class TestUnitTestClassDecorator(unittest.TestCase):
     def test_class_decorator_works_on_unittest(self):
         self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
+
+
+def assert_class_of_datetimes(right_class, wrong_class):
+    datetime.datetime.min.__class__.should.equal(right_class)
+    datetime.datetime.max.__class__.should.equal(right_class)
+    datetime.date.min.__class__.should.equal(right_class)
+    datetime.date.max.__class__.should.equal(right_class)
+    datetime.datetime.min.__class__.shouldnt.equal(wrong_class)
+    datetime.datetime.max.__class__.shouldnt.equal(wrong_class)
+    datetime.date.min.__class__.shouldnt.equal(wrong_class)
+    datetime.date.max.__class__.shouldnt.equal(wrong_class)
+
+
+def test_min_and_max():
+    freezer = freeze_time("2012-01-14")
+    real_datetime = datetime
+
+    freezer.start()
+    datetime.datetime.min.__class__.should.equal(FakeDatetime)
+    datetime.datetime.max.__class__.should.equal(FakeDatetime)
+    datetime.date.min.__class__.should.equal(FakeDate)
+    datetime.date.max.__class__.should.equal(FakeDate)
+    datetime.datetime.min.__class__.shouldnt.equal(real_datetime)
+    datetime.datetime.max.__class__.shouldnt.equal(real_datetime)
+    datetime.date.min.__class__.shouldnt.equal(real_date)
+    datetime.date.max.__class__.shouldnt.equal(real_date)
+
+    freezer.stop()
+    datetime.datetime.min.__class__.should.equal(datetime.datetime)
+    datetime.datetime.max.__class__.should.equal(datetime.datetime)
+    datetime.date.min.__class__.should.equal(datetime.date)
+    datetime.date.max.__class__.should.equal(datetime.date)
+    datetime.datetime.min.__class__.shouldnt.equal(FakeDatetime)
+    datetime.datetime.max.__class__.shouldnt.equal(FakeDatetime)
+    datetime.date.min.__class__.shouldnt.equal(FakeDate)
+    datetime.date.max.__class__.shouldnt.equal(FakeDate)
+
+
+def assert_pickled_datetimes_equal_original():
+    min_datetime = datetime.datetime.min
+    max_datetime = datetime.datetime.max
+    min_date = datetime.date.min
+    max_date = datetime.date.max
+    now = datetime.datetime.now()
+    today = datetime.date.today()
+    assert pickle.loads(pickle.dumps(min_datetime)) == min_datetime
+    assert pickle.loads(pickle.dumps(max_datetime)) == max_datetime
+    assert pickle.loads(pickle.dumps(min_date)) == min_date
+    assert pickle.loads(pickle.dumps(max_date)) == max_date
+    assert pickle.loads(pickle.dumps(now)) == now
+    assert pickle.loads(pickle.dumps(today)) == today
+
+
+def test_pickle():
+    freezer = freeze_time("2012-01-14")
+
+    freezer.start()
+    assert_pickled_datetimes_equal_original()
+
+    freezer.stop()
+    assert_pickled_datetimes_equal_original()
