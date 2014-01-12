@@ -107,6 +107,12 @@ def test_tz_offset_with_time():
     freezer.stop()
 
 
+def test_time_with_microseconds():
+    freezer = freeze_time(datetime.datetime(1970, 1, 1, 0, 0, 1, 123456))
+    freezer.start()
+    assert time.time() == 1.123456
+    freezer.stop()
+
 def test_bad_time_argument():
     try:
         freeze_time("2012-13-14", tz_offset=-4)

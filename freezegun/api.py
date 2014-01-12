@@ -25,7 +25,7 @@ class FakeTime(object):
 
     def __call__(self):
         shifted_time = self.time_to_freeze - datetime.timedelta(seconds=time.timezone)
-        return time.mktime(shifted_time.timetuple())
+        return time.mktime(shifted_time.timetuple()) + shifted_time.microsecond / 1000000.0
 
 
 class FakeDateMeta(type):
