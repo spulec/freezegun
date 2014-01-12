@@ -3,11 +3,13 @@
 import sys
 from setuptools import setup, find_packages
 
+requires = ['six<=1.4']
+
 if sys.version_info[0] == 2:
-    requires = ['python-dateutil>=1.0, <2.0, >=2.1']
+    requires += ['python-dateutil>=1.0, <2.0, >=2.1']
 else:
     # Py3k
-    requires = ['python-dateutil>=2.0']
+    requires += ['python-dateutil>=2.0']
 
 setup(
     name='freezegun',
