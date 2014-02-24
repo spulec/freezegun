@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import freezegun
 from setuptools import setup, find_packages
 
 requires = ['six']
@@ -13,7 +14,7 @@ else:
 
 setup(
     name='freezegun',
-    version='0.1.12',
+    version=freezegun.__version__,
     description='Let your Python tests travel through time',
     author='Steve Pulec',
     author_email='spulec@gmail',
