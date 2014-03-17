@@ -197,7 +197,7 @@ class _freeze_time(object):
         datetime.date = real_date
         time.time = real_time
 
-        for mod_name, module in sys.modules.items():
+        for mod_name, module in list(sys.modules.items()):
             if mod_name.startswith('six.moves.'):
                 continue
             if mod_name != 'datetime':
