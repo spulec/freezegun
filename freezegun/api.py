@@ -171,9 +171,10 @@ class _freeze_time(object):
         fake_time = FakeTime(self.time_to_freeze)
         time.time = fake_time
 
-        modules = sys.modules.values()
-        for module in modules:
+        for mod_name, module in sys.modules.items():
             if module is None:
+                continue
+            if mod_name.startswith('six.moves.'):
                 continue
             if hasattr(module, "__name__") and module.__name__ != 'datetime':
                 if hasattr(module, 'datetime') and module.datetime == real_datetime:
