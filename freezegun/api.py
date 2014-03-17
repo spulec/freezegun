@@ -171,7 +171,7 @@ class _freeze_time(object):
         fake_time = FakeTime(self.time_to_freeze)
         time.time = fake_time
 
-        for mod_name, module in sys.modules.items():
+        for mod_name, module in list(sys.modules.items()):
             if module is None:
                 continue
             if mod_name.startswith('six.moves.'):
