@@ -247,12 +247,14 @@ def assert_pickled_datetimes_equal_original():
     max_date = datetime.date.max
     now = datetime.datetime.now()
     today = datetime.date.today()
+    utc_now = datetime.datetime.utcnow()
     assert pickle.loads(pickle.dumps(min_datetime)) == min_datetime
     assert pickle.loads(pickle.dumps(max_datetime)) == max_datetime
     assert pickle.loads(pickle.dumps(min_date)) == min_date
     assert pickle.loads(pickle.dumps(max_date)) == max_date
     assert pickle.loads(pickle.dumps(now)) == now
     assert pickle.loads(pickle.dumps(today)) == today
+    assert pickle.loads(pickle.dumps(utc_now)) == utc_now
 
 
 def test_pickle():

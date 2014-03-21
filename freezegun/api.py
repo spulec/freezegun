@@ -120,7 +120,7 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
     @classmethod
     def utcnow(cls):
         result = cls.time_to_freeze
-        return result
+        return datetime_to_fakedatetime(result)
 
 FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
 FakeDatetime.max = datetime_to_fakedatetime(real_datetime.max)
