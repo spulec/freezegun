@@ -235,3 +235,19 @@ def freeze_time(time_to_freeze, tz_offset=0):
                          'datetime instance, but got type {0}.').format(type(time_to_freeze)))
 
     return _freeze_time(time_to_freeze, tz_offset)
+
+
+# Setup adapters for sqlite
+import sqlite3
+
+
+# These are copied from Python sqlite3.dbapi2
+def adapt_date(val):
+    return val.isoformat()
+
+
+def adapt_datetime(val):
+    return val.isoformat(" ")
+
+sqlite3.register_adapter(FakeDate, adapt_date)
+sqlite3.register_adapter(FakeDatetime, adapt_datetime)
