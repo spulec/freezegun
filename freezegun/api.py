@@ -238,16 +238,19 @@ def freeze_time(time_to_freeze, tz_offset=0):
 
 
 # Setup adapters for sqlite
-import sqlite3
+try:
+    import sqlite3
+except ImportError:
+    # Some systems have trouble with this
+    pass
+else:
+    # These are copied from Python sqlite3.dbapi2
+    def adapt_date(val):
+        return val.isoformat()
 
 
-# These are copied from Python sqlite3.dbapi2
-def adapt_date(val):
-    return val.isoformat()
+    def adapt_datetime(val):
+        return val.isoformat(" ")
 
-
-def adapt_datetime(val):
-    return val.isoformat(" ")
-
-sqlite3.register_adapter(FakeDate, adapt_date)
-sqlite3.register_adapter(FakeDatetime, adapt_datetime)
+    sqlite3.register_adapter(FakeDate, adapt_date)
+    sqlite3.register_adapter(FakeDatetime, adapt_datetime)
