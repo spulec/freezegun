@@ -13,7 +13,7 @@ else:
 
 setup(
     name='freezegun',
-    version='0.1.16',
+    version='0.1.17',
     description='Let your Python tests travel through time',
     author='Steve Pulec',
     author_email='spulec@gmail',
