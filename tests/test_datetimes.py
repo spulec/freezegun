@@ -48,7 +48,7 @@ def test_simple_api():
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
     assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14)
     assert datetime.date.today() == datetime.date(2012, 1, 14)
-    assert datetime.datetime.now().today() == datetime.date(2012, 1, 14)
+    assert datetime.datetime.now().today() == datetime.datetime(2012, 1, 14)
     freezer.stop()
     assert time.time() != expected_timestamp
     assert datetime.datetime.now() != datetime.datetime(2012, 1, 14)

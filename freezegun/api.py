@@ -118,6 +118,10 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
         return datetime_to_fakedatetime(result)
 
     @classmethod
+    def today(cls):
+        return cls.now(tz=None)
+
+    @classmethod
     def utcnow(cls):
         result = cls.time_to_freeze
         return datetime_to_fakedatetime(result)
