@@ -92,7 +92,7 @@ To install FreezeGun, simply:
 
     $ pip install freezegun
 
-On Debian (Testing and Unstable) systems::
+On Debian (Testing and Unstable) systems:
 
 .. code-block:: bash
 
