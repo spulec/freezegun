@@ -18,13 +18,22 @@ def with_metaclass(meta, *bases):
     return meta("NewBase", bases, {})
 
 
-class FakeTime(object):
+class FakeTimeBase(object):
+    time_to_freeze = None
 
-    def __init__(self, time_to_freeze):
-        self.time_to_freeze = time_to_freeze
+    @classmethod
+    def get_time_to_freeze(cls):
+        cls.time_to_freeze += datetime.timedelta(microseconds=1)
+        return cls.time_to_freeze
 
+    @classmethod
+    def set_time_to_freeze(cls, t):
+        cls.time_to_freeze = t
+
+
+class FakeTime(FakeTimeBase):
     def __call__(self):
-        shifted_time = self.time_to_freeze - datetime.timedelta(seconds=time.timezone)
+        shifted_time = self.get_time_to_freeze() - datetime.timedelta(seconds=time.timezone)
         return time.mktime(shifted_time.timetuple()) + shifted_time.microsecond / 1000000.0
 
 
@@ -87,8 +96,8 @@ class FakeDatetimeMeta(FakeDateMeta):
         return isinstance(obj, real_datetime)
 
 
-class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
-    time_to_freeze = None
+
+class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate, FakeTimeBase)):
     tz_offset = None
 
     def __new__(cls, *args, **kwargs):
@@ -112,9 +121,9 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
     @classmethod
     def now(cls, tz=None):
         if tz:
-            result = tz.fromutc(cls.time_to_freeze.replace(tzinfo=tz)) + datetime.timedelta(hours=cls.tz_offset)
+            result = tz.fromutc(cls.get_time_to_freeze().replace(tzinfo=tz)) + datetime.timedelta(hours=cls.tz_offset)
         else:
-            result = cls.time_to_freeze + datetime.timedelta(hours=cls.tz_offset)
+            result = cls.get_time_to_freeze() + datetime.timedelta(hours=cls.tz_offset)
         return datetime_to_fakedatetime(result)
 
     @classmethod
@@ -123,7 +132,7 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     @classmethod
     def utcnow(cls):
-        result = cls.time_to_freeze
+        result = cls.get_time_to_freeze()
         return datetime_to_fakedatetime(result)
 
 FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
@@ -172,7 +181,8 @@ class _freeze_time(object):
     def start(self):
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
-        fake_time = FakeTime(self.time_to_freeze)
+        fake_time = FakeTime()
+        fake_time.set_time_to_freeze(self.time_to_freeze)
         time.time = fake_time
 
         for mod_name, module in list(sys.modules.items()):
@@ -190,6 +200,7 @@ class _freeze_time(object):
                     module.time = fake_time
 
         datetime.datetime.time_to_freeze = self.time_to_freeze
+        datetime.datetime.set_time_to_freeze(self.time_to_freeze)
         datetime.datetime.tz_offset = self.tz_offset
 
         # Since datetime.datetime has already been mocked, just use that for
