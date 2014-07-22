@@ -210,12 +210,12 @@ class _freeze_time(object):
                 continue
             if mod_name.startswith(('six.moves.', 'django.utils.six.moves.')):
                 continue
-            if hasattr(module, "__name__") and module.__name__ != 'datetime':
+            if mod_name != 'datetime':
                 if hasattr(module, 'datetime') and module.datetime == real_datetime:
                     module.datetime = FakeDatetime
                 if hasattr(module, 'date') and module.date == real_date:
                     module.date = FakeDate
-            if hasattr(module, "__name__") and module.__name__ != 'time':
+            if mod_name != 'time':
                 if hasattr(module, 'time') and module.time == real_time:
                     module.time = fake_time
 
@@ -232,12 +232,15 @@ class _freeze_time(object):
         # calculating the date
         datetime.date.date_to_freeze = datetime.datetime.now().date()
 
-    def stop(self):
+    @classmethod
+    def stop(cls):
         datetime.datetime = real_datetime
         datetime.date = real_date
         time.time = real_time
 
         for mod_name, module in list(sys.modules.items()):
+            if module is None:
+                continue
             if mod_name.startswith(('six.moves.', 'django.utils.six.moves.')):
                 continue
             if mod_name != 'datetime':
