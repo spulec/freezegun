@@ -157,6 +157,13 @@ class FreezeMixin(object):
         super(FreezeMixin, self).tearDown()
         self._freezer.stop()
 
+# Use this instead of looking through all modules
+# because it is very expensive
+NESTED_IMPORTS = {
+    'pymysql.converters': 'encoders'
+}
+
+
 class _freeze_time(object):
 
     def __init__(self, time_to_freeze_str, tz_offset):
@@ -181,6 +188,16 @@ class _freeze_time(object):
     def __exit__(self, *args):
         self.stop()
 
+    @staticmethod
+    def swap_nested_values(swaps):
+        for module_name, attr_name in NESTED_IMPORTS.items():
+            attr = getattr(sys.modules[module_name], attr_name)
+            if isinstance(attr, dict):
+                for key, value in attr.items():
+                    if key in swaps:
+                        attr[swaps[key]] = value
+                        del attr[key]
+
     def start(self):
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
@@ -202,7 +219,12 @@ class _freeze_time(object):
                 if hasattr(module, 'time') and module.time == real_time:
                     module.time = fake_time
 
-        datetime.datetime.time_to_freeze = self.time_to_freeze
+        self.swap_nested_values({
+            real_datetime: FakeDatetime,
+            real_date: FakeDate,
+            real_time: FakeTime
+        })
+
         datetime.datetime.set_time_to_freeze(self.time_to_freeze)
         datetime.datetime.tz_offset = self.tz_offset
 
@@ -226,6 +248,12 @@ class _freeze_time(object):
             if mod_name != 'time':
                 if hasattr(module, 'time') and isinstance(module.time, FakeTime):
                     module.time = real_time
+
+        cls.swap_nested_values({
+            FakeDatetime: real_datetime,
+            FakeDate: real_date,
+            FakeTime: real_time
+        })
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
