@@ -130,21 +130,6 @@ FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
 FakeDatetime.max = datetime_to_fakedatetime(real_datetime.max)
 
 
-class FreezeMixin(object):
-    """
-    With unittest.TestCase subclasses, we must return the class from our
-    freeze_time decorator, else test discovery tools may not discover the
-    test. Instead, we inject this mixin, which starts and stops the freezer
-    before and after each test.
-    """
-    def setUp(self):
-        self._freezer.start()
-        super(FreezeMixin, self).setUp()
-
-    def tearDown(self):
-        super(FreezeMixin, self).tearDown()
-        self._freezer.stop()
-
 class _freeze_time(object):
 
     def __init__(self, time_to_freeze_str, tz_offset):
@@ -155,9 +140,9 @@ class _freeze_time(object):
 
     def __call__(self, func):
         if inspect.isclass(func) and issubclass(func, unittest.TestCase):
-            # Inject a mixin that does what we want, as otherwise we
-            # would not be found by the test discovery tool.
-            func.__bases__ = (FreezeMixin,) + func.__bases__
+            # Decorate the TestCase's run method, which is invoked for each test
+            # method.
+            func.run = self(func.run)
             # And, we need a reference to this object...
             func._freezer = self
             return func
