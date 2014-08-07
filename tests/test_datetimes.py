@@ -203,6 +203,14 @@ class TestUnitTestClassDecorator(unittest.TestCase):
     def test_class_decorator_works_on_unittest(self):
         self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
 
+@freeze_time('2013-04-09')
+class TestUnitTestClassDecoratorWithSetup(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_class_decorator_works_on_unittest(self):
+        self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
+
 
 def assert_class_of_datetimes(right_class, wrong_class):
     datetime.datetime.min.__class__.should.equal(right_class)
