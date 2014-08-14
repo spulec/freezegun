@@ -273,3 +273,24 @@ def test_pickle():
 
     freezer.stop()
     assert_pickled_datetimes_equal_original()
+
+
+@freeze_time("2014-07-30T01:00:00Z")
+def test_freeze_with_timezone_aware_datetime():
+    """
+    utcnow() should always return a timezone naive datetime
+    """
+    utc_now = datetime.datetime.utcnow()
+    assert utc_now.tzinfo == None
+
+
+@freeze_time("1970-01-01T00:00:00-04:00")
+def test_freeze_with_timezone_aware_datetime():
+    """
+    we expect the system to behave like a system with UTC-4 timezone
+    at the beginning of the Epoch (wall clock should be 4 hrs late)
+    """
+    utc_now = datetime.datetime.utcnow()
+    assert utc_now.tzinfo == None
+    assert utc_now == datetime.datetime(1969, 12, 31, 20)
+

@@ -129,11 +129,21 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
 FakeDatetime.max = datetime_to_fakedatetime(real_datetime.max)
 
+def convert_to_timezone_naive(time_to_freeze):
+    """
+    Converts a potentially timezone-aware datetime to be a naive UTC datetime
+    """
+    if time_to_freeze.utcoffset():
+        time_to_freeze += time_to_freeze.utcoffset()
+        time_to_freeze =  time_to_freeze.replace(tzinfo=None)
+    return time_to_freeze
+
 
 class _freeze_time(object):
 
     def __init__(self, time_to_freeze_str, tz_offset):
         time_to_freeze = parser.parse(time_to_freeze_str)
+        time_to_freeze = convert_to_timezone_naive(time_to_freeze)
 
         self.time_to_freeze = time_to_freeze
         self.tz_offset = tz_offset
@@ -236,7 +246,6 @@ else:
     # These are copied from Python sqlite3.dbapi2
     def adapt_date(val):
         return val.isoformat()
-
 
     def adapt_datetime(val):
         return val.isoformat(" ")
