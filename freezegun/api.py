@@ -141,12 +141,13 @@ def convert_to_timezone_naive(time_to_freeze):
 
 class _freeze_time(object):
 
-    def __init__(self, time_to_freeze_str, tz_offset):
+    def __init__(self, time_to_freeze_str, tz_offset, ignore):
         time_to_freeze = parser.parse(time_to_freeze_str)
         time_to_freeze = convert_to_timezone_naive(time_to_freeze)
 
         self.time_to_freeze = time_to_freeze
         self.tz_offset = tz_offset
+        self.ignore = ignore
 
     def __call__(self, func):
         if inspect.isclass(func) and issubclass(func, unittest.TestCase):
@@ -173,7 +174,7 @@ class _freeze_time(object):
         for mod_name, module in list(sys.modules.items()):
             if module is None:
                 continue
-            if mod_name.startswith(('six.moves.', 'django.utils.six.moves.')):
+            if mod_name.startswith(self.ignore):
                 continue
             if hasattr(module, "__name__") and module.__name__ != 'datetime':
                 if hasattr(module, 'datetime') and module.datetime == real_datetime:
@@ -197,7 +198,7 @@ class _freeze_time(object):
         time.time = real_time
 
         for mod_name, module in list(sys.modules.items()):
-            if mod_name.startswith(('six.moves.', 'django.utils.six.moves.')):
+            if mod_name.startswith(self.ignore):
                 continue
             if mod_name != 'datetime':
                 if hasattr(module, 'datetime') and module.datetime == FakeDatetime:
@@ -217,7 +218,7 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze, tz_offset=0):
+def freeze_time(time_to_freeze, tz_offset=0, ignore=None):
     if isinstance(time_to_freeze, datetime.datetime):
         time_to_freeze = time_to_freeze.isoformat()
     elif isinstance(time_to_freeze, datetime.date):
@@ -232,8 +233,11 @@ def freeze_time(time_to_freeze, tz_offset=0):
     if not isinstance(time_to_freeze, string_type):
         raise TypeError(('freeze_time() expected a string, date instance, or '
                          'datetime instance, but got type {0}.').format(type(time_to_freeze)))
-
-    return _freeze_time(time_to_freeze, tz_offset)
+    if ignore is None:
+        ignore = []
+    ignore.append('six.moves.')
+    ignore.append('django.utils.six.moves.')
+    return _freeze_time(time_to_freeze, tz_offset, ignore)
 
 
 # Setup adapters for sqlite
