@@ -6,3 +6,4 @@ Patches and Suggestions
 - `JJ Geewax <https://github.com/jgeewax>`_
 - `Roman Imankulov <https://github.com/imankulov>`_
 - `Martin Geisler <https://github.com/mgeisler>`_
+- `Richard Eames <https://github.com/Naddiseo>`_
