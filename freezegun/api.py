@@ -150,14 +150,21 @@ class _freeze_time(object):
         self.ignore = ignore
 
     def __call__(self, func):
-        if inspect.isclass(func) and issubclass(func, unittest.TestCase):
-            # Decorate the TestCase's run method, which is invoked for each test
-            # method.
-            func.run = self(func.run)
-            # And, we need a reference to this object...
-            func._freezer = self
-            return func
+        if inspect.isclass(func):
+            return self.decorate_class(func)
         return self.decorate_callable(func)
+
+    def decorate_class(self, klass):
+        for attr in dir(klass):
+            if not attr.startswith("test"):
+                continue
+
+            attr_value = getattr(klass, attr)
+            if not hasattr(attr_value, "__call__"):
+                continue
+
+            setattr(klass, attr, self(attr_value))
+        return klass
 
     def __enter__(self):
         self.start()
