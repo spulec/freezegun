@@ -7,7 +7,7 @@ import locale
 from nose.plugins import skip
 
 from freezegun import freeze_time
-from freezegun.api import FakeDatetime, FakeDate, real_datetime, real_date
+from freezegun.api import FakeDatetime, FakeDate, real_date
 
 
 class temp_locale(object):
