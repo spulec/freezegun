@@ -19,8 +19,9 @@ def with_metaclass(meta, *bases):
 
 class FakeTime(object):
 
-    def __init__(self, time_to_freeze):
+    def __init__(self, time_to_freeze, previous_time_function):
         self.time_to_freeze = time_to_freeze
+        self.previous_time_function = previous_time_function
 
     def __call__(self):
         shifted_time = self.time_to_freeze - datetime.timedelta(seconds=time.timezone)
@@ -51,7 +52,7 @@ def date_to_fakedate(date):
 
 
 class FakeDate(with_metaclass(FakeDateMeta, real_date)):
-    date_to_freeze = None
+    dates_to_freeze = []
 
     def __new__(cls, *args, **kwargs):
         return real_date.__new__(cls, *args, **kwargs)
@@ -73,8 +74,12 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
 
     @classmethod
     def today(cls):
-        result = cls.date_to_freeze
+        result = cls._date_to_freeze()
         return date_to_fakedate(result)
+
+    @classmethod
+    def _date_to_freeze(cls):
+        return cls.dates_to_freeze[-1]
 
 FakeDate.min = date_to_fakedate(real_date.min)
 FakeDate.max = date_to_fakedate(real_date.max)
@@ -87,8 +92,8 @@ class FakeDatetimeMeta(FakeDateMeta):
 
 
 class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
-    time_to_freeze = None
-    tz_offset = None
+    times_to_freeze = []
+    tz_offsets = []
 
     def __new__(cls, *args, **kwargs):
         return real_datetime.__new__(cls, *args, **kwargs)
@@ -111,9 +116,9 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
     @classmethod
     def now(cls, tz=None):
         if tz:
-            result = tz.fromutc(cls.time_to_freeze.replace(tzinfo=tz)) + datetime.timedelta(hours=cls.tz_offset)
+            result = tz.fromutc(cls._time_to_freeze().replace(tzinfo=tz)) + datetime.timedelta(hours=cls._tz_offset())
         else:
-            result = cls.time_to_freeze + datetime.timedelta(hours=cls.tz_offset)
+            result = cls._time_to_freeze() + datetime.timedelta(hours=cls._tz_offset())
         return datetime_to_fakedatetime(result)
 
     @classmethod
@@ -122,8 +127,16 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     @classmethod
     def utcnow(cls):
-        result = cls.time_to_freeze
+        result = cls._time_to_freeze()
         return datetime_to_fakedatetime(result)
+
+    @classmethod
+    def _time_to_freeze(cls):
+        return cls.times_to_freeze[-1]
+
+    @classmethod
+    def _tz_offset(cls):
+        return cls.tz_offsets[-1]
 
 FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
 FakeDatetime.max = datetime_to_fakedatetime(real_datetime.max)
@@ -174,7 +187,7 @@ class _freeze_time(object):
     def start(self):
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
-        fake_time = FakeTime(self.time_to_freeze)
+        fake_time = FakeTime(self.time_to_freeze, time.time)
         time.time = fake_time
 
         for mod_name, module in list(sys.modules.items()):
@@ -191,17 +204,24 @@ class _freeze_time(object):
                 if hasattr(module, 'time') and module.time == real_time:
                     module.time = fake_time
 
-        datetime.datetime.time_to_freeze = self.time_to_freeze
-        datetime.datetime.tz_offset = self.tz_offset
+        datetime.datetime.times_to_freeze.append(self.time_to_freeze)
+        datetime.datetime.tz_offsets.append(self.tz_offset)
 
         # Since datetime.datetime has already been mocked, just use that for
         # calculating the date
-        datetime.date.date_to_freeze = datetime.datetime.now().date()
+        datetime.date.dates_to_freeze.append(datetime.datetime.now().date())
 
     def stop(self):
-        datetime.datetime = real_datetime
-        datetime.date = real_date
-        time.time = real_time
+        datetime.datetime.times_to_freeze.pop()
+        datetime.datetime.tz_offsets.pop()
+        if not datetime.datetime.times_to_freeze:
+            datetime.datetime = real_datetime
+
+        datetime.date.dates_to_freeze.pop()
+        if not datetime.date.dates_to_freeze:
+            datetime.date = real_date
+
+        time.time = time.time.previous_time_function
 
         for mod_name, module in list(sys.modules.items()):
             if mod_name.startswith(tuple(self.ignore)):
