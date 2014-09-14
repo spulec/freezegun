@@ -66,3 +66,21 @@ def test_datetime_timezone_real_with_offset():
     now = datetime.datetime.now(tz=GMT5())
     now.should.equal(datetime.datetime(2012, 1, 14, 3, tzinfo=GMT5()))
     now.utcoffset().should.equal(timedelta(0, 60 * 60 * 5))
+
+
+@freeze_time("2012-01-14 00:00:00")
+def test_astimezone():
+    now = datetime.datetime.now(tz=GMT5())
+    converted = now.astimezone(GMT5())
+    assert utils.is_fake_datetime(converted)
+
+
+@freeze_time("2012-01-14 00:00:00")
+def test_replace():
+    now = datetime.datetime.now()
+    modified_time = now.replace(year=2013)
+    assert utils.is_fake_datetime(modified_time)
+
+    today = datetime.date.today()
+    modified_date = today.replace(year=2013)
+    assert utils.is_fake_date(modified_date)
