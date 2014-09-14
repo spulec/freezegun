@@ -1,8 +1,8 @@
 import datetime
-import sure
 from freezegun import freeze_time
 from dateutil.relativedelta import relativedelta
 from datetime import timedelta, tzinfo
+from tests import utils
 
 
 @freeze_time("2012-01-14")
@@ -10,14 +10,14 @@ def test_addition():
     now = datetime.datetime.now()
     later = now + datetime.timedelta(days=1)
     other_later = now + relativedelta(days=1)
-    assert isinstance(later, datetime.datetime)
-    assert isinstance(other_later, datetime.datetime)
+    assert utils.is_fake_datetime(later)
+    assert utils.is_fake_datetime(other_later)
 
     today = datetime.date.today()
     tomorrow = today + datetime.timedelta(days=1)
     other_tomorrow = today + relativedelta(days=1)
-    assert isinstance(tomorrow, datetime.date)
-    assert isinstance(other_tomorrow, datetime.date)
+    assert utils.is_fake_date(tomorrow)
+    assert utils.is_fake_date(other_tomorrow)
 
 
 @freeze_time("2012-01-14")
@@ -26,16 +26,16 @@ def test_subtraction():
     before = now - datetime.timedelta(days=1)
     other_before = now - relativedelta(days=1)
     how_long = now - before
-    assert isinstance(before, datetime.datetime)
-    assert isinstance(other_before, datetime.datetime)
+    assert utils.is_fake_datetime(before)
+    assert utils.is_fake_datetime(other_before)
     assert isinstance(how_long, datetime.timedelta)
 
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
     other_yesterday = today - relativedelta(days=1)
     how_long = today - yesterday
-    assert isinstance(yesterday, datetime.date)
-    assert isinstance(other_yesterday, datetime.date)
+    assert utils.is_fake_date(yesterday)
+    assert utils.is_fake_date(other_yesterday)
     assert isinstance(how_long, datetime.timedelta)
 
 
