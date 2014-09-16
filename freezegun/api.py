@@ -113,6 +113,9 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
         else:
             return result
 
+    def astimezone(self, tz):
+        return datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
+
     @classmethod
     def now(cls, tz=None):
         if tz:

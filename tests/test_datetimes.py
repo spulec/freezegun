@@ -5,6 +5,7 @@ import unittest
 import locale
 
 from nose.plugins import skip
+from tests import utils
 
 from freezegun import freeze_time
 from freezegun.api import FakeDatetime, FakeDate, real_date
@@ -211,10 +212,10 @@ def test_nested_context_manager_with_tz_offsets():
 @freeze_time("Jan 14th, 2012")
 def test_isinstance_with_active():
     now = datetime.datetime.now()
-    assert isinstance(now, datetime.datetime)
+    assert utils.is_fake_datetime(now)
 
     today = datetime.date.today()
-    assert isinstance(today, datetime.date)
+    assert utils.is_fake_date(today)
 
 
 def test_isinstance_without_active():
