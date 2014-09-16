@@ -181,6 +181,33 @@ def test_context_manager():
     assert datetime.datetime.now() != datetime.datetime(2012, 1, 14)
 
 
+def test_nested_context_manager():
+    with freeze_time("2012-01-14"):
+        with freeze_time("2012-12-25"):
+            _assert_datetime_date_and_time_are_all_equal(datetime.datetime(2012, 12, 25))
+        _assert_datetime_date_and_time_are_all_equal(datetime.datetime(2012, 1, 14))
+    assert datetime.datetime.now() > datetime.datetime(2013, 1, 1)
+
+
+def _assert_datetime_date_and_time_are_all_equal(expected_datetime):
+    assert datetime.datetime.now() == expected_datetime
+    assert datetime.date.today() == expected_datetime.date()
+    datetime_from_time = datetime.datetime.fromtimestamp(time.time())
+    timezone_adjusted_datetime = datetime_from_time + datetime.timedelta(seconds=time.timezone)
+    assert timezone_adjusted_datetime == expected_datetime
+
+
+def test_nested_context_manager_with_tz_offsets():
+    with freeze_time("2012-01-14 23:00:00", tz_offset=2):
+        with freeze_time("2012-12-25 19:00:00", tz_offset=6):
+            assert datetime.datetime.now() == datetime.datetime(2012, 12, 26, 1)
+            assert datetime.date.today() == datetime.date(2012, 12, 26)
+            #no assertion for time.time() since it's not affected by tz_offset
+        assert datetime.datetime.now() == datetime.datetime(2012, 1, 15, 1)
+        assert datetime.date.today() == datetime.date(2012, 1, 15)
+    assert datetime.datetime.now() > datetime.datetime(2013, 1, 1)
+
+
 @freeze_time("Jan 14th, 2012")
 def test_isinstance_with_active():
     now = datetime.datetime.now()
@@ -293,4 +320,3 @@ def test_freeze_with_timezone_aware_datetime_in_non_utc():
     utc_now = datetime.datetime.utcnow()
     assert utc_now.tzinfo == None
     assert utc_now == datetime.datetime(1969, 12, 31, 20)
-
