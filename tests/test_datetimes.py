@@ -7,7 +7,7 @@ import locale
 from nose.plugins import skip
 
 from freezegun import freeze_time
-from freezegun.api import FakeDatetime, FakeDate, real_datetime, real_date
+from freezegun.api import FakeDatetime, FakeDate, real_date
 
 
 class temp_locale(object):
@@ -83,7 +83,7 @@ def test_tz_offset_with_today():
     assert datetime.date.today() != datetime.date(2012, 1, 13)
 
 
-def test_tz_offset_with_time():
+def test_zero_tz_offset_with_time():
     # we expect the system to behave like a system with UTC timezone
     # at the beginning of the Epoch
     freezer = freeze_time('1970-01-01')
@@ -276,7 +276,7 @@ def test_pickle():
 
 
 @freeze_time("2014-07-30T01:00:00Z")
-def test_freeze_with_timezone_aware_datetime():
+def test_freeze_with_timezone_aware_datetime_in_utc():
     """
     utcnow() should always return a timezone naive datetime
     """
@@ -285,7 +285,7 @@ def test_freeze_with_timezone_aware_datetime():
 
 
 @freeze_time("1970-01-01T00:00:00-04:00")
-def test_freeze_with_timezone_aware_datetime():
+def test_freeze_with_timezone_aware_datetime_in_non_utc():
     """
     we expect the system to behave like a system with UTC-4 timezone
     at the beginning of the Epoch (wall clock should be 4 hrs late)
