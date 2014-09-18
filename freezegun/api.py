@@ -194,7 +194,7 @@ class _freeze_time(object):
         time.time = fake_time
 
         for mod_name, module in list(sys.modules.items()):
-            if module is None:
+            if mod_name is None or module is None:
                 continue
             if mod_name.startswith(tuple(self.ignore)):
                 continue
@@ -227,6 +227,8 @@ class _freeze_time(object):
         time.time = time.time.previous_time_function
 
         for mod_name, module in list(sys.modules.items()):
+            if mod_name is None or module is None:
+                continue
             if mod_name.startswith(tuple(self.ignore)):
                 continue
             if mod_name != 'datetime':
