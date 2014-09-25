@@ -6,6 +6,7 @@ import inspect
 import unittest
 
 from dateutil import parser
+from mock import patch
 
 real_time = time.time
 real_date = datetime.date
@@ -157,11 +158,29 @@ class FreezeMixin(object):
         super(FreezeMixin, self).tearDown()
         self._freezer.stop()
 
-# Use this instead of looking through all modules
-# because it is very expensive
-NESTED_IMPORTS = {
-    'pymysql.converters': 'encoders'
-}
+
+class PyMysqlPatcher(object):
+    def __init__(self):
+        self.encoders_patch = None
+
+    def start(self):
+        self.encoders_patch = patch('pymysql.converters.encoders')
+        original = self.encoders_patch.get_original()[0]
+        m_encoders = self.encoders_patch.start()
+        type_mapping = {
+            FakeDatetime: real_datetime,
+            FakeDate: real_date,
+            FakeTime: real_time
+        }
+
+        def m_get_item(_type):
+            _type = type_mapping.get(_type) or _type
+            return original.__getitem__(_type)
+
+        m_encoders.__getitem__.side_effect = m_get_item
+
+    def stop(self):
+        self.encoders_patch.stop()
 
 
 class _freeze_time(object):
@@ -171,6 +190,7 @@ class _freeze_time(object):
 
         self.time_to_freeze = time_to_freeze
         self.tz_offset = tz_offset
+        self.patchers = [PyMysqlPatcher()]
 
     def __call__(self, func):
         if inspect.isclass(func) and issubclass(func, unittest.TestCase):
@@ -187,16 +207,6 @@ class _freeze_time(object):
 
     def __exit__(self, *args):
         self.stop()
-
-    @staticmethod
-    def swap_nested_values(swaps):
-        for module_name, attr_name in NESTED_IMPORTS.items():
-            attr = getattr(sys.modules[module_name], attr_name)
-            if isinstance(attr, dict):
-                for key, value in attr.items():
-                    if key in swaps:
-                        attr[swaps[key]] = value
-                        del attr[key]
 
     def start(self):
         datetime.datetime = FakeDatetime
@@ -219,11 +229,8 @@ class _freeze_time(object):
                 if hasattr(module, 'time') and module.time == real_time:
                     module.time = fake_time
 
-        self.swap_nested_values({
-            real_datetime: FakeDatetime,
-            real_date: FakeDate,
-            real_time: FakeTime
-        })
+        for patcher in self.patchers:
+            patcher.start()
 
         datetime.datetime.set_time_to_freeze(self.time_to_freeze)
         datetime.datetime.tz_offset = self.tz_offset
@@ -232,8 +239,7 @@ class _freeze_time(object):
         # calculating the date
         datetime.date.date_to_freeze = datetime.datetime.now().date()
 
-    @classmethod
-    def stop(cls):
+    def stop(self):
         datetime.datetime = real_datetime
         datetime.date = real_date
         time.time = real_time
@@ -252,11 +258,8 @@ class _freeze_time(object):
                 if hasattr(module, 'time') and isinstance(module.time, FakeTime):
                     module.time = real_time
 
-        cls.swap_nested_values({
-            FakeDatetime: real_datetime,
-            FakeDate: real_date,
-            FakeTime: real_time
-        })
+        for patcher in self.patchers:
+            patcher.stop()
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
