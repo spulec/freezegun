@@ -203,7 +203,11 @@ class _freeze_time(object):
             if not hasattr(attr_value, "__call__"):
                 continue
 
-            setattr(klass, attr, self(attr_value))
+            try:
+                setattr(klass, attr, self(attr_value))
+            except TypeError:
+                # Sometimes we can't set this for built-in types
+                continue
         return klass
 
     def __enter__(self):
