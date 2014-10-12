@@ -196,7 +196,7 @@ class _freeze_time(object):
 
     def decorate_class(self, klass):
         for attr in dir(klass):
-            if not attr.startswith("test"):
+            if attr.startswith("_"):
                 continue
 
             attr_value = getattr(klass, attr)

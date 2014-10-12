@@ -227,6 +227,9 @@ def test_isinstance_without_active():
 
 @freeze_time('2013-04-09')
 class TestUnitTestClassDecorator(unittest.TestCase):
+    def setUp(self):
+        self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
+
     def test_class_decorator_works_on_unittest(self):
         self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
 
