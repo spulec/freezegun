@@ -1,7 +1,5 @@
 import datetime
 import pickle
-import StringIO
-
 from freezegun import freeze_time
 import sure
 

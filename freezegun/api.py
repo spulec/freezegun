@@ -1,4 +1,3 @@
-import copy_reg
 import datetime
 import functools
 import inspect
@@ -11,6 +10,10 @@ real_time = time.time
 real_date = datetime.date
 real_datetime = datetime.datetime
 
+try:
+    import copy_reg as copyreg
+except ImportError:
+    import copyreg
 
 # Stolen from six
 def with_metaclass(meta, *bases):
@@ -216,8 +219,8 @@ class _freeze_time(object):
         fake_time = FakeTime(self.time_to_freeze, time.time)
         time.time = fake_time
 
-        copy_reg.dispatch_table[real_datetime] = pickle_fake_datetime
-        copy_reg.dispatch_table[real_date] = pickle_fake_date
+        copyreg.dispatch_table[real_datetime] = pickle_fake_datetime
+        copyreg.dispatch_table[real_date] = pickle_fake_date
 
         # Change any place where the module had already been imported
         for mod_name, module in list(sys.modules.items()):
@@ -246,12 +249,12 @@ class _freeze_time(object):
         datetime.datetime.tz_offsets.pop()
         if not datetime.datetime.times_to_freeze:
             datetime.datetime = real_datetime
-            copy_reg.dispatch_table.pop(real_datetime)
+            copyreg.dispatch_table.pop(real_datetime)
 
         datetime.date.dates_to_freeze.pop()
         if not datetime.date.dates_to_freeze:
             datetime.date = real_date
-            copy_reg.dispatch_table.pop(real_date)
+            copyreg.dispatch_table.pop(real_date)
 
         time.time = time.time.previous_time_function
 
