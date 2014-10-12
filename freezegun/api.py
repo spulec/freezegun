@@ -1,8 +1,9 @@
-import time
+import copy_reg
 import datetime
 import functools
-import sys
 import inspect
+import sys
+import time
 
 from dateutil import parser
 
@@ -154,6 +155,27 @@ def convert_to_timezone_naive(time_to_freeze):
     return time_to_freeze
 
 
+def pickle_fake_date(datetime_):
+    # A pickle function for FakeDate
+    return FakeDate, (datetime_.year,
+        datetime_.month,
+        datetime_.day,
+    )
+
+
+def pickle_fake_datetime(datetime_):
+    # A pickle function for FakeDatetime
+    return FakeDatetime, (datetime_.year,
+        datetime_.month,
+        datetime_.day,
+        datetime_.hour,
+        datetime_.minute,
+        datetime_.second,
+        datetime_.microsecond,
+        datetime_.tzinfo,
+    )
+
+
 class _freeze_time(object):
 
     def __init__(self, time_to_freeze_str, tz_offset, ignore):
@@ -188,11 +210,16 @@ class _freeze_time(object):
         self.stop()
 
     def start(self):
+        # Change the modules
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
         fake_time = FakeTime(self.time_to_freeze, time.time)
         time.time = fake_time
 
+        copy_reg.dispatch_table[real_datetime] = pickle_fake_datetime
+        copy_reg.dispatch_table[real_date] = pickle_fake_date
+
+        # Change any place where the module had already been imported
         for mod_name, module in list(sys.modules.items()):
             if mod_name is None or module is None:
                 continue
@@ -219,10 +246,12 @@ class _freeze_time(object):
         datetime.datetime.tz_offsets.pop()
         if not datetime.datetime.times_to_freeze:
             datetime.datetime = real_datetime
+            copy_reg.dispatch_table.pop(real_datetime)
 
         datetime.date.dates_to_freeze.pop()
         if not datetime.date.dates_to_freeze:
             datetime.date = real_date
+            copy_reg.dispatch_table.pop(real_date)
 
         time.time = time.time.previous_time_function
 
