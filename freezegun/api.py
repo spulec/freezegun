@@ -153,7 +153,7 @@ def convert_to_timezone_naive(time_to_freeze):
     Converts a potentially timezone-aware datetime to be a naive UTC datetime
     """
     if time_to_freeze.tzinfo:
-        time_to_freeze += time_to_freeze.utcoffset()
+        time_to_freeze -= time_to_freeze.utcoffset()
         time_to_freeze =  time_to_freeze.replace(tzinfo=None)
     return time_to_freeze
 
