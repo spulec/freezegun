@@ -230,6 +230,10 @@ class TestUnitTestClassDecorator(unittest.TestCase):
     def setUp(self):
         self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
 
+    @classmethod
+    def setUpClass(cls):
+        datetime.date(2013,4,9).shouldnt.equal(datetime.date.today())
+
     def test_class_decorator_works_on_unittest(self):
         self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
 

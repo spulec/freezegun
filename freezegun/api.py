@@ -203,6 +203,10 @@ class _freeze_time(object):
             if not hasattr(attr_value, "__call__"):
                 continue
 
+            # Check if this is a classmethod. If so, skip patching
+            if inspect.ismethod(attr_value) and attr_value.__self__ is klass:
+                continue
+
             try:
                 setattr(klass, attr, self(attr_value))
             except TypeError:
