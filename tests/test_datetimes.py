@@ -299,4 +299,4 @@ def test_freeze_with_timezone_aware_datetime_in_non_utc():
     """
     utc_now = datetime.datetime.utcnow()
     assert utc_now.tzinfo == None
-    assert utc_now == datetime.datetime(1969, 12, 31, 20)
+    assert utc_now == datetime.datetime(1970, 1, 1, 4)
