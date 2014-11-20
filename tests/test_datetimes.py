@@ -7,7 +7,7 @@ from nose.plugins import skip
 from tests import utils
 
 from freezegun import freeze_time
-from freezegun.api import FakeDatetime, FakeDate, real_date
+from freezegun.api import FakeDatetime, FakeDate
 
 
 class temp_locale(object):
@@ -259,7 +259,8 @@ def assert_class_of_datetimes(right_class, wrong_class):
 
 def test_min_and_max():
     freezer = freeze_time("2012-01-14")
-    real_datetime = datetime
+    real_datetime = datetime.datetime
+    real_date = datetime.date
 
     freezer.start()
     datetime.datetime.min.__class__.should.equal(FakeDatetime)

@@ -236,14 +236,19 @@ class _freeze_time(object):
                 continue
             if mod_name.startswith(tuple(self.ignore)):
                 continue
-            if hasattr(module, "__name__") and module.__name__ != 'datetime':
-                if hasattr(module, 'datetime') and module.datetime == real_datetime:
-                    module.datetime = FakeDatetime
-                if hasattr(module, 'date') and module.date == real_date:
-                    module.date = FakeDate
-            if hasattr(module, "__name__") and module.__name__ != 'time':
-                if hasattr(module, 'time') and module.time == real_time:
-                    module.time = fake_time
+            if (not hasattr(module, "__name__")
+                or module.__name__ in ['datetime', 'time']):
+                continue
+            for module_attribute in dir(module):
+                if module_attribute in ['real_date', 'real_datetime', 'real_time']:
+                    continue
+                attribute_value = getattr(module, module_attribute)
+                if attribute_value == real_datetime:
+                    setattr(module, module_attribute, FakeDatetime)
+                if attribute_value == real_date:
+                    setattr(module, module_attribute, FakeDate)
+                if attribute_value == real_time:
+                    setattr(module, module_attribute, fake_time)
 
         datetime.datetime.times_to_freeze.append(self.time_to_freeze)
         datetime.datetime.tz_offsets.append(self.tz_offset)
@@ -271,14 +276,18 @@ class _freeze_time(object):
                 continue
             if mod_name.startswith(tuple(self.ignore)):
                 continue
-            if mod_name != 'datetime':
-                if hasattr(module, 'datetime') and module.datetime == FakeDatetime:
-                    module.datetime = real_datetime
-                if hasattr(module, 'date') and module.date == FakeDate:
-                    module.date = real_date
-            if mod_name != 'time':
-                if hasattr(module, 'time') and isinstance(module.time, FakeTime):
-                    module.time = real_time
+            if mod_name in ['datetime', 'time']:
+                continue
+            for module_attribute in dir(module):
+                if module_attribute in ['FakeDate', 'FakeDatetime', 'FakeTime']:
+                    continue
+                attribute_value = getattr(module, module_attribute)
+                if attribute_value == FakeDatetime:
+                    setattr(module, module_attribute, real_datetime)
+                if attribute_value == FakeDate:
+                    setattr(module, module_attribute, real_date)
+                if isinstance(attribute_value, FakeTime):
+                    setattr(module, module_attribute, real_time)
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
