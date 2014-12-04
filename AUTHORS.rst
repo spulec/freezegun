@@ -7,4 +7,4 @@ Patches and Suggestions
 - `Roman Imankulov <https://github.com/imankulov>`_
 - `Martin Geisler <https://github.com/mgeisler>`_
 - `Richard Eames <https://github.com/Naddiseo>`_
-- `Tye Wang` <https://github.com/tyewang>` _
+- `Tye Wang` <https://github.com/tyewang>`_
