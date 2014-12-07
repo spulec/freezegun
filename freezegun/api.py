@@ -242,7 +242,11 @@ class _freeze_time(object):
             for module_attribute in dir(module):
                 if module_attribute in ['real_date', 'real_datetime', 'real_time']:
                     continue
-                attribute_value = getattr(module, module_attribute)
+                try:
+                    attribute_value = getattr(module, module_attribute)
+                except ImportError:
+                    # For certain libraries, this can result in ImportError(_winreg)
+                    continue
                 if attribute_value == real_datetime:
                     setattr(module, module_attribute, FakeDatetime)
                 if attribute_value == real_date:
@@ -281,7 +285,11 @@ class _freeze_time(object):
             for module_attribute in dir(module):
                 if module_attribute in ['FakeDate', 'FakeDatetime', 'FakeTime']:
                     continue
-                attribute_value = getattr(module, module_attribute)
+                try:
+                    attribute_value = getattr(module, module_attribute)
+                except ImportError:
+                    # For certain libraries, this can result in ImportError(_winreg)
+                    continue
                 if attribute_value == FakeDatetime:
                     setattr(module, module_attribute, real_datetime)
                 if attribute_value == FakeDate:
