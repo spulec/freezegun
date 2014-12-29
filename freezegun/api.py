@@ -254,7 +254,7 @@ class _freeze_time(object):
                         setattr(module, module_attribute, FakeDate)
                     elif attribute_value == real_time:
                         setattr(module, module_attribute, fake_time)
-                except AttributeError:
+                except:
                     # If it's not possible to compare the value to real_XXX (e.g. hiredis.version)
                     pass
 
@@ -301,7 +301,7 @@ class _freeze_time(object):
                         setattr(module, module_attribute, real_date)
                     elif isinstance(attribute_value, FakeTime):
                         setattr(module, module_attribute, real_time)
-                except AttributeError:
+                except:
                     pass
 
     def decorate_callable(self, func):
