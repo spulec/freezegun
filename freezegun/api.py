@@ -250,9 +250,9 @@ class _freeze_time(object):
                 try:
                     if attribute_value == real_datetime:
                         setattr(module, module_attribute, FakeDatetime)
-                    if attribute_value == real_date:
+                    elif attribute_value == real_date:
                         setattr(module, module_attribute, FakeDate)
-                    if attribute_value == real_time:
+                    elif attribute_value == real_time:
                         setattr(module, module_attribute, fake_time)
                 except AttributeError:
                     # If it's not possible to compare the value to real_XXX (e.g. hiredis.version)
@@ -297,9 +297,9 @@ class _freeze_time(object):
                 try:
                     if attribute_value == FakeDatetime:
                         setattr(module, module_attribute, real_datetime)
-                    if attribute_value == FakeDate:
+                    elif attribute_value == FakeDate:
                         setattr(module, module_attribute, real_date)
-                    if isinstance(attribute_value, FakeTime):
+                    elif isinstance(attribute_value, FakeTime):
                         setattr(module, module_attribute, real_time)
                 except AttributeError:
                     pass
