@@ -244,15 +244,19 @@ class _freeze_time(object):
                     continue
                 try:
                     attribute_value = getattr(module, module_attribute)
-                except ImportError:
-                    # For certain libraries, this can result in ImportError(_winreg)
+                except (ImportError, AttributeError):
+                    # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
                     continue
-                if attribute_value == real_datetime:
-                    setattr(module, module_attribute, FakeDatetime)
-                if attribute_value == real_date:
-                    setattr(module, module_attribute, FakeDate)
-                if attribute_value == real_time:
-                    setattr(module, module_attribute, fake_time)
+                try:
+                    if attribute_value == real_datetime:
+                        setattr(module, module_attribute, FakeDatetime)
+                    if attribute_value == real_date:
+                        setattr(module, module_attribute, FakeDate)
+                    if attribute_value == real_time:
+                        setattr(module, module_attribute, fake_time)
+                except AttributeError:
+                    # If it's not possible to compare the value to real_XXX (e.g. hiredis.version)
+                    pass
 
         datetime.datetime.times_to_freeze.append(self.time_to_freeze)
         datetime.datetime.tz_offsets.append(self.tz_offset)
@@ -287,15 +291,18 @@ class _freeze_time(object):
                     continue
                 try:
                     attribute_value = getattr(module, module_attribute)
-                except ImportError:
+                except (ImportError, AttributeError):
                     # For certain libraries, this can result in ImportError(_winreg)
                     continue
-                if attribute_value == FakeDatetime:
-                    setattr(module, module_attribute, real_datetime)
-                if attribute_value == FakeDate:
-                    setattr(module, module_attribute, real_date)
-                if isinstance(attribute_value, FakeTime):
-                    setattr(module, module_attribute, real_time)
+                try:
+                    if attribute_value == FakeDatetime:
+                        setattr(module, module_attribute, real_datetime)
+                    if attribute_value == FakeDate:
+                        setattr(module, module_attribute, real_date)
+                    if isinstance(attribute_value, FakeTime):
+                        setattr(module, module_attribute, real_time)
+                except AttributeError:
+                    pass
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
