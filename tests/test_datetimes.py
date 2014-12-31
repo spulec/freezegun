@@ -161,6 +161,14 @@ def test_decorator():
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
 
+def test_decorator_wrapped_attribute():
+    def to_decorate():
+        pass
+
+    wrapped = freeze_time("2014-01-14")(to_decorate)
+
+    assert wrapped.__wrapped__ is to_decorate
+
 @freeze_time("2012-01-14")
 class Tester(object):
     def test_the_class(self):

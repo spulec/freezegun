@@ -292,6 +292,11 @@ class _freeze_time(object):
                 result = func(*args, **kwargs)
             return result
         functools.update_wrapper(wrapper, func)
+
+        # update_wrapper already sets __wrapped__ in Python 3.2+, this is only
+        # needed for Python 2.x support
+        wrapper.__wrapped__ = func
+
         return wrapper
 
 
