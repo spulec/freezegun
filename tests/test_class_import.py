@@ -1,6 +1,8 @@
 import sure
 import time
-from .fake_module import fake_datetime_function, fake_date_function, fake_time_function
+from .fake_module import (fake_datetime_function, fake_date_function, fake_time_function,
+                          equal_to_anything)
+from . import fake_module
 from freezegun import freeze_time
 from freezegun.api import FakeDatetime
 import datetime
@@ -54,3 +56,8 @@ def test_isinstance_works():
     isinstance(now, datetime.datetime).should.equal(True)
     isinstance(now, datetime.date).should.equal(True)
     freezer.stop()
+
+
+@freeze_time('2011-01-01')
+def test_avoid_replacing_equal_to_anything():
+    assert fake_module.equal_to_anything.description == 'This is the equal_to_anything object'

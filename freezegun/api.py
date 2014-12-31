@@ -249,13 +249,13 @@ class _freeze_time(object):
                     # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
                     continue
                 try:
-                    if attribute_value == real_datetime:
+                    if attribute_value is real_datetime:
                         setattr(module, module_attribute, FakeDatetime)
                         self.undo_changes.append((module, module_attribute, real_datetime))
-                    elif attribute_value == real_date:
+                    elif attribute_value is real_date:
                         setattr(module, module_attribute, FakeDate)
                         self.undo_changes.append((module, module_attribute, real_date))
-                    elif attribute_value == real_time:
+                    elif attribute_value is real_time:
                         setattr(module, module_attribute, fake_time)
                         self.undo_changes.append((module, module_attribute, real_time))
                 except:
