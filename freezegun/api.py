@@ -188,6 +188,7 @@ class _freeze_time(object):
         self.time_to_freeze = time_to_freeze
         self.tz_offset = tz_offset
         self.ignore = ignore
+        self.undo_changes = []
 
     def __call__(self, func):
         if inspect.isclass(func):
@@ -250,10 +251,13 @@ class _freeze_time(object):
                 try:
                     if attribute_value == real_datetime:
                         setattr(module, module_attribute, FakeDatetime)
+                        self.undo_changes.append((module, module_attribute, real_datetime))
                     elif attribute_value == real_date:
                         setattr(module, module_attribute, FakeDate)
+                        self.undo_changes.append((module, module_attribute, real_date))
                     elif attribute_value == real_time:
                         setattr(module, module_attribute, fake_time)
+                        self.undo_changes.append((module, module_attribute, real_time))
                 except:
                     # If it's not possible to compare the value to real_XXX (e.g. hiredis.version)
                     pass
@@ -279,30 +283,8 @@ class _freeze_time(object):
 
         time.time = time.time.previous_time_function
 
-        for mod_name, module in list(sys.modules.items()):
-            if mod_name is None or module is None:
-                continue
-            if mod_name.startswith(tuple(self.ignore)):
-                continue
-            if mod_name in ['datetime', 'time']:
-                continue
-            for module_attribute in dir(module):
-                if module_attribute in ['FakeDate', 'FakeDatetime', 'FakeTime']:
-                    continue
-                try:
-                    attribute_value = getattr(module, module_attribute)
-                except (ImportError, AttributeError):
-                    # For certain libraries, this can result in ImportError(_winreg)
-                    continue
-                try:
-                    if attribute_value == FakeDatetime:
-                        setattr(module, module_attribute, real_datetime)
-                    elif attribute_value == FakeDate:
-                        setattr(module, module_attribute, real_date)
-                    elif isinstance(attribute_value, FakeTime):
-                        setattr(module, module_attribute, real_time)
-                except:
-                    pass
+        for module, module_attribute, original_value in self.undo_changes:
+            setattr(module, module_attribute, original_value)
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
