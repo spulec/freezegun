@@ -1,12 +1,18 @@
 import sure
 import time
-from .fake_module import (fake_datetime_function, fake_date_function, fake_time_function,
-                          equal_to_anything)
+from .fake_module import (
+    equal_to_anything,
+    fake_date_function,
+    fake_datetime_function,
+    fake_gmtime_function,
+    fake_localtime_function,
+    fake_strftime_function,
+    fake_time_function,
+)
 from . import fake_module
 from freezegun import freeze_time
 from freezegun.api import FakeDatetime
 import datetime
-
 
 
 @freeze_time("2012-01-14")
@@ -61,3 +67,24 @@ def test_isinstance_works():
 @freeze_time('2011-01-01')
 def test_avoid_replacing_equal_to_anything():
     assert fake_module.equal_to_anything.description == 'This is the equal_to_anything object'
+
+
+@freeze_time("2012-01-14 12:00:00")
+def test_import_localtime():
+    struct = fake_localtime_function()
+    struct.tm_year.should.equal(2012)
+    struct.tm_mon.should.equal(1)
+    struct.tm_mday.should.equal(14)
+
+
+@freeze_time("2012-01-14 12:00:00")
+def test_fake_gmtime_function():
+    struct = fake_gmtime_function()
+    struct.tm_year.should.equal(2012)
+    struct.tm_mon.should.equal(1)
+    struct.tm_mday.should.equal(14)
+
+
+@freeze_time("2012-01-14")
+def test_fake_strftime_function():
+    fake_strftime_function().should.equal('2012')
