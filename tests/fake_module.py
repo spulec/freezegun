@@ -1,6 +1,6 @@
 from datetime import datetime
 from datetime import date
-from time import time
+from time import time, localtime, gmtime, strftime
 
 
 def fake_datetime_function():
@@ -13,6 +13,18 @@ def fake_date_function():
 
 def fake_time_function():
     return time()
+
+
+def fake_localtime_function():
+    return localtime()
+
+
+def fake_gmtime_function():
+    return gmtime()
+
+
+def fake_strftime_function():
+    return strftime("%Y")
 
 
 class EqualToAnything(object):

@@ -7,6 +7,9 @@ import time
 from dateutil import parser
 
 real_time = time.time
+real_localtime = time.localtime
+real_gmtime = time.gmtime
+real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
 
@@ -30,6 +33,33 @@ class FakeTime(object):
     def __call__(self):
         shifted_time = self.time_to_freeze - datetime.timedelta(seconds=time.timezone)
         return time.mktime(shifted_time.timetuple()) + shifted_time.microsecond / 1000000.0
+
+
+class FakeLocalTime(object):
+    def __init__(self, time_to_freeze):
+        self.time_to_freeze = time_to_freeze
+
+    def __call__(self):
+        shifted_time = self.time_to_freeze - datetime.timedelta(seconds=time.timezone)
+        return shifted_time.timetuple()
+
+
+class FakeGMTTime(object):
+    def __init__(self, time_to_freeze):
+        self.time_to_freeze = time_to_freeze
+
+    def __call__(self):
+        return self.time_to_freeze.timetuple()
+
+
+class FakeStrfTime(object):
+    def __init__(self, default_fake_time):
+        self.default_fake_time = default_fake_time
+
+    def __call__(self, format, time_to_format=None):
+        if time_to_format is None:
+            time_to_format = FakeLocalTime(self.default_fake_time)()
+        return real_strftime(format, time_to_format)
 
 
 class FakeDateMeta(type):
@@ -226,7 +256,13 @@ class _freeze_time(object):
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
         fake_time = FakeTime(self.time_to_freeze, time.time)
+        fake_localtime = FakeLocalTime(self.time_to_freeze)
+        fake_gmtime = FakeGMTTime(self.time_to_freeze)
+        fake_strftime = FakeStrfTime(self.time_to_freeze)
         time.time = fake_time
+        time.localtime = fake_localtime
+        time.gmtime = fake_gmtime
+        time.strftime = fake_strftime
 
         copyreg.dispatch_table[real_datetime] = pickle_fake_datetime
         copyreg.dispatch_table[real_date] = pickle_fake_date
@@ -241,7 +277,8 @@ class _freeze_time(object):
                 or module.__name__ in ['datetime', 'time']):
                 continue
             for module_attribute in dir(module):
-                if module_attribute in ['real_date', 'real_datetime', 'real_time']:
+                if module_attribute in ['real_date', 'real_datetime',
+                    'real_time', 'real_localtime', 'real_gmtime', 'real_strftime']:
                     continue
                 try:
                     attribute_value = getattr(module, module_attribute)
@@ -258,6 +295,15 @@ class _freeze_time(object):
                     elif attribute_value is real_time:
                         setattr(module, module_attribute, fake_time)
                         self.undo_changes.append((module, module_attribute, real_time))
+                    elif attribute_value is real_localtime:
+                        setattr(module, module_attribute, fake_localtime)
+                        self.undo_changes.append((module, module_attribute, real_localtime))
+                    elif attribute_value is real_gmtime:
+                        setattr(module, module_attribute, fake_gmtime)
+                        self.undo_changes.append((module, module_attribute, real_gmtime))
+                    elif attribute_value is real_strftime:
+                        setattr(module, module_attribute, fake_strftime)
+                        self.undo_changes.append((module, module_attribute, real_strftime))
                 except:
                     # If it's not possible to compare the value to real_XXX (e.g. hiredis.version)
                     pass

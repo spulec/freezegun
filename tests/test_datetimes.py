@@ -113,6 +113,7 @@ def test_time_with_microseconds():
     assert time.time() == 1.123456
     freezer.stop()
 
+
 def test_bad_time_argument():
     try:
         freeze_time("2012-13-14", tz_offset=-4)
@@ -120,6 +121,54 @@ def test_bad_time_argument():
         pass
     else:
         assert False, "Bad values should raise a ValueError"
+
+
+def test_time_gmtime():
+    with freeze_time('2012-01-14 03:21:34'):
+        time_struct = time.gmtime()
+        assert time_struct.tm_year == 2012
+        assert time_struct.tm_mon == 1
+        assert time_struct.tm_mday == 14
+        assert time_struct.tm_hour == 3
+        assert time_struct.tm_min == 21
+        assert time_struct.tm_sec == 34
+        assert time_struct.tm_wday == 5
+        assert time_struct.tm_yday == 14
+        assert time_struct.tm_isdst == -1
+
+
+class modify_timezone(object):
+
+    def __init__(self, new_timezone):
+        self.new_timezone = new_timezone
+        self.original_timezone = time.timezone
+
+    def __enter__(self):
+        time.timezone = self.new_timezone
+
+    def __exit__(self, *args):
+        time.timezone = self.original_timezone
+
+
+def test_time_localtime():
+    with modify_timezone(-3600):  # Set this for UTC-1
+        with freeze_time('2012-01-14 03:21:34'):
+            time_struct = time.localtime()
+            assert time_struct.tm_year == 2012
+            assert time_struct.tm_mon == 1
+            assert time_struct.tm_mday == 14
+            assert time_struct.tm_hour == 4  # offset of 1 hour due to time zone
+            assert time_struct.tm_min == 21
+            assert time_struct.tm_sec == 34
+            assert time_struct.tm_wday == 5
+            assert time_struct.tm_yday == 14
+            assert time_struct.tm_isdst == -1
+
+
+def test_strftime():
+    with modify_timezone(0):
+        with freeze_time('1970-01-01'):
+            assert time.strftime("%Y") == "1970"
 
 
 def test_date_object():
