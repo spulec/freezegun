@@ -1,2 +1,2 @@
 include README.rst LICENSE AUTHORS.rst
-
+recursive-exclude tests *
