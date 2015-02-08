@@ -18,7 +18,7 @@ setup(
     author='Steve Pulec',
     author_email='spulec@gmail',
     url='https://github.com/spulec/freezegun',
-    packages=find_packages(exclude=("tests", "tests.*",)),
+    packages=['freezegun'],
     install_requires=requires,
     include_package_data=True,
     classifiers=[
