@@ -39,7 +39,9 @@ class FakeLocalTime(object):
     def __init__(self, time_to_freeze):
         self.time_to_freeze = time_to_freeze
 
-    def __call__(self):
+    def __call__(self, t=None):
+        if t is not None:
+            return real_localtime(t)
         shifted_time = self.time_to_freeze - datetime.timedelta(seconds=time.timezone)
         return shifted_time.timetuple()
 
@@ -48,7 +50,9 @@ class FakeGMTTime(object):
     def __init__(self, time_to_freeze):
         self.time_to_freeze = time_to_freeze
 
-    def __call__(self):
+    def __call__(self, t=None):
+        if t is not None:
+            return real_gmtime(t)
         return self.time_to_freeze.timetuple()
 
 
