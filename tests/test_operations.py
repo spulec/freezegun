@@ -42,7 +42,7 @@ def test_subtraction():
 @freeze_time("2012-01-14")
 def test_datetime_timezone_none():
     now = datetime.datetime.now(tz=None)
-    now.should.equal(datetime.datetime(2012, 1, 14))
+    assert now == datetime.datetime(2012, 1, 14)
 
 
 class GMT5(tzinfo):
@@ -57,15 +57,15 @@ class GMT5(tzinfo):
 @freeze_time("2012-01-14 2:00:00")
 def test_datetime_timezone_real():
     now = datetime.datetime.now(tz=GMT5())
-    now.should.equal(datetime.datetime(2012, 1, 14, 7, tzinfo=GMT5()))
-    now.utcoffset().should.equal(timedelta(0, 60 * 60 * 5))
+    assert now == datetime.datetime(2012, 1, 14, 7, tzinfo=GMT5())
+    assert now.utcoffset() == timedelta(0, 60 * 60 * 5)
 
 
 @freeze_time("2012-01-14 2:00:00", tz_offset=-4)
 def test_datetime_timezone_real_with_offset():
     now = datetime.datetime.now(tz=GMT5())
-    now.should.equal(datetime.datetime(2012, 1, 14, 3, tzinfo=GMT5()))
-    now.utcoffset().should.equal(timedelta(0, 60 * 60 * 5))
+    assert now == datetime.datetime(2012, 1, 14, 3, tzinfo=GMT5())
+    assert now.utcoffset() == timedelta(0, 60 * 60 * 5)
 
 
 @freeze_time("2012-01-14 00:00:00")
