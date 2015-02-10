@@ -289,7 +289,7 @@ class TestUnitTestClassDecorator(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        datetime.date(2013,4,9).shouldnt.equal(datetime.date.today())
+        assert datetime.date(2013,4,9) != datetime.date.today()
 
     def test_class_decorator_works_on_unittest(self):
         self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
@@ -304,14 +304,14 @@ class TestUnitTestClassDecoratorWithSetup(unittest.TestCase):
 
 
 def assert_class_of_datetimes(right_class, wrong_class):
-    datetime.datetime.min.__class__.should.equal(right_class)
-    datetime.datetime.max.__class__.should.equal(right_class)
-    datetime.date.min.__class__.should.equal(right_class)
-    datetime.date.max.__class__.should.equal(right_class)
-    datetime.datetime.min.__class__.shouldnt.equal(wrong_class)
-    datetime.datetime.max.__class__.shouldnt.equal(wrong_class)
-    datetime.date.min.__class__.shouldnt.equal(wrong_class)
-    datetime.date.max.__class__.shouldnt.equal(wrong_class)
+    assert datetime.datetime.min.__class__ == right_class
+    assert datetime.datetime.max.__class__ == right_class
+    assert datetime.date.min.__class__ == right_class
+    assert datetime.date.max.__class__ == right_class
+    assert datetime.datetime.min.__class__ != wrong_class
+    assert datetime.datetime.max.__class__ != wrong_class
+    assert datetime.date.min.__class__ != wrong_class
+    assert datetime.date.max.__class__ != wrong_class
 
 
 def test_min_and_max():
@@ -320,24 +320,24 @@ def test_min_and_max():
     real_date = datetime.date
 
     freezer.start()
-    datetime.datetime.min.__class__.should.equal(FakeDatetime)
-    datetime.datetime.max.__class__.should.equal(FakeDatetime)
-    datetime.date.min.__class__.should.equal(FakeDate)
-    datetime.date.max.__class__.should.equal(FakeDate)
-    datetime.datetime.min.__class__.shouldnt.equal(real_datetime)
-    datetime.datetime.max.__class__.shouldnt.equal(real_datetime)
-    datetime.date.min.__class__.shouldnt.equal(real_date)
-    datetime.date.max.__class__.shouldnt.equal(real_date)
+    assert datetime.datetime.min.__class__ == FakeDatetime
+    assert datetime.datetime.max.__class__ == FakeDatetime
+    assert datetime.date.min.__class__ == FakeDate
+    assert datetime.date.max.__class__ == FakeDate
+    assert datetime.datetime.min.__class__ != real_datetime
+    assert datetime.datetime.max.__class__ != real_datetime
+    assert datetime.date.min.__class__ != real_date
+    assert datetime.date.max.__class__ != real_date
 
     freezer.stop()
-    datetime.datetime.min.__class__.should.equal(datetime.datetime)
-    datetime.datetime.max.__class__.should.equal(datetime.datetime)
-    datetime.date.min.__class__.should.equal(datetime.date)
-    datetime.date.max.__class__.should.equal(datetime.date)
-    datetime.datetime.min.__class__.shouldnt.equal(FakeDatetime)
-    datetime.datetime.max.__class__.shouldnt.equal(FakeDatetime)
-    datetime.date.min.__class__.shouldnt.equal(FakeDate)
-    datetime.date.max.__class__.shouldnt.equal(FakeDate)
+    assert datetime.datetime.min.__class__ == datetime.datetime
+    assert datetime.datetime.max.__class__ == datetime.datetime
+    assert datetime.date.min.__class__ == datetime.date
+    assert datetime.date.max.__class__ == datetime.date
+    assert datetime.datetime.min.__class__ != FakeDatetime
+    assert datetime.datetime.max.__class__ != FakeDatetime
+    assert datetime.date.min.__class__ != FakeDate
+    assert datetime.date.max.__class__ != FakeDate
 
 
 @freeze_time("2014-07-30T01:00:00Z")

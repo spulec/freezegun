@@ -1,4 +1,3 @@
 coverage
 coveralls
 nose
-sure==1.2.0

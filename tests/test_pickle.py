@@ -1,7 +1,6 @@
 import datetime
 import pickle
 from freezegun import freeze_time
-import sure
 
 
 def assert_pickled_datetimes_equal_original():
@@ -33,29 +32,29 @@ def test_pickle():
 
 def test_pickle_real_datetime():
     real_datetime = datetime.datetime(1970, 2, 1)
-    pickle.loads(pickle.dumps(real_datetime)).should.equal(real_datetime)
+    pickle.loads(pickle.dumps(real_datetime)) == real_datetime
 
     freezer = freeze_time("1970-01-01")
     freezer.start()
     fake_datetime = datetime.datetime.now()
-    pickle.loads(pickle.dumps(fake_datetime)).should.equal(fake_datetime)
+    assert pickle.loads(pickle.dumps(fake_datetime)) == fake_datetime
     pickle.loads(pickle.dumps(real_datetime))
     freezer.stop()
 
-    pickle.loads(pickle.dumps(fake_datetime)).should.equal(fake_datetime)
-    pickle.loads(pickle.dumps(real_datetime)).should.equal(real_datetime)
+    assert pickle.loads(pickle.dumps(fake_datetime)) == fake_datetime
+    assert pickle.loads(pickle.dumps(real_datetime)) == real_datetime
 
 
 def test_pickle_real_date():
     real_date = datetime.date(1970, 2, 1)
-    pickle.loads(pickle.dumps(real_date)).should.equal(real_date)
+    assert pickle.loads(pickle.dumps(real_date)) == real_date
 
     freezer = freeze_time("1970-01-01")
     freezer.start()
     fake_date = datetime.datetime.now()
-    pickle.loads(pickle.dumps(fake_date)).should.equal(fake_date)
+    assert pickle.loads(pickle.dumps(fake_date)) == fake_date
     pickle.loads(pickle.dumps(real_date))
     freezer.stop()
 
-    pickle.loads(pickle.dumps(fake_date)).should.equal(fake_date)
-    pickle.loads(pickle.dumps(real_date)).should.equal(real_date)
+    assert pickle.loads(pickle.dumps(fake_date)) == fake_date
+    assert pickle.loads(pickle.dumps(real_date)) == real_date
