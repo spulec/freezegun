@@ -13,3 +13,6 @@ travis:
 
 tdaemon:
 	tdaemon -t nose ./tests/ --custom-args="--with-growl"
+
+publish:
+	python setup.py sdist bdist_wheel upload

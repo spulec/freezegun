@@ -1,3 +1,4 @@
+build
 .coverage
 *.egg-info
 *.tox
