@@ -282,10 +282,24 @@ def test_isinstance_without_active():
     today = datetime.date.today()
     assert isinstance(today, datetime.date)
 
+
+class Callable(object):
+
+    def __call__(self, *args, **kws):
+        return (args, kws)
+
+
 @freeze_time('2013-04-09')
 class TestUnitTestClassDecorator(unittest.TestCase):
+
     def setUp(self):
         self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
+
+    a_mock = Callable()
+
+    @staticmethod
+    def helper():
+        return datetime.date.today()
 
     @classmethod
     def setUpClass(cls):
@@ -293,6 +307,13 @@ class TestUnitTestClassDecorator(unittest.TestCase):
 
     def test_class_decorator_works_on_unittest(self):
         self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
+
+    def test_class_decorator_respects_staticmethod(self):
+        self.assertEqual(self.helper(), datetime.date(2013, 4, 9))
+
+    def test_class_decorator_respects_callable_object(self):
+        self.assertIsInstance(self.a_mock, Callable)
+
 
 @freeze_time('2013-04-09')
 class TestUnitTestClassDecoratorWithSetup(unittest.TestCase):

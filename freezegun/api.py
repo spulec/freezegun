@@ -235,11 +235,11 @@ class _freeze_time(object):
                 continue
 
             attr_value = getattr(klass, attr)
-            if not hasattr(attr_value, "__call__"):
-                continue
 
-            # Check if this is a classmethod. If so, skip patching
-            if inspect.ismethod(attr_value) and attr_value.__self__ is klass:
+            # Skip patching classmethods, staticmethods and non-method callables
+            # (but do recurse into nested classes)
+            if not inspect.isclass(attr_value) and (not inspect.ismethod(attr_value) or
+                                                    attr_value.__self__ is klass):
                 continue
 
             try:
