@@ -2,6 +2,7 @@ import time
 import datetime
 import unittest
 import locale
+import sys
 
 from nose.plugins import skip
 from tests import utils
@@ -282,10 +283,24 @@ def test_isinstance_without_active():
     today = datetime.date.today()
     assert isinstance(today, datetime.date)
 
+
+class Callable(object):
+
+    def __call__(self, *args, **kws):
+        return (args, kws)
+
+
 @freeze_time('2013-04-09')
 class TestUnitTestClassDecorator(unittest.TestCase):
+
     def setUp(self):
         self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
+
+    a_mock = Callable()
+
+    @staticmethod
+    def helper():
+        return datetime.date.today()
 
     @classmethod
     def setUpClass(cls):
@@ -293,6 +308,20 @@ class TestUnitTestClassDecorator(unittest.TestCase):
 
     def test_class_decorator_works_on_unittest(self):
         self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
+
+    def test_class_decorator_respects_staticmethod(self):
+        self.assertEqual(self.helper(), datetime.date(2013, 4, 9))
+
+    def test_class_decorator_skips_callable_object_py2(self):
+        if sys.version_info[0] != 2:
+            raise skip.SkipTest("test target is Python2")
+        self.assertEqual(self.a_mock.__class__, Callable)
+
+    def test_class_decorator_wraps_callable_object_py3(self):
+        if sys.version_info[0] != 3:
+            raise skip.SkipTest("test target is Python3")
+        self.assertEqual(self.a_mock.__wrapped__.__class__, Callable)
+
 
 @freeze_time('2013-04-09')
 class TestUnitTestClassDecoratorWithSetup(unittest.TestCase):
