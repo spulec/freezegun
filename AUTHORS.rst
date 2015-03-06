@@ -9,3 +9,4 @@ Patches and Suggestions
 - `Richard Eames <https://github.com/Naddiseo>`_
 - `Tye Wang <https://github.com/tyewang>`_
 - `Andreas Pelme <https://github.com/pelme>`_
+- `Jesse London <https://github.com/jesteria>`_
