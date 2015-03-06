@@ -230,22 +230,34 @@ class _freeze_time(object):
         return self.decorate_callable(func)
 
     def decorate_class(self, klass):
+        klass_mro = klass.mro()
         for attr in dir(klass):
             if attr.startswith("_"):
                 continue
 
             attr_value = getattr(klass, attr)
+            if not callable(attr_value):
+                continue
 
-            # Skip patching classmethods, staticmethods and non-method callables
-            # (but do recurse into nested classes)
-            if not inspect.isclass(attr_value) and (not inspect.ismethod(attr_value) or
-                                                    attr_value.__self__ is klass):
+            for base_klass in klass_mro:
+                try:
+                    attr_descriptor = base_klass.__dict__[attr]
+                except KeyError:
+                    pass
+                else:
+                    break
+            else:
+                # don't sweat the attribute magic
+                attr_descriptor = None
+
+            # Skip patching classmethods and staticmethods
+            if isinstance(attr_descriptor, (classmethod, staticmethod)):
                 continue
 
             try:
                 setattr(klass, attr, self(attr_value))
-            except TypeError:
-                # Sometimes we can't set this for built-in types
+            except (AttributeError, TypeError):
+                # Sometimes we can't set this for built-in types and custom callables
                 continue
         return klass
 
