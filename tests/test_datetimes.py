@@ -293,10 +293,12 @@ class Callable(object):
 @freeze_time('2013-04-09')
 class TestUnitTestClassDecorator(unittest.TestCase):
 
-    def setUp(self):
-        self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
-
     a_mock = Callable()
+
+    class NotATestClass(object):
+
+        def perform_operation(self):
+            return datetime.date.today()
 
     @staticmethod
     def helper():
@@ -304,7 +306,10 @@ class TestUnitTestClassDecorator(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        assert datetime.date(2013,4,9) != datetime.date.today()
+        assert datetime.date(2013, 4, 9) != datetime.date.today()
+
+    def setUp(self):
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
 
     def test_class_decorator_works_on_unittest(self):
         self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
@@ -321,6 +326,11 @@ class TestUnitTestClassDecorator(unittest.TestCase):
         if sys.version_info[0] != 3:
             raise skip.SkipTest("test target is Python3")
         self.assertEqual(self.a_mock.__wrapped__.__class__, Callable)
+
+    @freeze_time('2001-01-01')
+    def test_class_decorator_ignores_nested_class(self):
+        not_a_test = self.NotATestClass()
+        self.assertEqual(not_a_test.perform_operation(), datetime.date(2001, 1, 1))
 
 
 @freeze_time('2013-04-09')
