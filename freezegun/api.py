@@ -3,6 +3,7 @@ import functools
 import inspect
 import sys
 import time
+import calendar
 
 from dateutil import parser
 
@@ -31,8 +32,7 @@ class FakeTime(object):
         self.previous_time_function = previous_time_function
 
     def __call__(self):
-        shifted_time = self.time_to_freeze - datetime.timedelta(seconds=time.timezone)
-        return time.mktime(shifted_time.timetuple()) + shifted_time.microsecond / 1000000.0
+        return calendar.timegm(self.time_to_freeze.timetuple()) + self.time_to_freeze.microsecond / 1000000.0
 
 
 class FakeLocalTime(object):
