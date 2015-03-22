@@ -114,6 +114,11 @@ def test_time_with_microseconds():
     assert time.time() == 1.123456
     freezer.stop()
 
+def test_time_with_dst():
+    freezer = freeze_time(datetime.datetime(1970, 6, 1, 0, 0, 1, 123456))
+    freezer.start()
+    assert time.time() == 13046401.123456
+    freezer.stop()
 
 def test_bad_time_argument():
     try:
