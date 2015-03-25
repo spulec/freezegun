@@ -47,8 +47,9 @@ class FakeLocalTime(object):
 
 
 class FakeGMTTime(object):
-    def __init__(self, time_to_freeze):
+    def __init__(self, time_to_freeze, previous_gmtime_function):
         self.time_to_freeze = time_to_freeze
+        self.previous_gmtime_function = previous_gmtime_function
 
     def __call__(self, t=None):
         if t is not None:
@@ -259,7 +260,7 @@ class _freeze_time(object):
         datetime.date = FakeDate
         fake_time = FakeTime(self.time_to_freeze, time.time)
         fake_localtime = FakeLocalTime(self.time_to_freeze)
-        fake_gmtime = FakeGMTTime(self.time_to_freeze)
+        fake_gmtime = FakeGMTTime(self.time_to_freeze, time.gmtime)
         fake_strftime = FakeStrfTime(self.time_to_freeze)
         time.time = fake_time
         time.localtime = fake_localtime
@@ -330,6 +331,7 @@ class _freeze_time(object):
             copyreg.dispatch_table.pop(real_date)
 
         time.time = time.time.previous_time_function
+        time.gmtime = time.gmtime.previous_gmtime_function
 
         for module, module_attribute, original_value in self.undo_changes:
             setattr(module, module_attribute, original_value)
