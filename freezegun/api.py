@@ -217,7 +217,12 @@ def pickle_fake_datetime(datetime_):
 class _freeze_time(object):
 
     def __init__(self, time_to_freeze_str, tz_offset, ignore):
-        time_to_freeze = parser.parse(time_to_freeze_str)
+        if isinstance(time_to_freeze_str, datetime.datetime):
+            time_to_freeze = time_to_freeze_str
+        elif isinstance(time_to_freeze_str, datetime.date):
+            time_to_freeze = datetime.datetime.combine(time_to_freeze_str, datetime.time())
+        else:
+            time_to_freeze = parser.parse(time_to_freeze_str)
         time_to_freeze = convert_to_timezone_naive(time_to_freeze)
 
         self.time_to_freeze = time_to_freeze
@@ -351,16 +356,13 @@ class _freeze_time(object):
 
 
 def freeze_time(time_to_freeze, tz_offset=0, ignore=None):
-    if isinstance(time_to_freeze, datetime.date):
-        time_to_freeze = time_to_freeze.isoformat()
-
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
     except NameError:
         string_type = str
 
-    if not isinstance(time_to_freeze, string_type):
+    if not isinstance(time_to_freeze, (string_type, datetime.date)):
         raise TypeError(('freeze_time() expected a string, date instance, or '
                          'datetime instance, but got type {0}.').format(type(time_to_freeze)))
     if ignore is None:
