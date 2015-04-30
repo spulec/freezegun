@@ -11,3 +11,15 @@ def test_datetime_alias():
 @freeze_time("1970-01-01")
 def test_time_alias():
     assert time_aliased() == 0.0
+
+
+@freeze_time('2013-04-09')
+class TestCallOtherFuncInTestClassDecoratorWithAlias(object):
+
+    def test_calls_other_method(self):
+        assert datetime_aliased(2013,4,9) == datetime_aliased.today()
+        self.some_other_func()
+        assert datetime_aliased(2013,4,9) == datetime_aliased.today()
+
+    def some_other_func(self):
+        pass

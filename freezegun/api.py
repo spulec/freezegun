@@ -326,20 +326,18 @@ class _freeze_time(object):
     def stop(self):
         datetime.datetime.times_to_freeze.pop()
         datetime.datetime.tz_offsets.pop()
+        datetime.date.dates_to_freeze.pop()
+
         if not datetime.datetime.times_to_freeze:
             datetime.datetime = real_datetime
-            copyreg.dispatch_table.pop(real_datetime)
-
-        datetime.date.dates_to_freeze.pop()
-        if not datetime.date.dates_to_freeze:
             datetime.date = real_date
+            copyreg.dispatch_table.pop(real_datetime)
             copyreg.dispatch_table.pop(real_date)
+            for module, module_attribute, original_value in self.undo_changes:
+                setattr(module, module_attribute, original_value)
 
         time.time = time.time.previous_time_function
         time.gmtime = time.gmtime.previous_gmtime_function
-
-        for module, module_attribute, original_value in self.undo_changes:
-            setattr(module, module_attribute, original_value)
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
