@@ -365,8 +365,8 @@ def freeze_time(time_to_freeze, tz_offset=0, ignore=None):
                          'datetime instance, but got type {0}.').format(type(time_to_freeze)))
     if ignore is None:
         ignore = []
-    ignore.append('six.moves.')
-    ignore.append('django.utils.six.moves.')
+    ignore.append('six.moves')
+    ignore.append('django.utils.six.moves')
     return _freeze_time(time_to_freeze, tz_offset, ignore)
 
 
