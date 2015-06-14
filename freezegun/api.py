@@ -163,6 +163,9 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
             result = cls._time_to_freeze() + datetime.timedelta(hours=cls._tz_offset())
         return datetime_to_fakedatetime(result)
 
+    def date(self):
+        return date_to_fakedate(self)
+
     @classmethod
     def today(cls):
         return cls.now(tz=None)

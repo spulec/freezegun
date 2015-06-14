@@ -249,6 +249,12 @@ def test_nice_datetime():
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
 
+@freeze_time("2012-01-14")
+def test_datetime_date_method():
+    now = datetime.datetime.now()
+    assert now.date() == FakeDate(2012, 1, 14)
+
+
 def test_context_manager():
     with freeze_time("2012-01-14"):
         assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
@@ -286,6 +292,7 @@ def test_nested_context_manager_with_tz_offsets():
 def test_isinstance_with_active():
     now = datetime.datetime.now()
     assert utils.is_fake_datetime(now)
+    assert utils.is_fake_date(now.date())
 
     today = datetime.date.today()
     assert utils.is_fake_date(today)
@@ -295,6 +302,7 @@ def test_isinstance_without_active():
     now = datetime.datetime.now()
     assert isinstance(now, datetime.datetime)
     assert isinstance(now, datetime.date)
+    assert isinstance(now.date(), datetime.date)
 
     today = datetime.date.today()
     assert isinstance(today, datetime.date)
