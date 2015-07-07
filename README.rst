@@ -70,7 +70,7 @@ Timezones
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 13, 23, 21, 34)
 
         # datetime.date.today() uses local time
-        assert datetime.date.today() == datetime.datetime(2012, 01, 13)
+        assert datetime.date.today() == datetime.date(2012, 01, 13)
 
 Nice inputs
 ~~~~~~~~~~~
