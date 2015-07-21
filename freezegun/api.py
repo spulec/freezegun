@@ -230,7 +230,7 @@ class _freeze_time(object):
 
         self.time_to_freeze = time_to_freeze
         self.tz_offset = tz_offset
-        self.ignore = ignore
+        self.ignore = tuple(ignore)
         self.undo_changes = []
 
     def __call__(self, func):
@@ -279,17 +279,27 @@ class _freeze_time(object):
         copyreg.dispatch_table[real_date] = pickle_fake_date
 
         # Change any place where the module had already been imported
+        real_things = (
+            real_time,
+            real_localtime,
+            real_gmtime,
+            real_strftime,
+            real_date,
+            real_datetime
+        )
+        add_change = self.undo_changes.append
+
         for mod_name, module in list(sys.modules.items()):
             if mod_name is None or module is None:
                 continue
-            if mod_name.startswith(tuple(self.ignore)):
+            elif mod_name.startswith(self.ignore):
                 continue
-            if (not hasattr(module, "__name__")
-                or module.__name__ in ['datetime', 'time']):
+            elif (not hasattr(module, "__name__")
+                or module.__name__ in ('datetime', 'time')):
                 continue
             for module_attribute in dir(module):
-                if module_attribute in ['real_date', 'real_datetime',
-                    'real_time', 'real_localtime', 'real_gmtime', 'real_strftime']:
+                if module_attribute in ('real_date', 'real_datetime',
+                    'real_time', 'real_localtime', 'real_gmtime', 'real_strftime'):
                     continue
                 try:
                     attribute_value = getattr(module, module_attribute)
@@ -297,24 +307,27 @@ class _freeze_time(object):
                     # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
                     continue
                 try:
+                    if attribute_value not in real_things:
+                        continue
+
                     if attribute_value is real_datetime:
                         setattr(module, module_attribute, FakeDatetime)
-                        self.undo_changes.append((module, module_attribute, real_datetime))
+                        add_change((module, module_attribute, real_datetime))
                     elif attribute_value is real_date:
                         setattr(module, module_attribute, FakeDate)
-                        self.undo_changes.append((module, module_attribute, real_date))
+                        add_change((module, module_attribute, real_date))
                     elif attribute_value is real_time:
                         setattr(module, module_attribute, fake_time)
-                        self.undo_changes.append((module, module_attribute, real_time))
+                        add_change((module, module_attribute, real_time))
                     elif attribute_value is real_localtime:
                         setattr(module, module_attribute, fake_localtime)
-                        self.undo_changes.append((module, module_attribute, real_localtime))
+                        add_change((module, module_attribute, real_localtime))
                     elif attribute_value is real_gmtime:
                         setattr(module, module_attribute, fake_gmtime)
-                        self.undo_changes.append((module, module_attribute, real_gmtime))
+                        add_change((module, module_attribute, real_gmtime))
                     elif attribute_value is real_strftime:
                         setattr(module, module_attribute, fake_strftime)
-                        self.undo_changes.append((module, module_attribute, real_strftime))
+                        add_change((module, module_attribute, real_strftime))
                 except:
                     # If it's not possible to compare the value to real_XXX (e.g. hiredis.version)
                     pass
