@@ -235,13 +235,53 @@ def test_decorator_wrapped_attribute():
 
     assert wrapped.__wrapped__ is to_decorate
 
+
+class Callable(object):
+
+    def __call__(self, *args, **kws):
+        return (args, kws)
+
+
 @freeze_time("2012-01-14")
 class Tester(object):
+
     def test_the_class(self):
         assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
     def test_still_the_same(self):
         assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
+
+    def test_class_name_preserved_by_decorator(self):
+        assert self.__class__.__name__ == "Tester"
+
+    class NotATestClass(object):
+
+        def perform_operation(self):
+            return datetime.date.today()
+
+    @freeze_time('2001-01-01')
+    def test_class_decorator_ignores_nested_class(self):
+        not_a_test = self.NotATestClass()
+        assert not_a_test.perform_operation() == datetime.date(2001, 1, 1)
+
+    a_mock = Callable()
+
+    def test_class_decorator_skips_callable_object_py2(self):
+        if sys.version_info[0] != 2:
+            raise skip.SkipTest("test target is Python2")
+        assert self.a_mock.__class__ == Callable
+
+    def test_class_decorator_wraps_callable_object_py3(self):
+        if sys.version_info[0] != 3:
+            raise skip.SkipTest("test target is Python3")
+        assert self.a_mock.__wrapped__.__class__ == Callable
+
+    @staticmethod
+    def helper():
+        return datetime.date.today()
+
+    def test_class_decorator_respects_staticmethod(self):
+        assert self.helper() == datetime.date(2012, 1, 14)
 
 
 @freeze_time("Jan 14th, 2012")
@@ -308,62 +348,74 @@ def test_isinstance_without_active():
     assert isinstance(today, datetime.date)
 
 
-class Callable(object):
-
-    def __call__(self, *args, **kws):
-        return (args, kws)
-
-
 @freeze_time('2013-04-09')
 class TestUnitTestClassDecorator(unittest.TestCase):
 
-    a_mock = Callable()
-
-    class NotATestClass(object):
-
-        def perform_operation(self):
-            return datetime.date.today()
-
-    @staticmethod
-    def helper():
-        return datetime.date.today()
-
     @classmethod
     def setUpClass(cls):
-        assert datetime.date(2013, 4, 9) != datetime.date.today()
+        assert datetime.date(2013, 4, 9) == datetime.date.today()
 
     def setUp(self):
         self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
 
+    def tearDown(self):
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
+
+    @classmethod
+    def tearDownClass(cls):
+        assert datetime.date(2013, 4, 9) == datetime.date.today()
+
     def test_class_decorator_works_on_unittest(self):
-        self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
 
-    def test_class_decorator_respects_staticmethod(self):
-        self.assertEqual(self.helper(), datetime.date(2013, 4, 9))
-
-    def test_class_decorator_skips_callable_object_py2(self):
-        if sys.version_info[0] != 2:
-            raise skip.SkipTest("test target is Python2")
-        self.assertEqual(self.a_mock.__class__, Callable)
-
-    def test_class_decorator_wraps_callable_object_py3(self):
-        if sys.version_info[0] != 3:
-            raise skip.SkipTest("test target is Python3")
-        self.assertEqual(self.a_mock.__wrapped__.__class__, Callable)
-
-    @freeze_time('2001-01-01')
-    def test_class_decorator_ignores_nested_class(self):
-        not_a_test = self.NotATestClass()
-        self.assertEqual(not_a_test.perform_operation(), datetime.date(2001, 1, 1))
+    def test_class_name_preserved_by_decorator(self):
+        self.assertEqual(self.__class__.__name__, "TestUnitTestClassDecorator")
 
 
 @freeze_time('2013-04-09')
-class TestUnitTestClassDecoratorWithSetup(unittest.TestCase):
-    def setUp(self):
+class TestUnitTestClassDecoratorWithNoSetUpOrTearDown(unittest.TestCase):
+    def test_class_decorator_works_on_unittest(self):
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
+
+
+class TestUnitTestClassDecoratorSubclass(TestUnitTestClassDecorator):
+    @classmethod
+    def setUpClass(cls):
+        # the super() call can fail if the class decoration was done wrong
+        super(TestUnitTestClassDecoratorSubclass, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        # the super() call can fail if the class decoration was done wrong
+        super(TestUnitTestClassDecoratorSubclass, cls).tearDownClass()
+
+    def test_class_name_preserved_by_decorator(self):
+        self.assertEqual(self.__class__.__name__,
+                         "TestUnitTestClassDecoratorSubclass")
+
+
+class BaseInheritanceFreezableTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
         pass
 
-    def test_class_decorator_works_on_unittest(self):
-        self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+
+class UnfrozenInheritedTests(BaseInheritanceFreezableTests):
+    def test_time_is_not_frozen(self):
+        # In this class, time should not be frozen - and the below decorated
+        # class shouldn't affect that
+        self.assertNotEqual(datetime.date(2013, 4, 9), datetime.date.today())
+
+
+@freeze_time('2013-04-09')
+class FrozenInheritedTests(BaseInheritanceFreezableTests):
+    def test_time_is_frozen(self):
+        # In this class, time should be frozen
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
 
 
 def assert_class_of_datetimes(right_class, wrong_class):

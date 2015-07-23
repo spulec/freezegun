@@ -4,6 +4,7 @@ import inspect
 import sys
 import time
 import calendar
+import unittest
 
 from dateutil import parser
 
@@ -239,22 +240,49 @@ class _freeze_time(object):
         return self.decorate_callable(func)
 
     def decorate_class(self, klass):
-        seen = set()
-        for base_klass in klass.mro():
-            for (attr, attr_value) in base_klass.__dict__.items():
-                if attr.startswith('_') or attr in seen:
-                    continue
-                seen.add(attr)
+        if issubclass(klass, unittest.TestCase):
+            # If it's a TestCase, we assume you want to freeze the time for the
+            # tests, from setUpClass to tearDownClass
 
-                if not callable(attr_value) or inspect.isclass(attr_value):
-                    continue
+            # Use getattr as in Python 2.6 they are optional
+            orig_setUpClass = getattr(klass, 'setUpClass', None)
+            orig_tearDownClass = getattr(klass, 'tearDownClass', None)
 
-                try:
-                    setattr(klass, attr, self(attr_value))
-                except (AttributeError, TypeError):
-                    # Sometimes we can't set this for built-in types and custom callables
-                    continue
-        return klass
+            @classmethod
+            def setUpClass(cls):
+                self.start()
+                if orig_setUpClass is not None:
+                    orig_setUpClass()
+
+            @classmethod
+            def tearDownClass(cls):
+                if orig_tearDownClass is not None:
+                    orig_tearDownClass()
+                self.stop()
+
+            klass.setUpClass = setUpClass
+            klass.tearDownClass = tearDownClass
+
+            return klass
+
+        else:
+
+            seen = set()
+            for base_klass in klass.mro():
+                for (attr, attr_value) in base_klass.__dict__.items():
+                    if attr.startswith('_') or attr in seen:
+                        continue
+                    seen.add(attr)
+
+                    if not callable(attr_value) or inspect.isclass(attr_value):
+                        continue
+
+                    try:
+                        setattr(klass, attr, self(attr_value))
+                    except (AttributeError, TypeError):
+                        # Sometimes we can't set this for built-in types and custom callables
+                        continue
+            return klass
 
     def __enter__(self):
         self.start()
