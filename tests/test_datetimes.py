@@ -366,17 +366,6 @@ class TestUnitTestClassDecoratorWithSetup(unittest.TestCase):
         self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
 
 
-def assert_class_of_datetimes(right_class, wrong_class):
-    assert datetime.datetime.min.__class__ == right_class
-    assert datetime.datetime.max.__class__ == right_class
-    assert datetime.date.min.__class__ == right_class
-    assert datetime.date.max.__class__ == right_class
-    assert datetime.datetime.min.__class__ != wrong_class
-    assert datetime.datetime.max.__class__ != wrong_class
-    assert datetime.date.min.__class__ != wrong_class
-    assert datetime.date.max.__class__ != wrong_class
-
-
 def test_min_and_max():
     freezer = freeze_time("2012-01-14")
     real_datetime = datetime.datetime
