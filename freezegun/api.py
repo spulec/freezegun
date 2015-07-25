@@ -351,6 +351,7 @@ class _freeze_time(object):
             copyreg.dispatch_table.pop(real_date)
             for module, module_attribute, original_value in self.undo_changes:
                 setattr(module, module_attribute, original_value)
+            self.undo_changes = []
 
         time.time = time.time.previous_time_function
         time.gmtime = time.gmtime.previous_gmtime_function
