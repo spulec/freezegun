@@ -25,7 +25,14 @@ Decorator
     def test():
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
 
-    # Or class based
+    # Or a unittest TestCase - freezes for every test, from the start of setUpClass to the end of tearDownClass
+
+    @freeze_time("1955-11-12")
+    class MyTests(unittest.TestCase):
+        def test_the_class(self):
+            assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+
+    # Or any other class - freezes around each callable (may not work in every case)
 
     @freeze_time("2012-01-14")
     class Tester(object):
