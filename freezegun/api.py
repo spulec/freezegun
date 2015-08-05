@@ -5,6 +5,7 @@ import sys
 import time
 import calendar
 import unittest
+import platform
 
 from dateutil import parser
 
@@ -20,10 +21,15 @@ try:
 except ImportError:
     import copyreg
 
+
 # Stolen from six
 def with_metaclass(meta, *bases):
     """Create a base class with a metaclass."""
     return meta("NewBase", bases, {})
+
+
+def _is_cpython():
+    return platform.python_implementation() == "CPython"
 
 
 class FakeTime(object):
@@ -33,7 +39,8 @@ class FakeTime(object):
         self.previous_time_function = previous_time_function
 
     def __call__(self):
-        return calendar.timegm(self.time_to_freeze.timetuple()) + self.time_to_freeze.microsecond / 1000000.0
+        current_time = self.time_to_freeze()
+        return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
 
 
 class FakeLocalTime(object):
@@ -43,7 +50,7 @@ class FakeLocalTime(object):
     def __call__(self, t=None):
         if t is not None:
             return real_localtime(t)
-        shifted_time = self.time_to_freeze - datetime.timedelta(seconds=time.timezone)
+        shifted_time = self.time_to_freeze() - datetime.timedelta(seconds=time.timezone)
         return shifted_time.timetuple()
 
 
@@ -55,16 +62,16 @@ class FakeGMTTime(object):
     def __call__(self, t=None):
         if t is not None:
             return real_gmtime(t)
-        return self.time_to_freeze.timetuple()
+        return self.time_to_freeze().timetuple()
 
 
 class FakeStrfTime(object):
-    def __init__(self, default_fake_time):
-        self.default_fake_time = default_fake_time
+    def __init__(self, time_to_freeze):
+        self.time_to_freeze = time_to_freeze
 
     def __call__(self, format, time_to_format=None):
         if time_to_format is None:
-            time_to_format = FakeLocalTime(self.default_fake_time)()
+            time_to_format = FakeLocalTime(self.time_to_freeze)()
         return real_strftime(format, time_to_format)
 
 
@@ -93,6 +100,7 @@ def date_to_fakedate(date):
 
 class FakeDate(with_metaclass(FakeDateMeta, real_date)):
     dates_to_freeze = []
+    tz_offsets = []
 
     def __new__(cls, *args, **kwargs):
         return real_date.__new__(cls, *args, **kwargs)
@@ -114,12 +122,16 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
 
     @classmethod
     def today(cls):
-        result = cls._date_to_freeze()
+        result = cls._date_to_freeze() + datetime.timedelta(hours=cls._tz_offset())
         return date_to_fakedate(result)
 
     @classmethod
     def _date_to_freeze(cls):
-        return cls.dates_to_freeze[-1]
+        return cls.dates_to_freeze[-1]()
+
+    @classmethod
+    def _tz_offset(cls):
+        return cls.tz_offsets[-1]
 
 FakeDate.min = date_to_fakedate(real_date.min)
 FakeDate.max = date_to_fakedate(real_date.max)
@@ -178,7 +190,7 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     @classmethod
     def _time_to_freeze(cls):
-        return cls.times_to_freeze[-1]
+        return cls.times_to_freeze[-1]()
 
     @classmethod
     def _tz_offset(cls):
@@ -218,9 +230,28 @@ def pickle_fake_datetime(datetime_):
     )
 
 
+class TickingDateTimeFactory(object):
+
+    def __init__(self, time_to_freeze, start):
+        self.time_to_freeze = time_to_freeze
+        self.start = start
+
+    def __call__(self):
+        return self.time_to_freeze + (real_datetime.now() - self.start)
+
+
+class FrozenDateTimeFactory(object):
+
+    def __init__(self, time_to_freeze):
+        self.time_to_freeze = time_to_freeze
+
+    def __call__(self):
+        return self.time_to_freeze
+
+
 class _freeze_time(object):
 
-    def __init__(self, time_to_freeze_str, tz_offset, ignore):
+    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick):
         if isinstance(time_to_freeze_str, datetime.datetime):
             time_to_freeze = time_to_freeze_str
         elif isinstance(time_to_freeze_str, datetime.date):
@@ -232,6 +263,7 @@ class _freeze_time(object):
         self.time_to_freeze = time_to_freeze
         self.tz_offset = tz_offset
         self.ignore = tuple(ignore)
+        self.tick = tick
         self.undo_changes = []
 
     def __call__(self, func):
@@ -291,13 +323,19 @@ class _freeze_time(object):
         self.stop()
 
     def start(self):
+
+        if self.tick:
+            time_to_freeze = TickingDateTimeFactory(self.time_to_freeze, real_datetime.now())
+        else:
+            time_to_freeze = FrozenDateTimeFactory(self.time_to_freeze)
+
         # Change the modules
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
-        fake_time = FakeTime(self.time_to_freeze, time.time)
-        fake_localtime = FakeLocalTime(self.time_to_freeze)
-        fake_gmtime = FakeGMTTime(self.time_to_freeze, time.gmtime)
-        fake_strftime = FakeStrfTime(self.time_to_freeze)
+        fake_time = FakeTime(time_to_freeze, time.time)
+        fake_localtime = FakeLocalTime(time_to_freeze)
+        fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime)
+        fake_strftime = FakeStrfTime(time_to_freeze)
         time.time = fake_time
         time.localtime = fake_localtime
         time.gmtime = fake_gmtime
@@ -360,17 +398,17 @@ class _freeze_time(object):
                     # If it's not possible to compare the value to real_XXX (e.g. hiredis.version)
                     pass
 
-        datetime.datetime.times_to_freeze.append(self.time_to_freeze)
+        datetime.datetime.times_to_freeze.append(time_to_freeze)
         datetime.datetime.tz_offsets.append(self.tz_offset)
 
-        # Since datetime.datetime has already been mocked, just use that for
-        # calculating the date
-        datetime.date.dates_to_freeze.append(datetime.datetime.now().date())
+        datetime.date.dates_to_freeze.append(time_to_freeze)
+        datetime.date.tz_offsets.append(self.tz_offset)
 
     def stop(self):
         datetime.datetime.times_to_freeze.pop()
         datetime.datetime.tz_offsets.pop()
         datetime.date.dates_to_freeze.pop()
+        datetime.date.tz_offsets.pop()
 
         if not datetime.datetime.times_to_freeze:
             datetime.datetime = real_datetime
@@ -398,7 +436,7 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze, tz_offset=0, ignore=None):
+def freeze_time(time_to_freeze, tz_offset=0, ignore=None, tick=False):
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
@@ -408,11 +446,14 @@ def freeze_time(time_to_freeze, tz_offset=0, ignore=None):
     if not isinstance(time_to_freeze, (string_type, datetime.date)):
         raise TypeError(('freeze_time() expected a string, date instance, or '
                          'datetime instance, but got type {0}.').format(type(time_to_freeze)))
+    if tick and not _is_cpython():
+        raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
+
     if ignore is None:
         ignore = []
     ignore.append('six.moves')
     ignore.append('django.utils.six.moves')
-    return _freeze_time(time_to_freeze, tz_offset, ignore)
+    return _freeze_time(time_to_freeze, tz_offset, ignore, tick)
 
 
 # Setup adapters for sqlite
