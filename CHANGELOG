@@ -4,5 +4,9 @@ Freezegun Changelog
 Latest
 ------
 
+0.3.5
+-----
+
+* Add `tick` argument to allow time to move forward
 * Performance improvements
 * Fix timezone example in README
