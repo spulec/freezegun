@@ -11,3 +11,4 @@ Patches and Suggestions
 - `Andreas Pelme <https://github.com/pelme>`_
 - `Jesse London <https://github.com/jesteria>`_
 - `Zach Smith <https://github.com/zmsmith>`_
+- `Adam Johnson <https://github.com/adamchainz>`_
