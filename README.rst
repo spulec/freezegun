@@ -90,6 +90,20 @@ FreezeGun uses dateutil behind the scenes so you can have nice-looking datetimes
     def test_nice_datetime():
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
 
+`tick` argument
+~~~~~~~~~~~
+
+FreezeGun has an additional `tick` argument which will restart time at the given
+value, but then time will keep ticking. This is alternative to the default
+parameters which will keep time stopped.
+
+.. code-block:: python
+
+    @freeze_time("Jan 14th, 2020", tick=True)
+    def test_nice_datetime():
+        assert datetime.datetime.now() > datetime.datetime(2020, 01, 14)
+
+
 Installation
 ------------
 
