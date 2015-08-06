@@ -16,7 +16,7 @@ def is_fake_datetime(obj):
 def cpython_only(func):
     @wraps(func)
     def wrapper(*args):
-        if not _is_cpython():
-            raise skip.SkipTest("tick=True on pypy")
+        if not _is_cpython:
+            raise skip.SkipTest("Requires CPython")
         return func(*args)
     return wrapper

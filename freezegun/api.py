@@ -27,9 +27,10 @@ def with_metaclass(meta, *bases):
     """Create a base class with a metaclass."""
     return meta("NewBase", bases, {})
 
-
-def _is_cpython():
-    return platform.python_implementation() == "CPython"
+_is_cpython = (
+    hasattr(platform, 'python_implementation') and
+    platform.python_implementation().lower == "cpython"
+)
 
 
 class FakeTime(object):
@@ -446,7 +447,7 @@ def freeze_time(time_to_freeze, tz_offset=0, ignore=None, tick=False):
     if not isinstance(time_to_freeze, (string_type, datetime.date)):
         raise TypeError(('freeze_time() expected a string, date instance, or '
                          'datetime instance, but got type {0}.').format(type(time_to_freeze)))
-    if tick and not _is_cpython():
+    if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
 
     if ignore is None:
