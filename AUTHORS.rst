@@ -10,3 +10,4 @@ Patches and Suggestions
 - `Tye Wang <https://github.com/tyewang>`_
 - `Andreas Pelme <https://github.com/pelme>`_
 - `Jesse London <https://github.com/jesteria>`_
+- `Zach Smith <https://github.com/zmsmith>`_
