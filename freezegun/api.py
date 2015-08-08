@@ -200,19 +200,21 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
 FakeDatetime.max = datetime_to_fakedatetime(real_datetime.max)
 
+
 def convert_to_timezone_naive(time_to_freeze):
     """
     Converts a potentially timezone-aware datetime to be a naive UTC datetime
     """
     if time_to_freeze.tzinfo:
         time_to_freeze -= time_to_freeze.utcoffset()
-        time_to_freeze =  time_to_freeze.replace(tzinfo=None)
+        time_to_freeze = time_to_freeze.replace(tzinfo=None)
     return time_to_freeze
 
 
 def pickle_fake_date(datetime_):
     # A pickle function for FakeDate
-    return FakeDate, (datetime_.year,
+    return FakeDate, (
+        datetime_.year,
         datetime_.month,
         datetime_.day,
     )
@@ -220,7 +222,8 @@ def pickle_fake_date(datetime_):
 
 def pickle_fake_datetime(datetime_):
     # A pickle function for FakeDatetime
-    return FakeDatetime, (datetime_.year,
+    return FakeDatetime, (
+        datetime_.year,
         datetime_.month,
         datetime_.day,
         datetime_.hour,
@@ -361,12 +364,11 @@ class _freeze_time(object):
                 continue
             elif mod_name.startswith(self.ignore):
                 continue
-            elif (not hasattr(module, "__name__")
-                or module.__name__ in ('datetime', 'time')):
+            elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                 continue
             for module_attribute in dir(module):
-                if module_attribute in ('real_date', 'real_datetime',
-                    'real_time', 'real_localtime', 'real_gmtime', 'real_strftime'):
+                if module_attribute in ('real_date', 'real_datetime', 'real_time', 'real_localtime', 'real_gmtime',
+                                        'real_strftime'):
                     continue
                 try:
                     attribute_value = getattr(module, module_attribute)

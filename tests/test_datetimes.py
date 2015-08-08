@@ -114,11 +114,13 @@ def test_time_with_microseconds():
     assert time.time() == 1.123456
     freezer.stop()
 
+
 def test_time_with_dst():
     freezer = freeze_time(datetime.datetime(1970, 6, 1, 0, 0, 1, 123456))
     freezer.start()
     assert time.time() == 13046401.123456
     freezer.stop()
+
 
 def test_bad_time_argument():
     try:
@@ -183,16 +185,19 @@ def test_date_object():
     regular_freezer = freeze_time('2012-11-10')
     assert date_freezer.time_to_freeze == regular_freezer.time_to_freeze
 
+
 def test_old_date_object():
     frozen_date = datetime.date(year=1, month=1, day=1)
     with freeze_time(frozen_date):
         assert datetime.date.today() == frozen_date
+
 
 def test_date_with_locale():
     with temp_locale(*_dd_mm_yyyy_locales):
         frozen_date = datetime.date(year=2012, month=1, day=2)
         date_freezer = freeze_time(frozen_date)
         assert date_freezer.time_to_freeze.date() == frozen_date
+
 
 def test_invalid_type():
     try:
@@ -210,17 +215,20 @@ def test_datetime_object():
     regular_freezer = freeze_time('2012-11-10 04:15:30')
     assert datetime_freezer.time_to_freeze == regular_freezer.time_to_freeze
 
+
 def test_old_datetime_object():
     frozen_datetime = datetime.datetime(year=1, month=7, day=12,
                                         hour=15, minute=6, second=3)
     with freeze_time(frozen_datetime):
         assert datetime.datetime.now() == frozen_datetime
 
+
 def test_datetime_with_locale():
     with temp_locale(*_dd_mm_yyyy_locales):
         frozen_datetime = datetime.datetime(year=2012, month=1, day=2)
         date_freezer = freeze_time(frozen_datetime)
         assert date_freezer.time_to_freeze == frozen_datetime
+
 
 @freeze_time("2012-01-14")
 def test_decorator():
@@ -322,7 +330,7 @@ def test_nested_context_manager_with_tz_offsets():
         with freeze_time("2012-12-25 19:00:00", tz_offset=6):
             assert datetime.datetime.now() == datetime.datetime(2012, 12, 26, 1)
             assert datetime.date.today() == datetime.date(2012, 12, 26)
-            #no assertion for time.time() since it's not affected by tz_offset
+            # no assertion for time.time() since it's not affected by tz_offset
         assert datetime.datetime.now() == datetime.datetime(2012, 1, 15, 1)
         assert datetime.date.today() == datetime.date(2012, 1, 15)
     assert datetime.datetime.now() > datetime.datetime(2013, 1, 1)
@@ -450,7 +458,7 @@ def test_freeze_with_timezone_aware_datetime_in_utc():
     utcnow() should always return a timezone naive datetime
     """
     utc_now = datetime.datetime.utcnow()
-    assert utc_now.tzinfo == None
+    assert utc_now.tzinfo is None
 
 
 @freeze_time("1970-01-01T00:00:00-04:00")
@@ -460,5 +468,5 @@ def test_freeze_with_timezone_aware_datetime_in_non_utc():
     at the beginning of the Epoch (wall clock should be 4 hrs late)
     """
     utc_now = datetime.datetime.utcnow()
-    assert utc_now.tzinfo == None
+    assert utc_now.tzinfo is None
     assert utc_now == datetime.datetime(1970, 1, 1, 4)
