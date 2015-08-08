@@ -46,11 +46,13 @@ def test_datetime_timezone_none():
 
 
 class GMT5(tzinfo):
-    def utcoffset(self,dt):
+    def utcoffset(self, dt):
         return timedelta(hours=5)
-    def tzname(self,dt):
+
+    def tzname(self, dt):
         return "GMT +5"
-    def dst(self,dt):
+
+    def dst(self, dt):
         return timedelta(0)
 
 

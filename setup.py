@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from setuptools import setup, find_packages
+from setuptools import setup
 
 requires = ['six']
 

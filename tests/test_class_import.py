@@ -1,6 +1,5 @@
 import time
 from .fake_module import (
-    equal_to_anything,
     fake_date_function,
     fake_datetime_function,
     fake_gmtime_function,
