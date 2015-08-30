@@ -45,8 +45,9 @@ class FakeTime(object):
 
 
 class FakeLocalTime(object):
-    def __init__(self, time_to_freeze):
+    def __init__(self, time_to_freeze, previous_localtime_function=None):
         self.time_to_freeze = time_to_freeze
+        self.previous_localtime_function = previous_localtime_function
 
     def __call__(self, t=None):
         if t is not None:
@@ -67,8 +68,9 @@ class FakeGMTTime(object):
 
 
 class FakeStrfTime(object):
-    def __init__(self, time_to_freeze):
+    def __init__(self, time_to_freeze, previous_strftime_function):
         self.time_to_freeze = time_to_freeze
+        self.previous_strftime_function = previous_strftime_function
 
     def __call__(self, format, time_to_format=None):
         if time_to_format is None:
@@ -337,9 +339,9 @@ class _freeze_time(object):
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
         fake_time = FakeTime(time_to_freeze, time.time)
-        fake_localtime = FakeLocalTime(time_to_freeze)
+        fake_localtime = FakeLocalTime(time_to_freeze, time.localtime)
         fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime)
-        fake_strftime = FakeStrfTime(time_to_freeze)
+        fake_strftime = FakeStrfTime(time_to_freeze, time.strftime)
         time.time = fake_time
         time.localtime = fake_localtime
         time.gmtime = fake_gmtime
@@ -424,6 +426,8 @@ class _freeze_time(object):
 
         time.time = time.time.previous_time_function
         time.gmtime = time.gmtime.previous_gmtime_function
+        time.localtime = time.localtime.previous_localtime_function
+        time.strftime = time.strftime.previous_strftime_function
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):

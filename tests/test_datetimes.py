@@ -171,6 +171,7 @@ def test_time_localtime():
             assert time_struct.tm_wday == 5
             assert time_struct.tm_yday == 14
             assert time_struct.tm_isdst == -1
+    assert time.localtime().tm_year != 2012
 
 
 def test_strftime():
