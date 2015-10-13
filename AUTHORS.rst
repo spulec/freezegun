@@ -12,3 +12,4 @@ Patches and Suggestions
 - `Jesse London <https://github.com/jesteria>`_
 - `Zach Smith <https://github.com/zmsmith>`_
 - `Adam Johnson <https://github.com/adamchainz>`_
+- `Alex Ehlke <https://github.com/aehlke>`_

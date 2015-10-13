@@ -254,6 +254,9 @@ class FrozenDateTimeFactory(object):
     def __call__(self):
         return self.time_to_freeze
 
+    def tick(self, delta=datetime.timedelta(seconds=1)):
+        self.time_to_freeze += delta
+
 
 class _freeze_time(object):
 
@@ -323,13 +326,12 @@ class _freeze_time(object):
             return klass
 
     def __enter__(self):
-        self.start()
+        return self.start()
 
     def __exit__(self, *args):
         self.stop()
 
     def start(self):
-
         if self.tick:
             time_to_freeze = TickingDateTimeFactory(self.time_to_freeze, real_datetime.now())
         else:
@@ -408,6 +410,8 @@ class _freeze_time(object):
 
         datetime.date.dates_to_freeze.append(time_to_freeze)
         datetime.date.tz_offsets.append(self.tz_offset)
+
+        return time_to_freeze
 
     def stop(self):
         datetime.datetime.times_to_freeze.pop()
