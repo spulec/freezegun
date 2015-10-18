@@ -122,6 +122,21 @@ def test_time_with_dst():
     freezer.stop()
 
 
+def test_manual_increment():
+    initial_datetime = datetime.datetime(year=1, month=7, day=12,
+                                        hour=15, minute=6, second=3)
+    with freeze_time(initial_datetime) as frozen_datetime:
+        assert frozen_datetime() == initial_datetime
+
+        frozen_datetime.tick()
+        initial_datetime += datetime.timedelta(seconds=1)
+        assert frozen_datetime() == initial_datetime
+
+        frozen_datetime.tick(delta=datetime.timedelta(seconds=10))
+        initial_datetime += datetime.timedelta(seconds=10)
+        assert frozen_datetime() == initial_datetime
+
+
 def test_bad_time_argument():
     try:
         freeze_time("2012-13-14", tz_offset=-4)
