@@ -483,3 +483,13 @@ else:
 
     sqlite3.register_adapter(FakeDate, adapt_date)
     sqlite3.register_adapter(FakeDatetime, adapt_datetime)
+
+
+# Setup converters for pymysql
+try:
+    import pymysql.converters
+except ImportError:
+    pass
+else:
+    pymysql.converters.encoders[FakeDate] = pymysql.converters.encoders[real_date]
+    pymysql.converters.encoders[FakeDatetime] = pymysql.converters.encoders[real_datetime]
