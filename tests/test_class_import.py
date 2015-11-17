@@ -86,3 +86,33 @@ def test_fake_gmtime_function():
 @freeze_time("2012-01-14")
 def test_fake_strftime_function():
     assert fake_strftime_function() == '2012'
+
+
+def test_datetime_types_equality():
+    freezer = freeze_time("2012-01-14")
+    orig_datetime = datetime.datetime
+
+    freezer.start()
+    result = fake_datetime_function()
+    assert type(result) == orig_datetime
+    assert type(result) is not orig_datetime
+
+    freezer.stop()
+    result = fake_datetime_function()
+    assert type(result) == orig_datetime
+    assert type(result) is orig_datetime
+
+
+def test_date_types_equality():
+    freezer = freeze_time("2012-01-14")
+    orig_date = datetime.date
+
+    freezer.start()
+    result = fake_date_function()
+    assert type(result) == orig_date
+    assert type(result) is not orig_date
+
+    freezer.stop()
+    result = fake_date_function()
+    assert type(result) == orig_date
+    assert type(result) is orig_date

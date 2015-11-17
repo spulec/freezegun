@@ -80,8 +80,14 @@ class FakeStrfTime(object):
 
 class FakeDateMeta(type):
     @classmethod
-    def __instancecheck__(self, obj):
+    def __instancecheck__(cls, obj):
         return isinstance(obj, real_date)
+
+    @classmethod
+    def __eq__(cls, obj):
+        return obj == real_date
+
+    __hash__ = type.__hash__
 
 
 def datetime_to_fakedatetime(datetime):
@@ -142,8 +148,14 @@ FakeDate.max = date_to_fakedate(real_date.max)
 
 class FakeDatetimeMeta(FakeDateMeta):
     @classmethod
-    def __instancecheck__(self, obj):
+    def __instancecheck__(cls, obj):
         return isinstance(obj, real_datetime)
+
+    @classmethod
+    def __eq__(cls, obj):
+        return obj == real_datetime
+
+    __hash__ = FakeDateMeta.__hash__
 
 
 class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
