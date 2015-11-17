@@ -87,6 +87,8 @@ class FakeDateMeta(type):
     def __eq__(cls, obj):
         return obj == real_date
 
+    __hash__ = type.__hash__
+
 
 def datetime_to_fakedatetime(datetime):
     return FakeDatetime(datetime.year,
@@ -152,6 +154,8 @@ class FakeDatetimeMeta(FakeDateMeta):
     @classmethod
     def __eq__(cls, obj):
         return obj == real_datetime
+
+    __hash__ = FakeDateMeta.__hash__
 
 
 class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
