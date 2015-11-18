@@ -274,6 +274,7 @@ class _freeze_time(object):
         self.ignore = tuple(ignore)
         self.tick = tick
         self.undo_changes = []
+        self.modules_at_start = set()
 
     def __call__(self, func):
         if inspect.isclass(func):
@@ -365,6 +366,9 @@ class _freeze_time(object):
         fakes = dict((id(real), fake) for real_name, real, fake in to_patch)
         add_change = self.undo_changes.append
 
+        # Save the current loaded modules
+        self.modules_at_start = set(sys.modules.keys())
+
         for mod_name, module in list(sys.modules.items()):
             if mod_name is None or module is None:
                 continue
@@ -407,6 +411,46 @@ class _freeze_time(object):
             for module, module_attribute, original_value in self.undo_changes:
                 setattr(module, module_attribute, original_value)
             self.undo_changes = []
+
+            # Restore modules loaded after start()
+            modules_to_restore = set(sys.modules.keys()) - self.modules_at_start
+            self.modules_at_start = set()
+            for mod_name in modules_to_restore:
+                module = sys.modules.get(mod_name, None)
+                if mod_name is None or module is None:
+                    continue
+                elif mod_name.startswith(self.ignore):
+                    continue
+                elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                    continue
+                for module_attribute in dir(module):
+                    if module_attribute in ('FakeTime', 'FakeLocalTime', 'FakeGMTTime', 'FakeStrfTime',
+                                            'FakeDate', 'FakeDatetime'):
+                        continue
+                    try:
+                        attribute_value = getattr(module, module_attribute)
+                    except (ImportError, AttributeError):
+                        # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+                        continue
+                    try:
+                        try:
+                            if attribute_value is FakeDatetime:
+                                setattr(module, module_attribute, real_datetime)
+                            elif attribute_value is FakeDate:
+                                setattr(module, module_attribute, real_date)
+                            elif isinstance(attribute_value, FakeTime):
+                                setattr(module, module_attribute, real_time)
+                            elif isinstance(attribute_value, FakeLocalTime):
+                                setattr(module, module_attribute, real_localtime)
+                            elif isinstance(attribute_value, FakeGMTTime):
+                                setattr(module, module_attribute, real_gmtime)
+                            elif isinstance(attribute_value, FakeStrfTime):
+                                setattr(module, module_attribute, real_strftime)
+                        except:
+                            pass
+                    except:
+                        # If it's not possible to compare the value to real_XXX (e.g. hiredis.version)
+                        pass
 
         time.time = time.time.previous_time_function
         time.gmtime = time.gmtime.previous_gmtime_function

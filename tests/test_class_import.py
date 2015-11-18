@@ -9,7 +9,14 @@ from .fake_module import (
 )
 from . import fake_module
 from freezegun import freeze_time
-from freezegun.api import FakeDatetime
+from freezegun.api import (
+    FakeDatetime,
+    FakeDate,
+    FakeTime,
+    FakeLocalTime,
+    FakeGMTTime,
+    FakeStrfTime,
+)
 import datetime
 
 
@@ -86,3 +93,33 @@ def test_fake_gmtime_function():
 @freeze_time("2012-01-14")
 def test_fake_strftime_function():
     assert fake_strftime_function() == '2012'
+
+
+def test_import_after_start():
+    with freeze_time('2012-01-14'):
+        from tests import another_module
+        assert another_module.get_datetime() is datetime.datetime
+        assert another_module.get_datetime() is FakeDatetime
+        assert another_module.get_date() is datetime.date
+        assert another_module.get_date() is FakeDate
+        assert another_module.get_time() is time.time
+        assert isinstance(another_module.get_time(), FakeTime)
+        assert another_module.get_localtime() is time.localtime
+        assert isinstance(another_module.get_localtime(), FakeLocalTime)
+        assert another_module.get_gmtime() is time.gmtime
+        assert isinstance(another_module.get_gmtime(), FakeGMTTime)
+        assert another_module.get_strftime() is time.strftime
+        assert isinstance(another_module.get_strftime(), FakeStrfTime)
+
+    assert another_module.get_datetime() is datetime.datetime
+    assert not another_module.get_datetime() is FakeDatetime
+    assert another_module.get_date() is datetime.date
+    assert not another_module.get_date() is FakeDate
+    assert another_module.get_time() is time.time
+    assert not isinstance(another_module.get_time(), FakeTime)
+    assert another_module.get_localtime() is time.localtime
+    assert not isinstance(another_module.get_localtime(), FakeLocalTime)
+    assert another_module.get_gmtime() is time.gmtime
+    assert not isinstance(another_module.get_gmtime(), FakeGMTTime)
+    assert another_module.get_strftime() is time.strftime
+    assert not isinstance(another_module.get_strftime(), FakeStrfTime)
