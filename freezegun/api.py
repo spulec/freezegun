@@ -92,12 +92,9 @@ FakeDate.max = date_to_fakedate(real_date.max)
 
 class FakeDatetimeMeta(FakeDateMeta):
     @classmethod
-    def __instancecheck__(mcs, obj):
+    def __instancecheck__(self, obj):
         return isinstance(obj, real_datetime)
 
-    @classmethod
-    def __eq__(mcs, other):
-        return (other is real_datetime) or (other is FakeDatetime)
 
 
 class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate, FakeTimeBase)):
