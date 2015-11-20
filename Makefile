@@ -6,10 +6,13 @@ init:
 
 test:
 	rm -f .coverage
-	nosetests ./tests/
+	nosetests $(NOSE_ARGS) ./tests/
 
 travis:
 	nosetests --with-coverage ./tests/
 
 tdaemon:
 	tdaemon -t nose ./tests/ --custom-args="--with-growl"
+
+publish:
+	python setup.py sdist bdist_wheel upload

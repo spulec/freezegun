@@ -12,7 +12,7 @@ FreezeGun is a library that allows your python tests to travel through time by m
 Usage
 -----
 
-Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), datetime.date.today(), and time.time() will return the time that has been frozen.
+Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), datetime.date.today(), time.time(), time.localtime(), time.gmtime(), and time.strftime() will return the time that has been frozen.
 
 Decorator
 ~~~~~~~~~
@@ -25,7 +25,14 @@ Decorator
     def test():
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
 
-    # Or class based
+    # Or a unittest TestCase - freezes for every test, from the start of setUpClass to the end of tearDownClass
+
+    @freeze_time("1955-11-12")
+    class MyTests(unittest.TestCase):
+        def test_the_class(self):
+            assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+
+    # Or any other class - freezes around each callable (may not work in every case)
 
     @freeze_time("2012-01-14")
     class Tester(object):
@@ -70,7 +77,7 @@ Timezones
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 13, 23, 21, 34)
 
         # datetime.date.today() uses local time
-        assert datetime.date.today() == datetime.datetime(2012, 01, 13)
+        assert datetime.date.today() == datetime.date(2012, 01, 13)
 
 Nice inputs
 ~~~~~~~~~~~
@@ -82,6 +89,20 @@ FreezeGun uses dateutil behind the scenes so you can have nice-looking datetimes
     @freeze_time("Jan 14th, 2012")
     def test_nice_datetime():
         assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+
+`tick` argument
+~~~~~~~~~~~
+
+FreezeGun has an additional `tick` argument which will restart time at the given
+value, but then time will keep ticking. This is alternative to the default
+parameters which will keep time stopped.
+
+.. code-block:: python
+
+    @freeze_time("Jan 14th, 2020", tick=True)
+    def test_nice_datetime():
+        assert datetime.datetime.now() > datetime.datetime(2020, 01, 14)
+
 
 Installation
 ------------

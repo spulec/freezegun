@@ -1,15 +1,25 @@
-import time
 import datetime
 import functools
-import sys
 import inspect
+import sys
+import time
+import calendar
 import unittest
+import platform
 
 from dateutil import parser
 
 real_time = time.time
+real_localtime = time.localtime
+real_gmtime = time.gmtime
+real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
+
+try:
+    import copy_reg as copyreg
+except ImportError:
+    import copyreg
 
 
 # Stolen from six
@@ -17,15 +27,55 @@ def with_metaclass(meta, *bases):
     """Create a base class with a metaclass."""
     return meta("NewBase", bases, {})
 
+_is_cpython = (
+    hasattr(platform, 'python_implementation') and
+    platform.python_implementation().lower == "cpython"
+)
+
 
 class FakeTime(object):
 
-    def __init__(self, time_to_freeze):
+    def __init__(self, time_to_freeze, previous_time_function):
         self.time_to_freeze = time_to_freeze
+        self.previous_time_function = previous_time_function
 
     def __call__(self):
-        shifted_time = self.time_to_freeze - datetime.timedelta(seconds=time.timezone)
-        return time.mktime(shifted_time.timetuple()) + shifted_time.microsecond / 1000000.0
+        current_time = self.time_to_freeze()
+        return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
+
+
+class FakeLocalTime(object):
+    def __init__(self, time_to_freeze, previous_localtime_function=None):
+        self.time_to_freeze = time_to_freeze
+        self.previous_localtime_function = previous_localtime_function
+
+    def __call__(self, t=None):
+        if t is not None:
+            return real_localtime(t)
+        shifted_time = self.time_to_freeze() - datetime.timedelta(seconds=time.timezone)
+        return shifted_time.timetuple()
+
+
+class FakeGMTTime(object):
+    def __init__(self, time_to_freeze, previous_gmtime_function):
+        self.time_to_freeze = time_to_freeze
+        self.previous_gmtime_function = previous_gmtime_function
+
+    def __call__(self, t=None):
+        if t is not None:
+            return real_gmtime(t)
+        return self.time_to_freeze().timetuple()
+
+
+class FakeStrfTime(object):
+    def __init__(self, time_to_freeze, previous_strftime_function):
+        self.time_to_freeze = time_to_freeze
+        self.previous_strftime_function = previous_strftime_function
+
+    def __call__(self, format, time_to_format=None):
+        if time_to_format is None:
+            time_to_format = FakeLocalTime(self.time_to_freeze)()
+        return real_strftime(format, time_to_format)
 
 
 class FakeDateMeta(type):
@@ -52,7 +102,8 @@ def date_to_fakedate(date):
 
 
 class FakeDate(with_metaclass(FakeDateMeta, real_date)):
-    date_to_freeze = None
+    dates_to_freeze = []
+    tz_offsets = []
 
     def __new__(cls, *args, **kwargs):
         return real_date.__new__(cls, *args, **kwargs)
@@ -74,8 +125,16 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
 
     @classmethod
     def today(cls):
-        result = cls.date_to_freeze
+        result = cls._date_to_freeze() + datetime.timedelta(hours=cls._tz_offset())
         return date_to_fakedate(result)
+
+    @classmethod
+    def _date_to_freeze(cls):
+        return cls.dates_to_freeze[-1]()
+
+    @classmethod
+    def _tz_offset(cls):
+        return cls.tz_offsets[-1]
 
 FakeDate.min = date_to_fakedate(real_date.min)
 FakeDate.max = date_to_fakedate(real_date.max)
@@ -88,8 +147,8 @@ class FakeDatetimeMeta(FakeDateMeta):
 
 
 class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
-    time_to_freeze = None
-    tz_offset = None
+    times_to_freeze = []
+    tz_offsets = []
 
     def __new__(cls, *args, **kwargs):
         return real_datetime.__new__(cls, *args, **kwargs)
@@ -109,13 +168,19 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
         else:
             return result
 
+    def astimezone(self, tz):
+        return datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
+
     @classmethod
     def now(cls, tz=None):
         if tz:
-            result = tz.fromutc(cls.time_to_freeze.replace(tzinfo=tz)) + datetime.timedelta(hours=cls.tz_offset)
+            result = tz.fromutc(cls._time_to_freeze().replace(tzinfo=tz)) + datetime.timedelta(hours=cls._tz_offset())
         else:
-            result = cls.time_to_freeze + datetime.timedelta(hours=cls.tz_offset)
+            result = cls._time_to_freeze() + datetime.timedelta(hours=cls._tz_offset())
         return datetime_to_fakedatetime(result)
+
+    def date(self):
+        return date_to_fakedate(self)
 
     @classmethod
     def today(cls):
@@ -123,95 +188,250 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     @classmethod
     def utcnow(cls):
-        result = cls.time_to_freeze
+        result = cls._time_to_freeze()
         return datetime_to_fakedatetime(result)
+
+    @classmethod
+    def _time_to_freeze(cls):
+        return cls.times_to_freeze[-1]()
+
+    @classmethod
+    def _tz_offset(cls):
+        return cls.tz_offsets[-1]
 
 FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
 FakeDatetime.max = datetime_to_fakedatetime(real_datetime.max)
 
 
-class FreezeMixin(object):
+def convert_to_timezone_naive(time_to_freeze):
     """
-    With unittest.TestCase subclasses, we must return the class from our
-    freeze_time decorator, else test discovery tools may not discover the
-    test. Instead, we inject this mixin, which starts and stops the freezer
-    before and after each test.
+    Converts a potentially timezone-aware datetime to be a naive UTC datetime
     """
-    def setUp(self):
-        self._freezer.start()
-        super(FreezeMixin, self).setUp()
+    if time_to_freeze.tzinfo:
+        time_to_freeze -= time_to_freeze.utcoffset()
+        time_to_freeze = time_to_freeze.replace(tzinfo=None)
+    return time_to_freeze
 
-    def tearDown(self):
-        super(FreezeMixin, self).tearDown()
-        self._freezer.stop()
+
+def pickle_fake_date(datetime_):
+    # A pickle function for FakeDate
+    return FakeDate, (
+        datetime_.year,
+        datetime_.month,
+        datetime_.day,
+    )
+
+
+def pickle_fake_datetime(datetime_):
+    # A pickle function for FakeDatetime
+    return FakeDatetime, (
+        datetime_.year,
+        datetime_.month,
+        datetime_.day,
+        datetime_.hour,
+        datetime_.minute,
+        datetime_.second,
+        datetime_.microsecond,
+        datetime_.tzinfo,
+    )
+
+
+class TickingDateTimeFactory(object):
+
+    def __init__(self, time_to_freeze, start):
+        self.time_to_freeze = time_to_freeze
+        self.start = start
+
+    def __call__(self):
+        return self.time_to_freeze + (real_datetime.now() - self.start)
+
+
+class FrozenDateTimeFactory(object):
+
+    def __init__(self, time_to_freeze):
+        self.time_to_freeze = time_to_freeze
+
+    def __call__(self):
+        return self.time_to_freeze
+
+    def tick(self, delta=datetime.timedelta(seconds=1)):
+        self.time_to_freeze += delta
+
 
 class _freeze_time(object):
 
-    def __init__(self, time_to_freeze_str, tz_offset):
-        time_to_freeze = parser.parse(time_to_freeze_str)
+    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick):
+        if isinstance(time_to_freeze_str, datetime.datetime):
+            time_to_freeze = time_to_freeze_str
+        elif isinstance(time_to_freeze_str, datetime.date):
+            time_to_freeze = datetime.datetime.combine(time_to_freeze_str, datetime.time())
+        else:
+            time_to_freeze = parser.parse(time_to_freeze_str)
+        time_to_freeze = convert_to_timezone_naive(time_to_freeze)
 
         self.time_to_freeze = time_to_freeze
         self.tz_offset = tz_offset
+        self.ignore = tuple(ignore)
+        self.tick = tick
+        self.undo_changes = []
 
     def __call__(self, func):
-        if inspect.isclass(func) and issubclass(func, unittest.TestCase):
-            # Inject a mixin that does what we want, as otherwise we
-            # would not be found by the test discovery tool.
-            func.__bases__ = (FreezeMixin,) + func.__bases__
-            # And, we need a reference to this object...
-            func._freezer = self
-            return func
+        if inspect.isclass(func):
+            return self.decorate_class(func)
         return self.decorate_callable(func)
 
+    def decorate_class(self, klass):
+        if issubclass(klass, unittest.TestCase):
+            # If it's a TestCase, we assume you want to freeze the time for the
+            # tests, from setUpClass to tearDownClass
+
+            # Use getattr as in Python 2.6 they are optional
+            orig_setUpClass = getattr(klass, 'setUpClass', None)
+            orig_tearDownClass = getattr(klass, 'tearDownClass', None)
+
+            @classmethod
+            def setUpClass(cls):
+                self.start()
+                if orig_setUpClass is not None:
+                    orig_setUpClass()
+
+            @classmethod
+            def tearDownClass(cls):
+                if orig_tearDownClass is not None:
+                    orig_tearDownClass()
+                self.stop()
+
+            klass.setUpClass = setUpClass
+            klass.tearDownClass = tearDownClass
+
+            return klass
+
+        else:
+
+            seen = set()
+            for base_klass in klass.mro():
+                for (attr, attr_value) in base_klass.__dict__.items():
+                    if attr.startswith('_') or attr in seen:
+                        continue
+                    seen.add(attr)
+
+                    if not callable(attr_value) or inspect.isclass(attr_value):
+                        continue
+
+                    try:
+                        setattr(klass, attr, self(attr_value))
+                    except (AttributeError, TypeError):
+                        # Sometimes we can't set this for built-in types and custom callables
+                        continue
+            return klass
+
     def __enter__(self):
-        self.start()
+        return self.start()
 
     def __exit__(self, *args):
         self.stop()
 
     def start(self):
+        if self.tick:
+            time_to_freeze = TickingDateTimeFactory(self.time_to_freeze, real_datetime.now())
+        else:
+            time_to_freeze = FrozenDateTimeFactory(self.time_to_freeze)
+
+        # Change the modules
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
-        fake_time = FakeTime(self.time_to_freeze)
+        fake_time = FakeTime(time_to_freeze, time.time)
+        fake_localtime = FakeLocalTime(time_to_freeze, time.localtime)
+        fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime)
+        fake_strftime = FakeStrfTime(time_to_freeze, time.strftime)
         time.time = fake_time
+        time.localtime = fake_localtime
+        time.gmtime = fake_gmtime
+        time.strftime = fake_strftime
+
+        copyreg.dispatch_table[real_datetime] = pickle_fake_datetime
+        copyreg.dispatch_table[real_date] = pickle_fake_date
+
+        # Change any place where the module had already been imported
+        real_things = (
+            real_time,
+            real_localtime,
+            real_gmtime,
+            real_strftime,
+            real_date,
+            real_datetime
+        )
+        add_change = self.undo_changes.append
 
         for mod_name, module in list(sys.modules.items()):
-            if module is None:
+            if mod_name is None or module is None:
                 continue
-            if mod_name.startswith(('six.moves.', 'django.utils.six.moves.')):
+            elif mod_name.startswith(self.ignore):
                 continue
-            if hasattr(module, "__name__") and module.__name__ != 'datetime':
-                if hasattr(module, 'datetime') and module.datetime == real_datetime:
-                    module.datetime = FakeDatetime
-                if hasattr(module, 'date') and module.date == real_date:
-                    module.date = FakeDate
-            if hasattr(module, "__name__") and module.__name__ != 'time':
-                if hasattr(module, 'time') and module.time == real_time:
-                    module.time = fake_time
+            elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                continue
+            for module_attribute in dir(module):
+                if module_attribute in ('real_date', 'real_datetime', 'real_time', 'real_localtime', 'real_gmtime',
+                                        'real_strftime'):
+                    continue
+                try:
+                    attribute_value = getattr(module, module_attribute)
+                except (ImportError, AttributeError):
+                    # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+                    continue
+                try:
+                    if attribute_value not in real_things:
+                        continue
 
-        datetime.datetime.time_to_freeze = self.time_to_freeze
-        datetime.datetime.tz_offset = self.tz_offset
+                    if attribute_value is real_datetime:
+                        setattr(module, module_attribute, FakeDatetime)
+                        add_change((module, module_attribute, real_datetime))
+                    elif attribute_value is real_date:
+                        setattr(module, module_attribute, FakeDate)
+                        add_change((module, module_attribute, real_date))
+                    elif attribute_value is real_time:
+                        setattr(module, module_attribute, fake_time)
+                        add_change((module, module_attribute, real_time))
+                    elif attribute_value is real_localtime:
+                        setattr(module, module_attribute, fake_localtime)
+                        add_change((module, module_attribute, real_localtime))
+                    elif attribute_value is real_gmtime:
+                        setattr(module, module_attribute, fake_gmtime)
+                        add_change((module, module_attribute, real_gmtime))
+                    elif attribute_value is real_strftime:
+                        setattr(module, module_attribute, fake_strftime)
+                        add_change((module, module_attribute, real_strftime))
+                except:
+                    # If it's not possible to compare the value to real_XXX (e.g. hiredis.version)
+                    pass
 
-        # Since datetime.datetime has already been mocked, just use that for
-        # calculating the date
-        datetime.date.date_to_freeze = datetime.datetime.now().date()
+        datetime.datetime.times_to_freeze.append(time_to_freeze)
+        datetime.datetime.tz_offsets.append(self.tz_offset)
+
+        datetime.date.dates_to_freeze.append(time_to_freeze)
+        datetime.date.tz_offsets.append(self.tz_offset)
+
+        return time_to_freeze
 
     def stop(self):
-        datetime.datetime = real_datetime
-        datetime.date = real_date
-        time.time = real_time
+        datetime.datetime.times_to_freeze.pop()
+        datetime.datetime.tz_offsets.pop()
+        datetime.date.dates_to_freeze.pop()
+        datetime.date.tz_offsets.pop()
 
-        for mod_name, module in list(sys.modules.items()):
-            if mod_name.startswith(('six.moves.', 'django.utils.six.moves.')):
-                continue
-            if mod_name != 'datetime':
-                if hasattr(module, 'datetime') and module.datetime == FakeDatetime:
-                    module.datetime = real_datetime
-                if hasattr(module, 'date') and module.date == FakeDate:
-                    module.date = real_date
-            if mod_name != 'time':
-                if hasattr(module, 'time') and isinstance(module.time, FakeTime):
-                    module.time = real_time
+        if not datetime.datetime.times_to_freeze:
+            datetime.datetime = real_datetime
+            datetime.date = real_date
+            copyreg.dispatch_table.pop(real_datetime)
+            copyreg.dispatch_table.pop(real_date)
+            for module, module_attribute, original_value in self.undo_changes:
+                setattr(module, module_attribute, original_value)
+            self.undo_changes = []
+
+        time.time = time.time.previous_time_function
+        time.gmtime = time.gmtime.previous_gmtime_function
+        time.localtime = time.localtime.previous_localtime_function
+        time.strftime = time.strftime.previous_strftime_function
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
@@ -219,26 +439,32 @@ class _freeze_time(object):
                 result = func(*args, **kwargs)
             return result
         functools.update_wrapper(wrapper, func)
+
+        # update_wrapper already sets __wrapped__ in Python 3.2+, this is only
+        # needed for Python 2.x support
+        wrapper.__wrapped__ = func
+
         return wrapper
 
 
-def freeze_time(time_to_freeze, tz_offset=0):
-    if isinstance(time_to_freeze, datetime.datetime):
-        time_to_freeze = time_to_freeze.isoformat()
-    elif isinstance(time_to_freeze, datetime.date):
-        time_to_freeze = time_to_freeze.isoformat()
-
+def freeze_time(time_to_freeze, tz_offset=0, ignore=None, tick=False):
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
     except NameError:
         string_type = str
 
-    if not isinstance(time_to_freeze, string_type):
+    if not isinstance(time_to_freeze, (string_type, datetime.date)):
         raise TypeError(('freeze_time() expected a string, date instance, or '
                          'datetime instance, but got type {0}.').format(type(time_to_freeze)))
+    if tick and not _is_cpython:
+        raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
 
-    return _freeze_time(time_to_freeze, tz_offset)
+    if ignore is None:
+        ignore = []
+    ignore.append('six.moves')
+    ignore.append('django.utils.six.moves')
+    return _freeze_time(time_to_freeze, tz_offset, ignore, tick)
 
 
 # Setup adapters for sqlite
@@ -252,9 +478,18 @@ else:
     def adapt_date(val):
         return val.isoformat()
 
-
     def adapt_datetime(val):
         return val.isoformat(" ")
 
     sqlite3.register_adapter(FakeDate, adapt_date)
     sqlite3.register_adapter(FakeDatetime, adapt_datetime)
+
+
+# Setup converters for pymysql
+try:
+    import pymysql.converters
+except ImportError:
+    pass
+else:
+    pymysql.converters.encoders[FakeDate] = pymysql.converters.encoders[real_date]
+    pymysql.converters.encoders[FakeDatetime] = pymysql.converters.encoders[real_datetime]

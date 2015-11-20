@@ -1,13 +1,14 @@
-import pickle
 import time
 import datetime
 import unittest
 import locale
+import sys
 
 from nose.plugins import skip
+from tests import utils
 
 from freezegun import freeze_time
-from freezegun.api import FakeDatetime, FakeDate, real_datetime, real_date
+from freezegun.api import FakeDatetime, FakeDate
 
 
 class temp_locale(object):
@@ -83,7 +84,7 @@ def test_tz_offset_with_today():
     assert datetime.date.today() != datetime.date(2012, 1, 13)
 
 
-def test_tz_offset_with_time():
+def test_zero_tz_offset_with_time():
     # we expect the system to behave like a system with UTC timezone
     # at the beginning of the Epoch
     freezer = freeze_time('1970-01-01')
@@ -113,6 +114,29 @@ def test_time_with_microseconds():
     assert time.time() == 1.123456
     freezer.stop()
 
+
+def test_time_with_dst():
+    freezer = freeze_time(datetime.datetime(1970, 6, 1, 0, 0, 1, 123456))
+    freezer.start()
+    assert time.time() == 13046401.123456
+    freezer.stop()
+
+
+def test_manual_increment():
+    initial_datetime = datetime.datetime(year=1, month=7, day=12,
+                                        hour=15, minute=6, second=3)
+    with freeze_time(initial_datetime) as frozen_datetime:
+        assert frozen_datetime() == initial_datetime
+
+        frozen_datetime.tick()
+        initial_datetime += datetime.timedelta(seconds=1)
+        assert frozen_datetime() == initial_datetime
+
+        frozen_datetime.tick(delta=datetime.timedelta(seconds=10))
+        initial_datetime += datetime.timedelta(seconds=10)
+        assert frozen_datetime() == initial_datetime
+
+
 def test_bad_time_argument():
     try:
         freeze_time("2012-13-14", tz_offset=-4)
@@ -122,17 +146,74 @@ def test_bad_time_argument():
         assert False, "Bad values should raise a ValueError"
 
 
+def test_time_gmtime():
+    with freeze_time('2012-01-14 03:21:34'):
+        time_struct = time.gmtime()
+        assert time_struct.tm_year == 2012
+        assert time_struct.tm_mon == 1
+        assert time_struct.tm_mday == 14
+        assert time_struct.tm_hour == 3
+        assert time_struct.tm_min == 21
+        assert time_struct.tm_sec == 34
+        assert time_struct.tm_wday == 5
+        assert time_struct.tm_yday == 14
+        assert time_struct.tm_isdst == -1
+
+
+class modify_timezone(object):
+
+    def __init__(self, new_timezone):
+        self.new_timezone = new_timezone
+        self.original_timezone = time.timezone
+
+    def __enter__(self):
+        time.timezone = self.new_timezone
+
+    def __exit__(self, *args):
+        time.timezone = self.original_timezone
+
+
+def test_time_localtime():
+    with modify_timezone(-3600):  # Set this for UTC-1
+        with freeze_time('2012-01-14 03:21:34'):
+            time_struct = time.localtime()
+            assert time_struct.tm_year == 2012
+            assert time_struct.tm_mon == 1
+            assert time_struct.tm_mday == 14
+            assert time_struct.tm_hour == 4  # offset of 1 hour due to time zone
+            assert time_struct.tm_min == 21
+            assert time_struct.tm_sec == 34
+            assert time_struct.tm_wday == 5
+            assert time_struct.tm_yday == 14
+            assert time_struct.tm_isdst == -1
+    assert time.localtime().tm_year != 2012
+
+
+def test_strftime():
+    with modify_timezone(0):
+        with freeze_time('1970-01-01'):
+            assert time.strftime("%Y") == "1970"
+
+
 def test_date_object():
     frozen_date = datetime.date(year=2012, month=11, day=10)
     date_freezer = freeze_time(frozen_date)
     regular_freezer = freeze_time('2012-11-10')
     assert date_freezer.time_to_freeze == regular_freezer.time_to_freeze
 
+
+def test_old_date_object():
+    frozen_date = datetime.date(year=1, month=1, day=1)
+    with freeze_time(frozen_date):
+        assert datetime.date.today() == frozen_date
+
+
 def test_date_with_locale():
     with temp_locale(*_dd_mm_yyyy_locales):
         frozen_date = datetime.date(year=2012, month=1, day=2)
         date_freezer = freeze_time(frozen_date)
         assert date_freezer.time_to_freeze.date() == frozen_date
+
 
 def test_invalid_type():
     try:
@@ -150,29 +231,92 @@ def test_datetime_object():
     regular_freezer = freeze_time('2012-11-10 04:15:30')
     assert datetime_freezer.time_to_freeze == regular_freezer.time_to_freeze
 
+
+def test_old_datetime_object():
+    frozen_datetime = datetime.datetime(year=1, month=7, day=12,
+                                        hour=15, minute=6, second=3)
+    with freeze_time(frozen_datetime):
+        assert datetime.datetime.now() == frozen_datetime
+
+
 def test_datetime_with_locale():
     with temp_locale(*_dd_mm_yyyy_locales):
         frozen_datetime = datetime.datetime(year=2012, month=1, day=2)
         date_freezer = freeze_time(frozen_datetime)
         assert date_freezer.time_to_freeze == frozen_datetime
 
+
 @freeze_time("2012-01-14")
 def test_decorator():
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
 
+def test_decorator_wrapped_attribute():
+    def to_decorate():
+        pass
+
+    wrapped = freeze_time("2014-01-14")(to_decorate)
+
+    assert wrapped.__wrapped__ is to_decorate
+
+
+class Callable(object):
+
+    def __call__(self, *args, **kws):
+        return (args, kws)
+
+
 @freeze_time("2012-01-14")
 class Tester(object):
+
     def test_the_class(self):
         assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
     def test_still_the_same(self):
         assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
+    def test_class_name_preserved_by_decorator(self):
+        assert self.__class__.__name__ == "Tester"
+
+    class NotATestClass(object):
+
+        def perform_operation(self):
+            return datetime.date.today()
+
+    @freeze_time('2001-01-01')
+    def test_class_decorator_ignores_nested_class(self):
+        not_a_test = self.NotATestClass()
+        assert not_a_test.perform_operation() == datetime.date(2001, 1, 1)
+
+    a_mock = Callable()
+
+    def test_class_decorator_skips_callable_object_py2(self):
+        if sys.version_info[0] != 2:
+            raise skip.SkipTest("test target is Python2")
+        assert self.a_mock.__class__ == Callable
+
+    def test_class_decorator_wraps_callable_object_py3(self):
+        if sys.version_info[0] != 3:
+            raise skip.SkipTest("test target is Python3")
+        assert self.a_mock.__wrapped__.__class__ == Callable
+
+    @staticmethod
+    def helper():
+        return datetime.date.today()
+
+    def test_class_decorator_respects_staticmethod(self):
+        assert self.helper() == datetime.date(2012, 1, 14)
+
 
 @freeze_time("Jan 14th, 2012")
 def test_nice_datetime():
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
+
+
+@freeze_time("2012-01-14")
+def test_datetime_date_method():
+    now = datetime.datetime.now()
+    assert now.date() == FakeDate(2012, 1, 14)
 
 
 def test_context_manager():
@@ -181,87 +325,164 @@ def test_context_manager():
     assert datetime.datetime.now() != datetime.datetime(2012, 1, 14)
 
 
+def test_nested_context_manager():
+    with freeze_time("2012-01-14"):
+        with freeze_time("2012-12-25"):
+            _assert_datetime_date_and_time_are_all_equal(datetime.datetime(2012, 12, 25))
+        _assert_datetime_date_and_time_are_all_equal(datetime.datetime(2012, 1, 14))
+    assert datetime.datetime.now() > datetime.datetime(2013, 1, 1)
+
+
+def _assert_datetime_date_and_time_are_all_equal(expected_datetime):
+    assert datetime.datetime.now() == expected_datetime
+    assert datetime.date.today() == expected_datetime.date()
+    datetime_from_time = datetime.datetime.fromtimestamp(time.time())
+    timezone_adjusted_datetime = datetime_from_time + datetime.timedelta(seconds=time.timezone)
+    assert timezone_adjusted_datetime == expected_datetime
+
+
+def test_nested_context_manager_with_tz_offsets():
+    with freeze_time("2012-01-14 23:00:00", tz_offset=2):
+        with freeze_time("2012-12-25 19:00:00", tz_offset=6):
+            assert datetime.datetime.now() == datetime.datetime(2012, 12, 26, 1)
+            assert datetime.date.today() == datetime.date(2012, 12, 26)
+            # no assertion for time.time() since it's not affected by tz_offset
+        assert datetime.datetime.now() == datetime.datetime(2012, 1, 15, 1)
+        assert datetime.date.today() == datetime.date(2012, 1, 15)
+    assert datetime.datetime.now() > datetime.datetime(2013, 1, 1)
+
+
 @freeze_time("Jan 14th, 2012")
 def test_isinstance_with_active():
     now = datetime.datetime.now()
-    assert isinstance(now, datetime.datetime)
+    assert utils.is_fake_datetime(now)
+    assert utils.is_fake_date(now.date())
 
     today = datetime.date.today()
-    assert isinstance(today, datetime.date)
+    assert utils.is_fake_date(today)
 
 
 def test_isinstance_without_active():
     now = datetime.datetime.now()
     assert isinstance(now, datetime.datetime)
     assert isinstance(now, datetime.date)
+    assert isinstance(now.date(), datetime.date)
 
     today = datetime.date.today()
     assert isinstance(today, datetime.date)
 
+
 @freeze_time('2013-04-09')
 class TestUnitTestClassDecorator(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        assert datetime.date(2013, 4, 9) == datetime.date.today()
+
+    def setUp(self):
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
+
+    def tearDown(self):
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
+
+    @classmethod
+    def tearDownClass(cls):
+        assert datetime.date(2013, 4, 9) == datetime.date.today()
+
     def test_class_decorator_works_on_unittest(self):
-        self.assertEqual(datetime.date(2013,4,9), datetime.date.today())
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
+
+    def test_class_name_preserved_by_decorator(self):
+        self.assertEqual(self.__class__.__name__, "TestUnitTestClassDecorator")
 
 
-def assert_class_of_datetimes(right_class, wrong_class):
-    datetime.datetime.min.__class__.should.equal(right_class)
-    datetime.datetime.max.__class__.should.equal(right_class)
-    datetime.date.min.__class__.should.equal(right_class)
-    datetime.date.max.__class__.should.equal(right_class)
-    datetime.datetime.min.__class__.shouldnt.equal(wrong_class)
-    datetime.datetime.max.__class__.shouldnt.equal(wrong_class)
-    datetime.date.min.__class__.shouldnt.equal(wrong_class)
-    datetime.date.max.__class__.shouldnt.equal(wrong_class)
+@freeze_time('2013-04-09')
+class TestUnitTestClassDecoratorWithNoSetUpOrTearDown(unittest.TestCase):
+    def test_class_decorator_works_on_unittest(self):
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
+
+
+class TestUnitTestClassDecoratorSubclass(TestUnitTestClassDecorator):
+    @classmethod
+    def setUpClass(cls):
+        # the super() call can fail if the class decoration was done wrong
+        super(TestUnitTestClassDecoratorSubclass, cls).setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        # the super() call can fail if the class decoration was done wrong
+        super(TestUnitTestClassDecoratorSubclass, cls).tearDownClass()
+
+    def test_class_name_preserved_by_decorator(self):
+        self.assertEqual(self.__class__.__name__,
+                         "TestUnitTestClassDecoratorSubclass")
+
+
+class BaseInheritanceFreezableTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        pass
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+
+class UnfrozenInheritedTests(BaseInheritanceFreezableTests):
+    def test_time_is_not_frozen(self):
+        # In this class, time should not be frozen - and the below decorated
+        # class shouldn't affect that
+        self.assertNotEqual(datetime.date(2013, 4, 9), datetime.date.today())
+
+
+@freeze_time('2013-04-09')
+class FrozenInheritedTests(BaseInheritanceFreezableTests):
+    def test_time_is_frozen(self):
+        # In this class, time should be frozen
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
 
 
 def test_min_and_max():
     freezer = freeze_time("2012-01-14")
-    real_datetime = datetime
+    real_datetime = datetime.datetime
+    real_date = datetime.date
 
     freezer.start()
-    datetime.datetime.min.__class__.should.equal(FakeDatetime)
-    datetime.datetime.max.__class__.should.equal(FakeDatetime)
-    datetime.date.min.__class__.should.equal(FakeDate)
-    datetime.date.max.__class__.should.equal(FakeDate)
-    datetime.datetime.min.__class__.shouldnt.equal(real_datetime)
-    datetime.datetime.max.__class__.shouldnt.equal(real_datetime)
-    datetime.date.min.__class__.shouldnt.equal(real_date)
-    datetime.date.max.__class__.shouldnt.equal(real_date)
+    assert datetime.datetime.min.__class__ == FakeDatetime
+    assert datetime.datetime.max.__class__ == FakeDatetime
+    assert datetime.date.min.__class__ == FakeDate
+    assert datetime.date.max.__class__ == FakeDate
+    assert datetime.datetime.min.__class__ != real_datetime
+    assert datetime.datetime.max.__class__ != real_datetime
+    assert datetime.date.min.__class__ != real_date
+    assert datetime.date.max.__class__ != real_date
 
     freezer.stop()
-    datetime.datetime.min.__class__.should.equal(datetime.datetime)
-    datetime.datetime.max.__class__.should.equal(datetime.datetime)
-    datetime.date.min.__class__.should.equal(datetime.date)
-    datetime.date.max.__class__.should.equal(datetime.date)
-    datetime.datetime.min.__class__.shouldnt.equal(FakeDatetime)
-    datetime.datetime.max.__class__.shouldnt.equal(FakeDatetime)
-    datetime.date.min.__class__.shouldnt.equal(FakeDate)
-    datetime.date.max.__class__.shouldnt.equal(FakeDate)
+    assert datetime.datetime.min.__class__ == datetime.datetime
+    assert datetime.datetime.max.__class__ == datetime.datetime
+    assert datetime.date.min.__class__ == datetime.date
+    assert datetime.date.max.__class__ == datetime.date
+    assert datetime.datetime.min.__class__ != FakeDatetime
+    assert datetime.datetime.max.__class__ != FakeDatetime
+    assert datetime.date.min.__class__ != FakeDate
+    assert datetime.date.max.__class__ != FakeDate
 
 
-def assert_pickled_datetimes_equal_original():
-    min_datetime = datetime.datetime.min
-    max_datetime = datetime.datetime.max
-    min_date = datetime.date.min
-    max_date = datetime.date.max
-    now = datetime.datetime.now()
-    today = datetime.date.today()
+@freeze_time("2014-07-30T01:00:00Z")
+def test_freeze_with_timezone_aware_datetime_in_utc():
+    """
+    utcnow() should always return a timezone naive datetime
+    """
     utc_now = datetime.datetime.utcnow()
-    assert pickle.loads(pickle.dumps(min_datetime)) == min_datetime
-    assert pickle.loads(pickle.dumps(max_datetime)) == max_datetime
-    assert pickle.loads(pickle.dumps(min_date)) == min_date
-    assert pickle.loads(pickle.dumps(max_date)) == max_date
-    assert pickle.loads(pickle.dumps(now)) == now
-    assert pickle.loads(pickle.dumps(today)) == today
-    assert pickle.loads(pickle.dumps(utc_now)) == utc_now
+    assert utc_now.tzinfo is None
 
 
-def test_pickle():
-    freezer = freeze_time("2012-01-14")
-
-    freezer.start()
-    assert_pickled_datetimes_equal_original()
-
-    freezer.stop()
-    assert_pickled_datetimes_equal_original()
+@freeze_time("1970-01-01T00:00:00-04:00")
+def test_freeze_with_timezone_aware_datetime_in_non_utc():
+    """
+    we expect the system to behave like a system with UTC-4 timezone
+    at the beginning of the Epoch (wall clock should be 4 hrs late)
+    """
+    utc_now = datetime.datetime.utcnow()
+    assert utc_now.tzinfo is None
+    assert utc_now == datetime.datetime(1970, 1, 1, 4)
