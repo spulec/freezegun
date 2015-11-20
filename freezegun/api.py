@@ -11,7 +11,7 @@ from mock import patch
 real_time = time.time
 real_date = datetime.date
 real_datetime = datetime.datetime
-_permute_milliseconds = False
+
 
 # Stolen from six
 def with_metaclass(meta, *bases):
@@ -24,8 +24,7 @@ class FakeTimeBase(object):
 
     @classmethod
     def get_time_to_freeze(cls):
-        if _permute_milliseconds:
-            cls.time_to_freeze += datetime.timedelta(microseconds=1)
+        cls.time_to_freeze += datetime.timedelta(microseconds=1)
         return cls.time_to_freeze
 
     @classmethod
@@ -271,13 +270,12 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze, tz_offset=0, permute_milliseconds=False):
+def freeze_time(time_to_freeze, tz_offset=0):
     if isinstance(time_to_freeze, datetime.datetime):
         time_to_freeze = time_to_freeze.isoformat()
     elif isinstance(time_to_freeze, datetime.date):
         time_to_freeze = time_to_freeze.isoformat()
-    global _permute_milliseconds
-    _permute_milliseconds = permute_milliseconds
+
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
