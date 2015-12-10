@@ -19,25 +19,28 @@ Decorator
 
 .. code-block:: python
 
-    from freezegun import freeze_time
-
-    @freeze_time("2012-01-14")
-    def test():
-        assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
-
-    # Or a unittest TestCase - freezes for every test, from the start of setUpClass to the end of tearDownClass
-
-    @freeze_time("1955-11-12")
-    class MyTests(unittest.TestCase):
-        def test_the_class(self):
-            assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
-
-    # Or any other class - freezes around each callable (may not work in every case)
-
-    @freeze_time("2012-01-14")
-    class Tester(object):
-        def test_the_class(self):
-            assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+      from freezegun import freeze_time
+      import datetime
+      import unittest
+      
+      
+      @freeze_time("2012-01-14")
+      def test():
+          assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+      
+      # Or a unittest TestCase - freezes for every test, from the start of setUpClass to the end of tearDownClass
+      
+      @freeze_time("1955-11-12")
+      class MyTests(unittest.TestCase):
+          def test_the_class(self):
+              assert datetime.datetime.now() == datetime.datetime(1955, 11, 12)
+      
+      # Or any other class - freezes around each callable (may not work in every case)
+      
+      @freeze_time("2012-01-14")
+      class Tester(object):
+          def test_the_class(self):
+              assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
 
 Context Manager
 ~~~~~~~~~~~~~~~
