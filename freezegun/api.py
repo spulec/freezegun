@@ -376,7 +376,7 @@ class _freeze_time(object):
                     continue
                 try:
                     attribute_value = getattr(module, module_attribute)
-                except (ImportError, AttributeError):
+                except (ImportError, AttributeError, TypeError):
                     # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
                     continue
                 try:
