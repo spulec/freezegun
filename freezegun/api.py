@@ -353,16 +353,16 @@ class _freeze_time(object):
         copyreg.dispatch_table[real_date] = pickle_fake_date
 
         # Change any place where the module had already been imported
-        things = [(real_name, globals()[real_name], fake) for real_name, fake in [
-            ('real_date', FakeDate),
-            ('real_datetime', FakeDatetime),
-            ('real_gmtime', fake_gmtime),
-            ('real_localtime', fake_localtime),
-            ('real_strftime', fake_strftime),
-            ('real_time', fake_time),
-        ]]
-        real_names = tuple(real_name for real_name, real, fake in things)
-        fakes = dict((id(real), fake) for real_name, real, fake in things)
+        to_patch = [
+            ('real_date', real_date, FakeDate),
+            ('real_datetime', real_datetime, FakeDatetime),
+            ('real_gmtime', real_gmtime, fake_gmtime),
+            ('real_localtime', real_localtime, fake_localtime),
+            ('real_strftime', real_strftime, fake_strftime),
+            ('real_time', real_time, fake_time),
+        ]
+        real_names = tuple(real_name for real_name, real, fake in to_patch)
+        fakes = dict((id(real), fake) for real_name, real, fake in to_patch)
         add_change = self.undo_changes.append
 
         for mod_name, module in list(sys.modules.items()):
