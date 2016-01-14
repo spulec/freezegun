@@ -355,15 +355,17 @@ class _freeze_time(object):
 
         # Change any place where the module had already been imported
         to_patch = [
-            ('real_date', real_date, FakeDate),
-            ('real_datetime', real_datetime, FakeDatetime),
-            ('real_gmtime', real_gmtime, fake_gmtime),
-            ('real_localtime', real_localtime, fake_localtime),
-            ('real_strftime', real_strftime, fake_strftime),
-            ('real_time', real_time, fake_time),
+            ('real_date', real_date, 'FakeDate', FakeDate),
+            ('real_datetime', real_datetime, 'FakeDatetime', FakeDatetime),
+            ('real_gmtime', real_gmtime, 'FakeGMTTime', fake_gmtime),
+            ('real_localtime', real_localtime, 'FakeLocalTime', fake_localtime),
+            ('real_strftime', real_strftime, 'FakeStrfTime', fake_strftime),
+            ('real_time', real_time, 'FakeTime', fake_time),
         ]
-        real_names = tuple(real_name for real_name, real, fake in to_patch)
-        fakes = dict((id(real), fake) for real_name, real, fake in to_patch)
+        real_names = tuple(real_name for real_name, real, fake_name, fake in to_patch)
+        self.fake_names = tuple(fake_name for real_name, real, fake_name, fake in to_patch)
+        self.reals = dict((id(fake), real) for real_name, real, fake_name, fake in to_patch)
+        fakes = dict((id(real), fake) for real_name, real, fake_name, fake in to_patch)
         add_change = self.undo_changes.append
 
         # Save the current loaded modules
@@ -424,33 +426,17 @@ class _freeze_time(object):
                 elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                     continue
                 for module_attribute in dir(module):
-                    if module_attribute in ('FakeTime', 'FakeLocalTime', 'FakeGMTTime', 'FakeStrfTime',
-                                            'FakeDate', 'FakeDatetime'):
+                    if module_attribute in self.fake_names:
                         continue
                     try:
                         attribute_value = getattr(module, module_attribute)
-                    except (ImportError, AttributeError):
+                    except (ImportError, AttributeError, TypeError):
                         # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
                         continue
-                    try:
-                        try:
-                            if attribute_value is FakeDatetime:
-                                setattr(module, module_attribute, real_datetime)
-                            elif attribute_value is FakeDate:
-                                setattr(module, module_attribute, real_date)
-                            elif isinstance(attribute_value, FakeTime):
-                                setattr(module, module_attribute, real_time)
-                            elif isinstance(attribute_value, FakeLocalTime):
-                                setattr(module, module_attribute, real_localtime)
-                            elif isinstance(attribute_value, FakeGMTTime):
-                                setattr(module, module_attribute, real_gmtime)
-                            elif isinstance(attribute_value, FakeStrfTime):
-                                setattr(module, module_attribute, real_strftime)
-                        except:
-                            pass
-                    except:
-                        # If it's not possible to compare the value to real_XXX (e.g. hiredis.version)
-                        pass
+
+                    real = self.reals.get(id(attribute_value))
+                    if real:
+                        setattr(module, module_attribute, real)
 
         time.time = time.time.previous_time_function
         time.gmtime = time.gmtime.previous_gmtime_function
