@@ -274,6 +274,7 @@ class _freeze_time(object):
         self.ignore = tuple(ignore)
         self.tick = tick
         self.undo_changes = []
+        self.modules_at_start = set()
 
     def __call__(self, func):
         if inspect.isclass(func):
@@ -354,16 +355,21 @@ class _freeze_time(object):
 
         # Change any place where the module had already been imported
         to_patch = [
-            ('real_date', real_date, FakeDate),
-            ('real_datetime', real_datetime, FakeDatetime),
-            ('real_gmtime', real_gmtime, fake_gmtime),
-            ('real_localtime', real_localtime, fake_localtime),
-            ('real_strftime', real_strftime, fake_strftime),
-            ('real_time', real_time, fake_time),
+            ('real_date', real_date, 'FakeDate', FakeDate),
+            ('real_datetime', real_datetime, 'FakeDatetime', FakeDatetime),
+            ('real_gmtime', real_gmtime, 'FakeGMTTime', fake_gmtime),
+            ('real_localtime', real_localtime, 'FakeLocalTime', fake_localtime),
+            ('real_strftime', real_strftime, 'FakeStrfTime', fake_strftime),
+            ('real_time', real_time, 'FakeTime', fake_time),
         ]
-        real_names = tuple(real_name for real_name, real, fake in to_patch)
-        fakes = dict((id(real), fake) for real_name, real, fake in to_patch)
+        real_names = tuple(real_name for real_name, real, fake_name, fake in to_patch)
+        self.fake_names = tuple(fake_name for real_name, real, fake_name, fake in to_patch)
+        self.reals = dict((id(fake), real) for real_name, real, fake_name, fake in to_patch)
+        fakes = dict((id(real), fake) for real_name, real, fake_name, fake in to_patch)
         add_change = self.undo_changes.append
+
+        # Save the current loaded modules
+        self.modules_at_start = set(sys.modules.keys())
 
         for mod_name, module in list(sys.modules.items()):
             if mod_name is None or module is None:
@@ -407,6 +413,30 @@ class _freeze_time(object):
             for module, module_attribute, original_value in self.undo_changes:
                 setattr(module, module_attribute, original_value)
             self.undo_changes = []
+
+            # Restore modules loaded after start()
+            modules_to_restore = set(sys.modules.keys()) - self.modules_at_start
+            self.modules_at_start = set()
+            for mod_name in modules_to_restore:
+                module = sys.modules.get(mod_name, None)
+                if mod_name is None or module is None:
+                    continue
+                elif mod_name.startswith(self.ignore):
+                    continue
+                elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                    continue
+                for module_attribute in dir(module):
+                    if module_attribute in self.fake_names:
+                        continue
+                    try:
+                        attribute_value = getattr(module, module_attribute)
+                    except (ImportError, AttributeError, TypeError):
+                        # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+                        continue
+
+                    real = self.reals.get(id(attribute_value))
+                    if real:
+                        setattr(module, module_attribute, real)
 
         time.time = time.time.previous_time_function
         time.gmtime = time.gmtime.previous_gmtime_function
