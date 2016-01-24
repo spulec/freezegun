@@ -22,21 +22,21 @@ Decorator
       from freezegun import freeze_time
       import datetime
       import unittest
-      
-      
+
+
       @freeze_time("2012-01-14")
       def test():
           assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
-      
+
       # Or a unittest TestCase - freezes for every test, from the start of setUpClass to the end of tearDownClass
-      
+
       @freeze_time("1955-11-12")
       class MyTests(unittest.TestCase):
           def test_the_class(self):
               assert datetime.datetime.now() == datetime.datetime(1955, 11, 12)
-      
+
       # Or any other class - freezes around each callable (may not work in every case)
-      
+
       @freeze_time("2012-01-14")
       class Tester(object):
           def test_the_class(self):
@@ -105,6 +105,27 @@ parameters which will keep time stopped.
     @freeze_time("Jan 14th, 2020", tick=True)
     def test_nice_datetime():
         assert datetime.datetime.now() > datetime.datetime(2020, 01, 14)
+
+Manual ticks
+~~~~~~~~~~~~
+
+Freezegun allows for the time to be manually forwarded as well
+
+.. code-block:: python
+
+    def test_manual_increment():
+        initial_datetime = datetime.datetime(year=1, month=7, day=12,
+                                            hour=15, minute=6, second=3)
+        with freeze_time(initial_datetime) as frozen_datetime:
+            assert frozen_datetime() == initial_datetime
+
+            frozen_datetime.tick()
+            initial_datetime += datetime.timedelta(seconds=1)
+            assert frozen_datetime() == initial_datetime
+
+            frozen_datetime.tick(delta=datetime.timedelta(seconds=10))
+            initial_datetime += datetime.timedelta(seconds=10)
+            assert frozen_datetime() == initial_datetime
 
 
 Installation
