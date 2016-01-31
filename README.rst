@@ -26,7 +26,7 @@ Decorator
 
       @freeze_time("2012-01-14")
       def test():
-          assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+          assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
       # Or a unittest TestCase - freezes for every test, from the start of setUpClass to the end of tearDownClass
 
@@ -40,7 +40,7 @@ Decorator
       @freeze_time("2012-01-14")
       class Tester(object):
           def test_the_class(self):
-              assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+              assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
 Context Manager
 ~~~~~~~~~~~~~~~
@@ -50,10 +50,10 @@ Context Manager
     from freezegun import freeze_time
 
     def test():
-        assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
+        assert datetime.datetime.now() != datetime.datetime(2012, 1, 14)
         with freeze_time("2012-01-14"):
-            assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
-        assert datetime.datetime.now() != datetime.datetime(2012, 01, 14)
+            assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
+        assert datetime.datetime.now() != datetime.datetime(2012, 1, 14)
 
 Raw use
 ~~~~~~~
@@ -64,7 +64,7 @@ Raw use
 
     freezer = freeze_time("2012-01-14 12:00:01")
     freezer.start()
-    assert datetime.datetime.now() == datetime.datetime(2012, 01, 14, 12, 00, 01)
+    assert datetime.datetime.now() == datetime.datetime(2012, 1, 14, 12, 0, 1)
     freezer.stop()
 
 Timezones
@@ -76,11 +76,11 @@ Timezones
 
     @freeze_time("2012-01-14 03:21:34", tz_offset=-4)
     def test():
-        assert datetime.datetime.utcnow() == datetime.datetime(2012, 01, 14, 03, 21, 34)
-        assert datetime.datetime.now() == datetime.datetime(2012, 01, 13, 23, 21, 34)
+        assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14, 3, 21, 34)
+        assert datetime.datetime.now() == datetime.datetime(2012, 1, 13, 23, 21, 34)
 
         # datetime.date.today() uses local time
-        assert datetime.date.today() == datetime.date(2012, 01, 13)
+        assert datetime.date.today() == datetime.date(2012, 1, 13)
 
 Nice inputs
 ~~~~~~~~~~~
@@ -91,7 +91,7 @@ FreezeGun uses dateutil behind the scenes so you can have nice-looking datetimes
 
     @freeze_time("Jan 14th, 2012")
     def test_nice_datetime():
-        assert datetime.datetime.now() == datetime.datetime(2012, 01, 14)
+        assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
 `tick` argument
 ~~~~~~~~~~~
@@ -104,7 +104,7 @@ parameters which will keep time stopped.
 
     @freeze_time("Jan 14th, 2020", tick=True)
     def test_nice_datetime():
-        assert datetime.datetime.now() > datetime.datetime(2020, 01, 14)
+        assert datetime.datetime.now() > datetime.datetime(2020, 1, 14)
 
 Manual ticks
 ~~~~~~~~~~~~
