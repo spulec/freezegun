@@ -265,6 +265,8 @@ class _freeze_time(object):
             time_to_freeze = time_to_freeze_str
         elif isinstance(time_to_freeze_str, datetime.date):
             time_to_freeze = datetime.datetime.combine(time_to_freeze_str, datetime.time())
+        elif isinstance(time_to_freeze_str, datetime.timedelta):
+            time_to_freeze = datetime.datetime.utcnow() + time_to_freeze_str
         else:
             time_to_freeze = parser.parse(time_to_freeze_str)
         time_to_freeze = convert_to_timezone_naive(time_to_freeze)
@@ -464,8 +466,8 @@ def freeze_time(time_to_freeze, tz_offset=0, ignore=None, tick=False):
     except NameError:
         string_type = str
 
-    if not isinstance(time_to_freeze, (string_type, datetime.date)):
-        raise TypeError(('freeze_time() expected a string, date instance, or '
+    if not isinstance(time_to_freeze, (string_type, datetime.date, datetime.timedelta)):
+        raise TypeError(('freeze_time() expected a string, date instance, timedelta instance, or '
                          'datetime instance, but got type {0}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
