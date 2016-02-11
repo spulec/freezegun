@@ -343,6 +343,8 @@ def _parse_time_to_freeze(time_to_freeze_str):
         time_to_freeze = time_to_freeze_str
     elif isinstance(time_to_freeze_str, datetime.date):
         time_to_freeze = datetime.datetime.combine(time_to_freeze_str, datetime.time())
+    elif isinstance(time_to_freeze_str, datetime.timedelta):
+        time_to_freeze = datetime.datetime.utcnow() + time_to_freeze_str
     else:
         time_to_freeze = parser.parse(time_to_freeze_str)
 
@@ -605,9 +607,10 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
         string_type = str
 
     if not isinstance(time_to_freeze, (type(None), string_type, datetime.date,
-        types.FunctionType, types.GeneratorType)):
+        datetime.timedelta, types.FunctionType, types.GeneratorType)):
         raise TypeError(('freeze_time() expected None, a string, date instance, datetime '
-                         'instance, function or a generator, but got type {0}.').format(type(time_to_freeze)))
+                         'instance timedelta instance, function or a generator, but got '
+                         'type {0}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
 
