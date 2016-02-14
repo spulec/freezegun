@@ -261,6 +261,8 @@ class FrozenDateTimeFactory(object):
 class _freeze_time(object):
 
     def __init__(self, time_to_freeze_str, tz_offset, ignore, tick):
+        if time_to_freeze_str is None:
+            time_to_freeze = datetime.datetime.utcnow()
         if isinstance(time_to_freeze_str, datetime.datetime):
             time_to_freeze = time_to_freeze_str
         elif isinstance(time_to_freeze_str, datetime.date):
@@ -457,7 +459,7 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze, tz_offset=0, ignore=None, tick=False):
+def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
@@ -465,7 +467,7 @@ def freeze_time(time_to_freeze, tz_offset=0, ignore=None, tick=False):
         string_type = str
 
     if not isinstance(time_to_freeze, (string_type, datetime.date)):
-        raise TypeError(('freeze_time() expected a string, date instance, or '
+        raise TypeError(('freeze_time() expected None, a string, date instance, or '
                          'datetime instance, but got type {0}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
