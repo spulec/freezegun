@@ -29,7 +29,7 @@ def with_metaclass(meta, *bases):
 
 _is_cpython = (
     hasattr(platform, 'python_implementation') and
-    platform.python_implementation().lower == "cpython"
+    platform.python_implementation().lower() == "cpython"
 )
 
 
