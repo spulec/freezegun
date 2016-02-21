@@ -9,6 +9,8 @@ import platform
 
 from dateutil import parser
 
+system_tz_offset = (time.timezone if time.localtime().tm_isdst is 0 else time.altzone) / 60 / 60 * -1
+
 real_time = time.time
 real_localtime = time.localtime
 real_gmtime = time.gmtime
@@ -126,6 +128,9 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
     @classmethod
     def today(cls):
         result = cls._date_to_freeze() + datetime.timedelta(hours=cls._tz_offset())
+        # hack that we set it here :-/
+        if system_tz_offset:
+            result += datetime.timedelta(hours=system_tz_offset)
         return date_to_fakedate(result)
 
     @classmethod
@@ -177,6 +182,9 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
             result = tz.fromutc(cls._time_to_freeze().replace(tzinfo=tz)) + datetime.timedelta(hours=cls._tz_offset())
         else:
             result = cls._time_to_freeze() + datetime.timedelta(hours=cls._tz_offset())
+            # hack that we set it here :-/
+            if system_tz_offset:
+                result += datetime.timedelta(hours=system_tz_offset)
         return datetime_to_fakedatetime(result)
 
     def date(self):
@@ -207,6 +215,8 @@ def convert_to_timezone_naive(time_to_freeze):
     """
     Converts a potentially timezone-aware datetime to be a naive UTC datetime
     """
+    if system_tz_offset:
+        time_to_freeze -= datetime.timedelta(hours=system_tz_offset)
     if time_to_freeze.tzinfo:
         time_to_freeze -= time_to_freeze.utcoffset()
         time_to_freeze = time_to_freeze.replace(tzinfo=None)
