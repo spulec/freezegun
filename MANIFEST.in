@@ -1,2 +1,4 @@
 include README.rst LICENSE AUTHORS.rst
 recursive-include tests *
+global-exclude __pycache__
+global-exclude *.py[co]
