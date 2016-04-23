@@ -4,6 +4,11 @@ Freezegun Changelog
 Latest
 ------
 
+0.3.7
+-----
+
+* Fix CPython detection
+
 0.3.6
 -----
 
