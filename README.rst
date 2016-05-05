@@ -127,6 +127,23 @@ Freezegun allows for the time to be manually forwarded as well
             initial_datetime += datetime.timedelta(seconds=10)
             assert frozen_datetime() == initial_datetime
 
+Default Arguments
+~~~~~~~~~~~~~~~~~
+
+Note that Freezegun will not modify default arguments. The following code will
+print the current date. See `here <http://docs.python-guide.org/en/latest/writing/gotchas/#mutable-default-arguments>`_ for why.
+
+.. code-block:: python
+
+    from freezegun import freeze_time
+    import datetime as dt
+
+    def test(default=dt.date.today()):
+        print(default)
+
+    with freeze_time('2000-1-1'):
+        test()
+
 
 Installation
 ------------
