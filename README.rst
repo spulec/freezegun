@@ -127,6 +127,31 @@ Freezegun allows for the time to be manually forwarded as well
             initial_datetime += datetime.timedelta(seconds=10)
             assert frozen_datetime() == initial_datetime
 
+Moving time to specify datetime
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Freezegun allows moving time to specific dates 
+
+.. code-block:: python
+
+    def test_move_to():
+        initial_datetime = datetime.datetime(year=1, month=7, day=12,
+                                            hour=15, minute=6, second=3)
+
+        other_datetime = datetime.datetime(year=2, month=8, day=13,
+                                            hour=14, minute=5, second=0)
+        with freeze_time(initial_datetime) as frozen_datetime:
+            assert frozen_datetime() == initial_datetime
+
+            frozen_datetime.move_to(other_datetime)
+            assert frozen_datetime() == other_datetime
+
+            frozen_datetime.move_to(initial_datetime)
+            assert frozen_datetime() == initial_datetime
+
+Parameter for ``move_to`` can be any valid ``freeze_time`` date (string, date, datetime).
+
+
 Default Arguments
 ~~~~~~~~~~~~~~~~~
 
