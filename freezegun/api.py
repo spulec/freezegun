@@ -236,6 +236,22 @@ def pickle_fake_datetime(datetime_):
     )
 
 
+def _parse_time_to_freeze(time_to_freeze_str):
+    """Parses all the possible inputs for freeze_time
+    :returns: a naive ``datetime.datetime`` object
+    """
+    if time_to_freeze_str is None:
+        time_to_freeze = datetime.datetime.utcnow()
+    if isinstance(time_to_freeze_str, datetime.datetime):
+        time_to_freeze = time_to_freeze_str
+    elif isinstance(time_to_freeze_str, datetime.date):
+        time_to_freeze = datetime.datetime.combine(time_to_freeze_str, datetime.time())
+    else:
+        time_to_freeze = parser.parse(time_to_freeze_str)
+
+    return convert_to_timezone_naive(time_to_freeze)
+
+
 class TickingDateTimeFactory(object):
 
     def __init__(self, time_to_freeze, start):
@@ -257,21 +273,18 @@ class FrozenDateTimeFactory(object):
     def tick(self, delta=datetime.timedelta(seconds=1)):
         self.time_to_freeze += delta
 
+    def move_to(self, target_datetime):
+        """Moves frozen date to the given ``target_datetime``"""
+        target_datetime = _parse_time_to_freeze(target_datetime)
+        delta = target_datetime - self.time_to_freeze
+        self.tick(delta=delta)
+
 
 class _freeze_time(object):
 
     def __init__(self, time_to_freeze_str, tz_offset, ignore, tick):
-        if time_to_freeze_str is None:
-            time_to_freeze = datetime.datetime.utcnow()
-        if isinstance(time_to_freeze_str, datetime.datetime):
-            time_to_freeze = time_to_freeze_str
-        elif isinstance(time_to_freeze_str, datetime.date):
-            time_to_freeze = datetime.datetime.combine(time_to_freeze_str, datetime.time())
-        else:
-            time_to_freeze = parser.parse(time_to_freeze_str)
-        time_to_freeze = convert_to_timezone_naive(time_to_freeze)
 
-        self.time_to_freeze = time_to_freeze
+        self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = tz_offset
         self.ignore = tuple(ignore)
         self.tick = tick
