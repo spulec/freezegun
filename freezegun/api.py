@@ -8,6 +8,7 @@ import unittest
 import platform
 
 from dateutil import parser
+from dateutil.tz import tzlocal
 
 real_time = time.time
 real_localtime = time.localtime
@@ -169,6 +170,8 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
             return result
 
     def astimezone(self, tz):
+        if tz is None:
+            tz = tzlocal()
         return datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
 
     @classmethod
