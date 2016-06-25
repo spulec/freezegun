@@ -144,3 +144,9 @@ def test_import_after_start():
     assert another_module.get_fake_localtime() is FakeLocalTime
     assert another_module.get_fake_gmtime() is FakeGMTTime
     assert another_module.get_fake_strftime() is FakeStrfTime
+
+
+def test_none_as_initial():
+    with freeze_time() as ft:
+        ft.move_to('2012-01-14')
+        assert fake_strftime_function() == '2012'
