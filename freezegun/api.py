@@ -8,6 +8,7 @@ import unittest
 import platform
 
 from dateutil import parser
+from dateutil.tz import tzlocal
 
 real_time = time.time
 real_localtime = time.localtime
@@ -29,7 +30,7 @@ def with_metaclass(meta, *bases):
 
 _is_cpython = (
     hasattr(platform, 'python_implementation') and
-    platform.python_implementation().lower == "cpython"
+    platform.python_implementation().lower() == "cpython"
 )
 
 
@@ -169,6 +170,8 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
             return result
 
     def astimezone(self, tz):
+        if tz is None:
+            tz = tzlocal()
         return datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
 
     @classmethod
@@ -236,6 +239,22 @@ def pickle_fake_datetime(datetime_):
     )
 
 
+def _parse_time_to_freeze(time_to_freeze_str):
+    """Parses all the possible inputs for freeze_time
+    :returns: a naive ``datetime.datetime`` object
+    """
+    if time_to_freeze_str is None:
+        time_to_freeze = datetime.datetime.utcnow()
+    if isinstance(time_to_freeze_str, datetime.datetime):
+        time_to_freeze = time_to_freeze_str
+    elif isinstance(time_to_freeze_str, datetime.date):
+        time_to_freeze = datetime.datetime.combine(time_to_freeze_str, datetime.time())
+    else:
+        time_to_freeze = parser.parse(time_to_freeze_str)
+
+    return convert_to_timezone_naive(time_to_freeze)
+
+
 class TickingDateTimeFactory(object):
 
     def __init__(self, time_to_freeze, start):
@@ -257,23 +276,23 @@ class FrozenDateTimeFactory(object):
     def tick(self, delta=datetime.timedelta(seconds=1)):
         self.time_to_freeze += delta
 
+    def move_to(self, target_datetime):
+        """Moves frozen date to the given ``target_datetime``"""
+        target_datetime = _parse_time_to_freeze(target_datetime)
+        delta = target_datetime - self.time_to_freeze
+        self.tick(delta=delta)
+
 
 class _freeze_time(object):
 
     def __init__(self, time_to_freeze_str, tz_offset, ignore, tick):
-        if isinstance(time_to_freeze_str, datetime.datetime):
-            time_to_freeze = time_to_freeze_str
-        elif isinstance(time_to_freeze_str, datetime.date):
-            time_to_freeze = datetime.datetime.combine(time_to_freeze_str, datetime.time())
-        else:
-            time_to_freeze = parser.parse(time_to_freeze_str)
-        time_to_freeze = convert_to_timezone_naive(time_to_freeze)
 
-        self.time_to_freeze = time_to_freeze
+        self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = tz_offset
         self.ignore = tuple(ignore)
         self.tick = tick
         self.undo_changes = []
+        self.modules_at_start = set()
 
     def __call__(self, func):
         if inspect.isclass(func):
@@ -353,15 +372,22 @@ class _freeze_time(object):
         copyreg.dispatch_table[real_date] = pickle_fake_date
 
         # Change any place where the module had already been imported
-        real_things = (
-            real_time,
-            real_localtime,
-            real_gmtime,
-            real_strftime,
-            real_date,
-            real_datetime
-        )
+        to_patch = [
+            ('real_date', real_date, 'FakeDate', FakeDate),
+            ('real_datetime', real_datetime, 'FakeDatetime', FakeDatetime),
+            ('real_gmtime', real_gmtime, 'FakeGMTTime', fake_gmtime),
+            ('real_localtime', real_localtime, 'FakeLocalTime', fake_localtime),
+            ('real_strftime', real_strftime, 'FakeStrfTime', fake_strftime),
+            ('real_time', real_time, 'FakeTime', fake_time),
+        ]
+        real_names = tuple(real_name for real_name, real, fake_name, fake in to_patch)
+        self.fake_names = tuple(fake_name for real_name, real, fake_name, fake in to_patch)
+        self.reals = dict((id(fake), real) for real_name, real, fake_name, fake in to_patch)
+        fakes = dict((id(real), fake) for real_name, real, fake_name, fake in to_patch)
         add_change = self.undo_changes.append
+
+        # Save the current loaded modules
+        self.modules_at_start = set(sys.modules.keys())
 
         for mod_name, module in list(sys.modules.items()):
             if mod_name is None or module is None:
@@ -371,39 +397,17 @@ class _freeze_time(object):
             elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                 continue
             for module_attribute in dir(module):
-                if module_attribute in ('real_date', 'real_datetime', 'real_time', 'real_localtime', 'real_gmtime',
-                                        'real_strftime'):
+                if module_attribute in real_names:
                     continue
                 try:
                     attribute_value = getattr(module, module_attribute)
-                except (ImportError, AttributeError):
+                except (ImportError, AttributeError, TypeError):
                     # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
                     continue
-                try:
-                    if attribute_value not in real_things:
-                        continue
-
-                    if attribute_value is real_datetime:
-                        setattr(module, module_attribute, FakeDatetime)
-                        add_change((module, module_attribute, real_datetime))
-                    elif attribute_value is real_date:
-                        setattr(module, module_attribute, FakeDate)
-                        add_change((module, module_attribute, real_date))
-                    elif attribute_value is real_time:
-                        setattr(module, module_attribute, fake_time)
-                        add_change((module, module_attribute, real_time))
-                    elif attribute_value is real_localtime:
-                        setattr(module, module_attribute, fake_localtime)
-                        add_change((module, module_attribute, real_localtime))
-                    elif attribute_value is real_gmtime:
-                        setattr(module, module_attribute, fake_gmtime)
-                        add_change((module, module_attribute, real_gmtime))
-                    elif attribute_value is real_strftime:
-                        setattr(module, module_attribute, fake_strftime)
-                        add_change((module, module_attribute, real_strftime))
-                except:
-                    # If it's not possible to compare the value to real_XXX (e.g. hiredis.version)
-                    pass
+                fake = fakes.get(id(attribute_value))
+                if fake:
+                    setattr(module, module_attribute, fake)
+                    add_change((module, module_attribute, attribute_value))
 
         datetime.datetime.times_to_freeze.append(time_to_freeze)
         datetime.datetime.tz_offsets.append(self.tz_offset)
@@ -428,6 +432,30 @@ class _freeze_time(object):
                 setattr(module, module_attribute, original_value)
             self.undo_changes = []
 
+            # Restore modules loaded after start()
+            modules_to_restore = set(sys.modules.keys()) - self.modules_at_start
+            self.modules_at_start = set()
+            for mod_name in modules_to_restore:
+                module = sys.modules.get(mod_name, None)
+                if mod_name is None or module is None:
+                    continue
+                elif mod_name.startswith(self.ignore):
+                    continue
+                elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                    continue
+                for module_attribute in dir(module):
+                    if module_attribute in self.fake_names:
+                        continue
+                    try:
+                        attribute_value = getattr(module, module_attribute)
+                    except (ImportError, AttributeError, TypeError):
+                        # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+                        continue
+
+                    real = self.reals.get(id(attribute_value))
+                    if real:
+                        setattr(module, module_attribute, real)
+
         time.time = time.time.previous_time_function
         time.gmtime = time.gmtime.previous_gmtime_function
         time.localtime = time.localtime.previous_localtime_function
@@ -447,7 +475,7 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze, tz_offset=0, ignore=None, tick=False):
+def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
@@ -455,7 +483,7 @@ def freeze_time(time_to_freeze, tz_offset=0, ignore=None, tick=False):
         string_type = str
 
     if not isinstance(time_to_freeze, (string_type, datetime.date)):
-        raise TypeError(('freeze_time() expected a string, date instance, or '
+        raise TypeError(('freeze_time() expected None, a string, date instance, or '
                          'datetime instance, but got type {0}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
@@ -464,6 +492,8 @@ def freeze_time(time_to_freeze, tz_offset=0, ignore=None, tick=False):
         ignore = []
     ignore.append('six.moves')
     ignore.append('django.utils.six.moves')
+    ignore.append('threading')
+    ignore.append('Queue')
     return _freeze_time(time_to_freeze, tz_offset, ignore, tick)
 
 
