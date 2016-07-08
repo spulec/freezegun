@@ -21,7 +21,9 @@ setup(
     packages=['freezegun'],
     install_requires=requires,
     include_package_data=True,
+    license='Apache 2.0',
     classifiers=[
+        'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
