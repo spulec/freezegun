@@ -78,6 +78,13 @@ def test_astimezone():
 
 
 @freeze_time("2012-01-14 00:00:00")
+def test_astimezone_tz_none():
+    now = datetime.datetime.now(tz=GMT5())
+    converted = now.astimezone()
+    assert utils.is_fake_datetime(converted)
+
+
+@freeze_time("2012-01-14 00:00:00")
 def test_replace():
     now = datetime.datetime.now()
     modified_time = now.replace(year=2013)
