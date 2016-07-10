@@ -169,7 +169,7 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
         else:
             return result
 
-    def astimezone(self, tz):
+    def astimezone(self, tz=None):
         if tz is None:
             tz = tzlocal()
         return datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
