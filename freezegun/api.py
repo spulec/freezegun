@@ -244,7 +244,8 @@ def _parse_time_to_freeze(time_to_freeze_str):
     :returns: a naive ``datetime.datetime`` object
     """
     if time_to_freeze_str is None:
-        time_to_freeze = datetime.datetime.utcnow()
+        time_to_freeze_str = datetime.datetime.utcnow()
+
     if isinstance(time_to_freeze_str, datetime.datetime):
         time_to_freeze = time_to_freeze_str
     elif isinstance(time_to_freeze_str, datetime.date):
@@ -482,7 +483,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
     except NameError:
         string_type = str
 
-    if not isinstance(time_to_freeze, (string_type, datetime.date)):
+    if not isinstance(time_to_freeze, (type(None), string_type, datetime.date)):
         raise TypeError(('freeze_time() expected None, a string, date instance, or '
                          'datetime instance, but got type {0}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
