@@ -106,8 +106,8 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
     dates_to_freeze = []
     tz_offsets = []
 
-    def __new__(cls, *args, **kwargs):
-        return real_date.__new__(cls, *args, **kwargs)
+    def __new__(self, *args, **kwargs):
+        return real_date.__new__(self, *args, **kwargs)
 
     def __add__(self, other):
         result = real_date.__add__(self, other)
@@ -125,17 +125,17 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
             return result
 
     @classmethod
-    def today(cls):
-        result = cls._date_to_freeze() + datetime.timedelta(hours=cls._tz_offset())
+    def today(self):
+        result = self._date_to_freeze() + datetime.timedelta(hours=self._tz_offset())
         return date_to_fakedate(result)
 
     @classmethod
-    def _date_to_freeze(cls):
-        return cls.dates_to_freeze[-1]()
+    def _date_to_freeze(self):
+        return self.dates_to_freeze[-1]()
 
     @classmethod
-    def _tz_offset(cls):
-        return cls.tz_offsets[-1]
+    def _tz_offset(self):
+        return self.tz_offsets[-1]
 
 FakeDate.min = date_to_fakedate(real_date.min)
 FakeDate.max = date_to_fakedate(real_date.max)
@@ -146,13 +146,17 @@ class FakeDatetimeMeta(FakeDateMeta):
     def __instancecheck__(self, obj):
         return isinstance(obj, real_datetime)
 
+    @classmethod
+    def __eq__(self, other):
+        return (other is real_datetime) or (other is FakeDatetime)
+
 
 class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
     times_to_freeze = []
     tz_offsets = []
 
-    def __new__(cls, *args, **kwargs):
-        return real_datetime.__new__(cls, *args, **kwargs)
+    def __new__(self, *args, **kwargs):
+        return real_datetime.__new__(self, *args, **kwargs)
 
     def __add__(self, other):
         result = real_datetime.__add__(self, other)
@@ -169,38 +173,38 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
         else:
             return result
 
-    def astimezone(self, tz):
+    def astimezone(self, tz=None):
         if tz is None:
             tz = tzlocal()
         return datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
 
     @classmethod
-    def now(cls, tz=None):
+    def now(self, tz=None):
         if tz:
-            result = tz.fromutc(cls._time_to_freeze().replace(tzinfo=tz)) + datetime.timedelta(hours=cls._tz_offset())
+            result = tz.fromutc(self._time_to_freeze().replace(tzinfo=tz)) + datetime.timedelta(hours=self._tz_offset())
         else:
-            result = cls._time_to_freeze() + datetime.timedelta(hours=cls._tz_offset())
+            result = self._time_to_freeze() + datetime.timedelta(hours=self._tz_offset())
         return datetime_to_fakedatetime(result)
 
     def date(self):
         return date_to_fakedate(self)
 
     @classmethod
-    def today(cls):
-        return cls.now(tz=None)
+    def today(self):
+        return self.now(tz=None)
 
     @classmethod
-    def utcnow(cls):
-        result = cls._time_to_freeze()
+    def utcnow(self):
+        result = self._time_to_freeze()
         return datetime_to_fakedatetime(result)
 
     @classmethod
-    def _time_to_freeze(cls):
-        return cls.times_to_freeze[-1]()
+    def _time_to_freeze(self):
+        return self.times_to_freeze[-1]()
 
     @classmethod
-    def _tz_offset(cls):
-        return cls.tz_offsets[-1]
+    def _tz_offset(self):
+        return self.tz_offsets[-1]
 
 FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
 FakeDatetime.max = datetime_to_fakedatetime(real_datetime.max)
@@ -244,7 +248,8 @@ def _parse_time_to_freeze(time_to_freeze_str):
     :returns: a naive ``datetime.datetime`` object
     """
     if time_to_freeze_str is None:
-        time_to_freeze = datetime.datetime.utcnow()
+        time_to_freeze_str = datetime.datetime.utcnow()
+
     if isinstance(time_to_freeze_str, datetime.datetime):
         time_to_freeze = time_to_freeze_str
     elif isinstance(time_to_freeze_str, datetime.date):
@@ -309,13 +314,13 @@ class _freeze_time(object):
             orig_tearDownClass = getattr(klass, 'tearDownClass', None)
 
             @classmethod
-            def setUpClass(cls):
+            def setUpClass(self):
                 self.start()
                 if orig_setUpClass is not None:
                     orig_setUpClass()
 
             @classmethod
-            def tearDownClass(cls):
+            def tearDownClass(self):
                 if orig_tearDownClass is not None:
                     orig_tearDownClass()
                 self.stop()
@@ -482,7 +487,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
     except NameError:
         string_type = str
 
-    if not isinstance(time_to_freeze, (string_type, datetime.date)):
+    if not isinstance(time_to_freeze, (type(None), string_type, datetime.date)):
         raise TypeError(('freeze_time() expected None, a string, date instance, or '
                          'datetime instance, but got type {0}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
