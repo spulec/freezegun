@@ -523,4 +523,6 @@ except ImportError:
     pass
 else:
     pymysql.converters.encoders[FakeDate] = pymysql.converters.encoders[real_date]
+    pymysql.converters.conversions[FakeDate] = pymysql.converters.encoders[real_date]
     pymysql.converters.encoders[FakeDatetime] = pymysql.converters.encoders[real_datetime]
+    pymysql.converters.conversions[FakeDatetime] = pymysql.converters.encoders[real_datetime]
