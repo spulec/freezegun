@@ -6,6 +6,7 @@ import time
 import calendar
 import unittest
 import platform
+import os
 
 from dateutil import parser
 from dateutil.tz import tzlocal
@@ -371,6 +372,7 @@ class _freeze_time(object):
 
         copyreg.dispatch_table[real_datetime] = pickle_fake_datetime
         copyreg.dispatch_table[real_date] = pickle_fake_date
+        cwd = os.getcwd()
 
         # Change any place where the module had already been imported
         to_patch = [
@@ -390,12 +392,18 @@ class _freeze_time(object):
         # Save the current loaded modules
         self.modules_at_start = set(sys.modules.keys())
 
-        for mod_name, module in list(sys.modules.items()):
+        for mod_name, module in sorted(list(sys.modules.items())):
             if mod_name is None or module is None:
                 continue
             elif mod_name.startswith(self.ignore):
                 continue
             elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                continue
+            try:
+                mfile = module.__file__
+            except:
+                pass
+            if not mfile or not mfile.startswith(cwd):
                 continue
             for module_attribute in dir(module):
                 if module_attribute in real_names:
