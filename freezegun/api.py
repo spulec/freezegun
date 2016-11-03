@@ -6,9 +6,10 @@ import time
 import calendar
 import unittest
 import platform
+import os
 
 from dateutil import parser
-from dateutil.tz import tzlocal
+from dateutil.tz import tzlocal, tzutc
 
 real_time = time.time
 real_localtime = time.localtime
@@ -176,10 +177,9 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     @classmethod
     def now(cls, tz=None):
+        result = cls._time_to_freeze()
         if tz:
-            result = tz.fromutc(cls._time_to_freeze().replace(tzinfo=tz)) + datetime.timedelta(hours=cls._tz_offset())
-        else:
-            result = cls._time_to_freeze() + datetime.timedelta(hours=cls._tz_offset())
+            result = tz.fromutc(result)
         return datetime_to_fakedatetime(result)
 
     def date(self):
@@ -283,13 +283,16 @@ class FrozenDateTimeFactory(object):
         delta = target_datetime - self.time_to_freeze
         self.tick(delta=delta)
 
+def _apply_offset(time_to_freeze, tz_offset):
+    delta = tz_offset if isinstance(tz_offset, datetime.timedelta) else datetime.timedelta(hours=tz_offset)
+    return time_to_freeze - delta
 
 class _freeze_time(object):
 
     def __init__(self, time_to_freeze_str, tz_offset, ignore, tick):
-
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
-        self.tz_offset = tz_offset
+        if tz_offset and not getattr(time_to_freeze_str, 'tzinfo', None):
+            self.time_to_freeze = _apply_offset(self.time_to_freeze, tz_offset)
         self.ignore = tuple(ignore)
         self.tick = tick
         self.undo_changes = []
@@ -371,6 +374,7 @@ class _freeze_time(object):
 
         copyreg.dispatch_table[real_datetime] = pickle_fake_datetime
         copyreg.dispatch_table[real_date] = pickle_fake_date
+        cwd = os.getcwd()
 
         # Change any place where the module had already been imported
         to_patch = [
@@ -390,12 +394,18 @@ class _freeze_time(object):
         # Save the current loaded modules
         self.modules_at_start = set(sys.modules.keys())
 
-        for mod_name, module in list(sys.modules.items()):
+        for mod_name, module in sorted(list(sys.modules.items())):
             if mod_name is None or module is None:
                 continue
             elif mod_name.startswith(self.ignore):
                 continue
             elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                continue
+            try:
+                mfile = module.__file__
+            except:
+                pass
+            if not mfile or not mfile.startswith(cwd):
                 continue
             for module_attribute in dir(module):
                 if module_attribute in real_names:
@@ -411,18 +421,13 @@ class _freeze_time(object):
                     add_change((module, module_attribute, attribute_value))
 
         datetime.datetime.times_to_freeze.append(time_to_freeze)
-        datetime.datetime.tz_offsets.append(self.tz_offset)
-
         datetime.date.dates_to_freeze.append(time_to_freeze)
-        datetime.date.tz_offsets.append(self.tz_offset)
 
         return time_to_freeze
 
     def stop(self):
         datetime.datetime.times_to_freeze.pop()
-        datetime.datetime.tz_offsets.pop()
         datetime.date.dates_to_freeze.pop()
-        datetime.date.tz_offsets.pop()
 
         if not datetime.datetime.times_to_freeze:
             datetime.datetime = real_datetime
