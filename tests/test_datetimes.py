@@ -458,6 +458,28 @@ class FrozenInheritedTests(BaseInheritanceFreezableTests):
         self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
 
 
+class TestOldStyleClasses:
+    def test_direct_method(self):
+        # Make sure old style classes (not inheriting from object) is supported
+        @freeze_time('2013-04-09')
+        class OldStyleClass:
+            def method(self):
+                return datetime.date.today()
+
+        assert OldStyleClass().method() == datetime.date(2013, 4, 9)
+
+    def test_inherited_method(self):
+        class OldStyleBaseClass:
+            def inherited_method(self):
+                return datetime.date.today()
+
+        @freeze_time('2013-04-09')
+        class OldStyleClass(OldStyleBaseClass):
+            pass
+
+        assert OldStyleClass().inherited_method() == datetime.date(2013, 4, 9)
+
+
 def test_min_and_max():
     freezer = freeze_time("2012-01-14")
     real_datetime = datetime.datetime
