@@ -4,6 +4,13 @@ Freezegun Changelog
 Latest
 ------
 
+0.3.8
+-----
+
+* Bugfix for old-style classes
+* Ignore warnings when patching
+* Add `move_to` method to change time
+
 0.3.7
 -----
 
