@@ -6,6 +6,7 @@ import time
 import calendar
 import unittest
 import platform
+import warnings
 
 from dateutil import parser
 from dateutil.tz import tzlocal
@@ -390,25 +391,28 @@ class _freeze_time(object):
         # Save the current loaded modules
         self.modules_at_start = set(sys.modules.keys())
 
-        for mod_name, module in list(sys.modules.items()):
-            if mod_name is None or module is None:
-                continue
-            elif mod_name.startswith(self.ignore):
-                continue
-            elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
-                continue
-            for module_attribute in dir(module):
-                if module_attribute in real_names:
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore')
+
+            for mod_name, module in list(sys.modules.items()):
+                if mod_name is None or module is None:
                     continue
-                try:
-                    attribute_value = getattr(module, module_attribute)
-                except (ImportError, AttributeError, TypeError):
-                    # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+                elif mod_name.startswith(self.ignore):
                     continue
-                fake = fakes.get(id(attribute_value))
-                if fake:
-                    setattr(module, module_attribute, fake)
-                    add_change((module, module_attribute, attribute_value))
+                elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                    continue
+                for module_attribute in dir(module):
+                    if module_attribute in real_names:
+                        continue
+                    try:
+                        attribute_value = getattr(module, module_attribute)
+                    except (ImportError, AttributeError, TypeError):
+                        # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+                        continue
+                    fake = fakes.get(id(attribute_value))
+                    if fake:
+                        setattr(module, module_attribute, fake)
+                        add_change((module, module_attribute, attribute_value))
 
         datetime.datetime.times_to_freeze.append(time_to_freeze)
         datetime.datetime.tz_offsets.append(self.tz_offset)
@@ -436,26 +440,29 @@ class _freeze_time(object):
             # Restore modules loaded after start()
             modules_to_restore = set(sys.modules.keys()) - self.modules_at_start
             self.modules_at_start = set()
-            for mod_name in modules_to_restore:
-                module = sys.modules.get(mod_name, None)
-                if mod_name is None or module is None:
-                    continue
-                elif mod_name.startswith(self.ignore):
-                    continue
-                elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
-                    continue
-                for module_attribute in dir(module):
-                    if module_attribute in self.fake_names:
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                for mod_name in modules_to_restore:
+                    module = sys.modules.get(mod_name, None)
+                    if mod_name is None or module is None:
                         continue
-                    try:
-                        attribute_value = getattr(module, module_attribute)
-                    except (ImportError, AttributeError, TypeError):
-                        # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+                    elif mod_name.startswith(self.ignore):
                         continue
+                    elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                        continue
+                    for module_attribute in dir(module):
 
-                    real = self.reals.get(id(attribute_value))
-                    if real:
-                        setattr(module, module_attribute, real)
+                        if module_attribute in self.fake_names:
+                            continue
+                        try:
+                            attribute_value = getattr(module, module_attribute)
+                        except (ImportError, AttributeError, TypeError):
+                            # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+                            continue
+
+                        real = self.reals.get(id(attribute_value))
+                        if real:
+                            setattr(module, module_attribute, real)
 
         time.time = time.time.previous_time_function
         time.gmtime = time.gmtime.previous_gmtime_function
