@@ -80,7 +80,8 @@ def test_import_localtime():
     struct = fake_localtime_function()
     assert struct.tm_year == 2012
     assert struct.tm_mon == 1
-    assert struct.tm_mday == 14
+    assert struct.tm_mday >= 13  # eg. GMT+14
+    assert struct.tm_mday <= 15  # eg. GMT-14
 
 
 @freeze_time("2012-01-14 12:00:00")
