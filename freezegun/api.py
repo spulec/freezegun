@@ -283,16 +283,16 @@ class FrozenDateTimeFactory(object):
         delta = target_datetime - self.time_to_freeze
         self.tick(delta=delta)
 
-def _apply_offset(time_to_freeze, tz_offset):
-    delta = tz_offset if isinstance(tz_offset, datetime.timedelta) else datetime.timedelta(hours=tz_offset)
-    return time_to_freeze - delta
+def _apply_offset(time_to_freeze, tz):
+    res = tz.localize(time_to_freeze)
+    return convert_to_timezone_naive(res)
 
 class _freeze_time(object):
 
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick):
+    def __init__(self, time_to_freeze_str, tz, ignore, tick):
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
-        if tz_offset and not getattr(time_to_freeze_str, 'tzinfo', None):
-            self.time_to_freeze = _apply_offset(self.time_to_freeze, tz_offset)
+        if tz and not getattr(time_to_freeze_str, 'tzinfo', None):
+            self.time_to_freeze = _apply_offset(self.time_to_freeze, tz)
         self.ignore = tuple(ignore)
         self.tick = tick
         self.undo_changes = []
@@ -481,7 +481,7 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
+def freeze_time(time_to_freeze=None, tz=tzlocal, ignore=None, tick=False):
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
@@ -500,7 +500,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
     ignore.append('django.utils.six.moves')
     ignore.append('threading')
     ignore.append('Queue')
-    return _freeze_time(time_to_freeze, tz_offset, ignore, tick)
+    return _freeze_time(time_to_freeze, tz, ignore, tick)
 
 
 # Setup adapters for sqlite
