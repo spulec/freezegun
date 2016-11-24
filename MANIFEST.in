@@ -1,4 +1,4 @@
-include README.rst LICENSE AUTHORS.rst
+include README.rst LICENSE AUTHORS.rst CHANGELOG
 recursive-include tests *
 global-exclude __pycache__
 global-exclude *.py[co]
