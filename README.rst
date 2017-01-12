@@ -19,28 +19,28 @@ Decorator
 
 .. code-block:: python
 
-      from freezegun import freeze_time
-      import datetime
-      import unittest
+    from freezegun import freeze_time
+    import datetime
+    import unittest
 
 
-      @freeze_time("2012-01-14")
-      def test():
-          assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
+    @freeze_time("2012-01-14")
+    def test():
+        assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
-      # Or a unittest TestCase - freezes for every test, from the start of setUpClass to the end of tearDownClass
+    # Or a unittest TestCase - freezes for every test, from the start of setUpClass to the end of tearDownClass
 
-      @freeze_time("1955-11-12")
-      class MyTests(unittest.TestCase):
-          def test_the_class(self):
-              assert datetime.datetime.now() == datetime.datetime(1955, 11, 12)
+    @freeze_time("1955-11-12")
+    class MyTests(unittest.TestCase):
+        def test_the_class(self):
+            assert datetime.datetime.now() == datetime.datetime(1955, 11, 12)
 
-      # Or any other class - freezes around each callable (may not work in every case)
+    # Or any other class - freezes around each callable (may not work in every case)
 
-      @freeze_time("2012-01-14")
-      class Tester(object):
-          def test_the_class(self):
-              assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
+    @freeze_time("2012-01-14")
+    class Tester(object):
+        def test_the_class(self):
+            assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
 Context Manager
 ~~~~~~~~~~~~~~~
@@ -85,7 +85,7 @@ Timezones
 Nice inputs
 ~~~~~~~~~~~
 
-FreezeGun uses dateutil behind the scenes so you can have nice-looking datetimes
+FreezeGun uses dateutil behind the scenes so you can have nice-looking datetimes.
 
 .. code-block:: python
 
@@ -93,10 +93,10 @@ FreezeGun uses dateutil behind the scenes so you can have nice-looking datetimes
     def test_nice_datetime():
         assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
-`tick` argument
-~~~~~~~~~~~
+``tick`` argument
+~~~~~~~~~~~~~~~~~
 
-FreezeGun has an additional `tick` argument which will restart time at the given
+FreezeGun has an additional ``tick`` argument which will restart time at the given
 value, but then time will keep ticking. This is alternative to the default
 parameters which will keep time stopped.
 
@@ -109,7 +109,7 @@ parameters which will keep time stopped.
 Manual ticks
 ~~~~~~~~~~~~
 
-Freezegun allows for the time to be manually forwarded as well
+Freezegun allows for the time to be manually forwarded as well.
 
 .. code-block:: python
 
@@ -130,7 +130,7 @@ Freezegun allows for the time to be manually forwarded as well
 Moving time to specify datetime
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Freezegun allows moving time to specific dates 
+Freezegun allows moving time to specific dates.
 
 .. code-block:: python
 
