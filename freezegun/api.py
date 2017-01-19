@@ -177,10 +177,11 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     @classmethod
     def now(cls, tz=None):
+        now = cls._time_to_freeze() or real_datetime.now()
         if tz:
-            result = tz.fromutc(cls._time_to_freeze().replace(tzinfo=tz)) + datetime.timedelta(hours=cls._tz_offset())
+            result = tz.fromutc(now.replace(tzinfo=tz)) + datetime.timedelta(hours=cls._tz_offset())
         else:
-            result = cls._time_to_freeze() + datetime.timedelta(hours=cls._tz_offset())
+            result = now + datetime.timedelta(hours=cls._tz_offset())
         return datetime_to_fakedatetime(result)
 
     def date(self):
@@ -192,12 +193,13 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     @classmethod
     def utcnow(cls):
-        result = cls._time_to_freeze()
+        result = cls._time_to_freeze() or real_datetime.utcnow()
         return datetime_to_fakedatetime(result)
 
     @classmethod
     def _time_to_freeze(cls):
-        return cls.times_to_freeze[-1]()
+        if cls.times_to_freeze:
+            return cls.times_to_freeze[-1]()
 
     @classmethod
     def _tz_offset(cls):
