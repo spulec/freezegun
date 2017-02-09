@@ -3,6 +3,7 @@ import functools
 import inspect
 import sys
 import time
+import uuid
 import calendar
 import unittest
 import platform
@@ -17,6 +18,16 @@ real_gmtime = time.gmtime
 real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
+
+try:
+    real_uuid_generate_time = uuid._uuid_generate_time
+except ImportError:
+    real_uuid_generate_time = None
+
+try:
+    real_uuid_create = uuid._UuidCreate
+except ImportError:
+    real_uuid_create = None
 
 try:
     import copy_reg as copyreg
@@ -373,6 +384,8 @@ class _freeze_time(object):
         time.localtime = fake_localtime
         time.gmtime = fake_gmtime
         time.strftime = fake_strftime
+        uuid._uuid_generate_time = None
+        uuid._UuidCreate = None
 
         copyreg.dispatch_table[real_datetime] = pickle_fake_datetime
         copyreg.dispatch_table[real_date] = pickle_fake_date
@@ -472,6 +485,9 @@ class _freeze_time(object):
         time.gmtime = time.gmtime.previous_gmtime_function
         time.localtime = time.localtime.previous_localtime_function
         time.strftime = time.strftime.previous_strftime_function
+
+        uuid._uuid_generate_time = real_uuid_generate_time
+        uuid._UuidCreate = real_uuid_create
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
