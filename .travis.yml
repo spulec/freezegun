@@ -6,6 +6,7 @@ python:
   - 3.2
   - 3.3
   - 3.4
+  - 3.6
   - pypy3
 script: make travis
 install:
