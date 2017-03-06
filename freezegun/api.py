@@ -66,7 +66,7 @@ def _setup_modules_cache():
     # FIXME: move this definition to be at the top-level
     real_time_object_ids = set(id(obj) for obj in real_date_objects)
     result = {}
-    for mod_name, module in sys.modules.items():
+    for mod_name, module in list(sys.modules.items()):
         # ignore this module
         if mod_name == __name__:
             continue
