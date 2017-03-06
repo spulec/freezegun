@@ -297,6 +297,38 @@ class FrozenDateTimeFactory(object):
         delta = target_datetime - self.time_to_freeze
         self.tick(delta=delta)
 
+import hashlib
+
+def setup_modules_cache():
+    to_patch = {
+        'real_date': id(real_date),
+        'real_datetime': id(real_datetime),
+        'real_gmtime': id(real_gmtime),
+        'real_localtime': id(real_localtime),
+        'real_strftime': id(real_strftime),
+        'real_time': id(real_time),
+    }
+    result = {}
+    for mod_name, module in list(sys.modules.items()):
+        attrs = []
+        for module_attribute in dir(module):
+            if mod_name == __name__:
+                continue
+            try:
+                attribute_value = getattr(module, module_attribute)
+            except (ImportError, AttributeError, TypeError):
+                # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+                continue
+            if id(attribute_value) in to_patch.values():
+                attrs.append(attribute_value)
+
+        result[mod_name] = (id(module), hashlib.md5(','.join(dir(module))).hexdigest(), attrs)
+    return result
+
+
+GLOBAL_MODULES_CACHE = None
+
+
 
 class _freeze_time(object):
 
@@ -418,18 +450,30 @@ class _freeze_time(object):
                     continue
                 elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                     continue
-                for module_attribute in dir(module):
-                    if module_attribute in real_names:
-                        continue
-                    try:
-                        attribute_value = getattr(module, module_attribute)
-                    except (ImportError, AttributeError, TypeError):
-                        # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
-                        continue
-                    fake = fakes.get(id(attribute_value))
-                    if fake:
-                        setattr(module, module_attribute, fake)
-                        add_change((module, module_attribute, attribute_value))
+
+                global GLOBAL_MODULES_CACHE
+                if GLOBAL_MODULES_CACHE is None:
+                    GLOBAL_MODULES_CACHE = setup_modules_cache()
+                cached_module_name, cached_hash, cached_attrs = GLOBAL_MODULES_CACHE.get(mod_name, ('_', 0, ['']))
+                if id(module) == cached_module_name and hashlib.md5(','.join(dir(module))).hexdigest() == cached_hash:
+                    for attribute_value in cached_attrs:
+                        fake = fakes.get(id(attribute_value))
+                        if fake:
+                            setattr(module, attribute_value.__name__, fake)
+                            add_change((module, attribute_value.__name__, attribute_value))
+                else:
+                    for module_attribute in dir(module):
+                        if module_attribute in real_names:
+                            continue
+                        try:
+                            attribute_value = getattr(module, module_attribute)
+                        except (ImportError, AttributeError, TypeError):
+                            # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+                            continue
+                        fake = fakes.get(id(attribute_value))
+                        if fake:
+                            setattr(module, module_attribute, fake)
+                            add_change((module, module_attribute, attribute_value))
 
         datetime.datetime.times_to_freeze.append(time_to_freeze)
         datetime.datetime.tz_offsets.append(self.tz_offset)
