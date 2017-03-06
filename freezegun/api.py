@@ -80,7 +80,7 @@ def _setup_modules_cache():
 
 
 def _get_module_attributes_hash(module):
-    return '{}-{}'.format(id(module), hashlib.md5(','.join(dir(module))).hexdigest())
+    return '{0}-{1}'.format(id(module), hashlib.md5(','.join(dir(module)).encode('utf-8')).hexdigest())
 
 
 def _get_cached_module_attributes(mod_name, module):
