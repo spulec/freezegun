@@ -20,6 +20,7 @@ real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
 real_date_objects = [real_time, real_localtime, real_gmtime, real_strftime, real_date, real_datetime]
+_real_time_object_ids = set(id(obj) for obj in real_date_objects)
 
 
 try:
@@ -39,13 +40,17 @@ except ImportError:
 
 
 # keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
+# start with `None` as the sentinel value.
+# if `{}` (empty dict) was the sentinel value, there's a chance that `setup_modules_cache()` will be called many times
 _GLOBAL_MODULES_CACHE = None
 
 
 def _get_global_modules_cache():
     global _GLOBAL_MODULES_CACHE
+    # the first call to this function sets up the global module cache. it's expected to be slower than consecutive calls
     if _GLOBAL_MODULES_CACHE is None:
-        _GLOBAL_MODULES_CACHE = _setup_modules_cache()
+        _GLOBAL_MODULES_CACHE = {}
+        _setup_modules_cache()
     return _GLOBAL_MODULES_CACHE
 
 
@@ -63,20 +68,21 @@ def _get_module_attributes(module):
 
 
 def _setup_modules_cache():
-    # FIXME: move this definition to be at the top-level
-    real_time_object_ids = set(id(obj) for obj in real_date_objects)
-    result = {}
     for mod_name, module in list(sys.modules.items()):
-        # ignore this module
-        if mod_name == __name__:
+        # ignore modules from freezegun
+        if mod_name == __name__ or not mod_name or not module:
             continue
-        date_attrs = []
-        all_module_attributes = _get_module_attributes(module)
-        for attribute_name, attribute_value in all_module_attributes:
-            if id(attribute_value) in real_time_object_ids:
-                date_attrs.append((attribute_name, attribute_value))
-        result[mod_name] = (_get_module_attributes_hash(module), date_attrs)
-    return result
+        _setup_module_cache(module)
+
+
+def _setup_module_cache(module):
+    global _GLOBAL_MODULES_CACHE
+    date_attrs = []
+    all_module_attributes = _get_module_attributes(module)
+    for attribute_name, attribute_value in all_module_attributes:
+        if id(attribute_value) in _real_time_object_ids:
+            date_attrs.append((attribute_name, attribute_value))
+    _GLOBAL_MODULES_CACHE[module.__name__] = (_get_module_attributes_hash(module), date_attrs)
 
 
 def _get_module_attributes_hash(module):
@@ -89,6 +95,7 @@ def _get_cached_module_attributes(mod_name, module):
     if _get_module_attributes_hash(module) == module_hash:
         return cached_attrs
     else:
+        _setup_module_cache(module)
         return _get_module_attributes(module)
 
 
