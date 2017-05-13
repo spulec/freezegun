@@ -16,7 +16,7 @@ setup(
     version='0.3.9',
     description='Let your Python tests travel through time',
     author='Steve Pulec',
-    author_email='spulec@gmail',
+    author_email='spulec@gmail.com',
     url='https://github.com/spulec/freezegun',
     packages=['freezegun'],
     install_requires=requires,
