@@ -414,7 +414,7 @@ class _freeze_time(object):
             for mod_name, module in list(sys.modules.items()):
                 if mod_name is None or module is None:
                     continue
-                elif mod_name.startswith(self.ignore):
+                elif any(map(mod_name.startswith, self.ignore)):
                     continue
                 elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                     continue
@@ -463,7 +463,7 @@ class _freeze_time(object):
                     module = sys.modules.get(mod_name, None)
                     if mod_name is None or module is None:
                         continue
-                    elif mod_name.startswith(self.ignore):
+                    elif any(map(mod_name.startswith, self.ignore)):
                         continue
                     elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                         continue
