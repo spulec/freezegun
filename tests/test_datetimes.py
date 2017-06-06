@@ -248,6 +248,22 @@ def test_datetime_object():
     assert datetime_freezer.time_to_freeze == regular_freezer.time_to_freeze
 
 
+def test_function_object():
+    frozen_datetime = datetime.datetime(year=2012, month=11, day=10,
+                                        hour=4, minute=15, second=30)
+    def function(): return frozen_datetime
+
+    with freeze_time(function):
+        assert frozen_datetime == datetime.datetime.now()
+
+
+def test_lambda_object():
+    frozen_datetime = datetime.datetime(year=2012, month=11, day=10,
+                                        hour=4, minute=15, second=30)
+    with freeze_time(lambda: frozen_datetime):
+        assert frozen_datetime == datetime.datetime.now()
+
+
 def test_old_datetime_object():
     frozen_datetime = datetime.datetime(year=1, month=7, day=12,
                                         hour=15, minute=6, second=3)

@@ -93,6 +93,18 @@ FreezeGun uses dateutil behind the scenes so you can have nice-looking datetimes
     def test_nice_datetime():
         assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
+Function objects
+~~~~~~~~~~~~~~~~
+
+FreezeGun is able to handle function objects.
+
+.. code-block:: python
+
+    def test_lambda():
+        with freeze_time(lambda: datetime.datetime(2012, 1, 14)):
+            assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
+
+
 ``tick`` argument
 ~~~~~~~~~~~~~~~~~
 
