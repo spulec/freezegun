@@ -8,6 +8,7 @@ import calendar
 import unittest
 import platform
 import warnings
+import types
 
 from dateutil import parser
 from dateutil.tz import tzlocal
@@ -510,11 +511,18 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
     except NameError:
         string_type = str
 
-    if not isinstance(time_to_freeze, (type(None), string_type, datetime.date)):
-        raise TypeError(('freeze_time() expected None, a string, date instance, or '
-                         'datetime instance, but got type {0}.').format(type(time_to_freeze)))
+    if not isinstance(time_to_freeze, (type(None), string_type, datetime.date,
+        types.FunctionType, types.GeneratorType)):
+        raise TypeError(('freeze_time() expected None, a string, date instance, datetime '
+                         'instance, function or a generator, but got type {0}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
+
+    if isinstance(time_to_freeze, types.FunctionType):
+        return freeze_time(time_to_freeze(), tz_offset, ignore, tick)
+
+    if isinstance(time_to_freeze, types.GeneratorType):
+        return freeze_time(next(time_to_freeze), tz_offset, ignore, tick)
 
     if ignore is None:
         ignore = []
