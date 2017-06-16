@@ -8,7 +8,7 @@ from nose.plugins import skip
 from nose.tools import assert_raises
 from tests import utils
 
-from freezegun import freeze_time
+from freezegun import freeze_time, freeze_times
 from freezegun.api import FakeDatetime, FakeDate
 
 
@@ -269,13 +269,13 @@ def test_generator_object():
     frozen_datetimes = (datetime.datetime(year=y, month=1, day=1)
         for y in range(2010, 2012))
 
-    with freeze_time(frozen_datetimes):
+    with freeze_times(frozen_datetimes):
         assert datetime.datetime(2010, 1, 1) == datetime.datetime.now()
 
-    with freeze_time(frozen_datetimes):
+    with freeze_times(frozen_datetimes):
         assert datetime.datetime(2011, 1, 1) == datetime.datetime.now()
 
-    assert_raises(StopIteration, freeze_time, frozen_datetimes)
+    assert_raises(StopIteration, freeze_times, frozen_datetimes)
 
 
 def test_old_datetime_object():
