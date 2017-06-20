@@ -292,7 +292,7 @@ class FrozenDateTimeFactory(object):
 
     def tick(self, delta=datetime.timedelta(seconds=1)):
         if isinstance(delta, numbers.Real):
-            self.time_to_freeze += dateime.timedelta(seconds=delta)
+            self.time_to_freeze += datetime.timedelta(seconds=delta)
         else:
             self.time_to_freeze += delta
 
