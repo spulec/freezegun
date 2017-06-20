@@ -138,6 +138,21 @@ def test_manual_increment():
         assert frozen_datetime() == initial_datetime
 
 
+def test_manual_increment_seconds():
+    initial_datetime = datetime.datetime(year=1, month=7, day=12,
+                                         hour=15, minute=6, second=3)
+    with freeze_time(initial_datetime) as frozen_datetime:
+        assert frozen_datetime() == initial_datetime
+
+        frozen_datetime.tick()
+        initial_datetime += datetime.timedelta(seconds=1)
+        assert frozen_datetime() == initial_datetime
+
+        frozen_datetime.tick(10)
+        initial_datetime += datetime.timedelta(seconds=10)
+        assert frozen_datetime() == initial_datetime
+
+
 def test_move_to():
     initial_datetime = datetime.datetime(year=1, month=7, day=12,
                                         hour=15, minute=6, second=3)
