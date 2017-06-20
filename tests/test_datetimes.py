@@ -145,11 +145,11 @@ def test_manual_increment_seconds():
         assert frozen_datetime() == initial_datetime
 
         frozen_datetime.tick()
-        initial_datetime += datetime.timedelta(seconds=1)
+        initial_datetime += datetime.datetime.timedelta(seconds=1)
         assert frozen_datetime() == initial_datetime
 
         frozen_datetime.tick(10)
-        initial_datetime += datetime.timedelta(seconds=10)
+        initial_datetime += datetime.datetime.timedelta(seconds=10)
         assert frozen_datetime() == initial_datetime
 
 
