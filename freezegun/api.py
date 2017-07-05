@@ -9,6 +9,7 @@ import unittest
 import platform
 import warnings
 import types
+import numbers
 
 from dateutil import parser
 from dateutil.tz import tzlocal
@@ -290,7 +291,10 @@ class FrozenDateTimeFactory(object):
         return self.time_to_freeze
 
     def tick(self, delta=datetime.timedelta(seconds=1)):
-        self.time_to_freeze += delta
+        if isinstance(delta, numbers.Real):
+            self.time_to_freeze += datetime.timedelta(seconds=delta)
+        else:
+            self.time_to_freeze += delta
 
     def move_to(self, target_datetime):
         """Moves frozen date to the given ``target_datetime``"""
