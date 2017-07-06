@@ -391,6 +391,7 @@ class _freeze_time(object):
         time.strftime = fake_strftime
         uuid._uuid_generate_time = None
         uuid._UuidCreate = None
+        uuid._last_timestamp = None
 
         copyreg.dispatch_table[real_datetime] = pickle_fake_datetime
         copyreg.dispatch_table[real_date] = pickle_fake_date
@@ -493,6 +494,7 @@ class _freeze_time(object):
 
         uuid._uuid_generate_time = real_uuid_generate_time
         uuid._UuidCreate = real_uuid_create
+        uuid._last_timestamp = None
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
