@@ -77,6 +77,15 @@ def test_tz_offset():
     freezer.stop()
 
 
+def test_timedelta_tz_offset():
+    freezer = freeze_time("2012-01-14 03:21:34",
+                          tz_offset=-datetime.timedelta(hours=3, minutes=30))
+    freezer.start()
+    assert datetime.datetime.now() == datetime.datetime(2012, 1, 13, 23, 51, 34)
+    assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14, 3, 21, 34)
+    freezer.stop()
+
+
 def test_tz_offset_with_today():
     freezer = freeze_time("2012-01-14", tz_offset=-4)
     freezer.start()

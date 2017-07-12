@@ -82,6 +82,10 @@ Timezones
         # datetime.date.today() uses local time
         assert datetime.date.today() == datetime.date(2012, 1, 13)
 
+    @freeze_time("2012-01-14 03:21:34", tz_offset=-datetime.timedelta(hours=3, minutes=30))
+    def test_timedelta_offset():
+        assert datetime.datetime.now() == datetime.datetime(2012, 1, 13, 23, 51, 34)
+
 Nice inputs
 ~~~~~~~~~~~
 
