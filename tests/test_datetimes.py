@@ -169,6 +169,43 @@ def test_move_to():
         assert frozen_datetime() == initial_datetime
 
 
+def test_manual_increment_monotonic():
+    if sys.version_info[0] != 3:
+        raise skip.SkipTest("test target is Python3")
+
+    initial_datetime = datetime.datetime(year=1, month=7, day=12,
+        hour=15, minute=6, second=3)
+    with freeze_time(initial_datetime) as frozen_datetime:
+        initial_monotonic = time.monotonic()
+
+        frozen_datetime.tick()
+        initial_monotonic += 1
+        assert time.monotonic() == initial_monotonic
+
+        frozen_datetime.tick(delta=datetime.timedelta(seconds=10))
+        initial_monotonic += 10
+        assert time.monotonic() == initial_monotonic
+
+
+def test_move_to_monotonic():
+    if sys.version_info[0] != 3:
+        raise skip.SkipTest("test target is Python3")
+
+    initial_datetime = datetime.datetime(year=1, month=7, day=12,
+        hour=15, minute=6, second=3)
+
+    other_datetime = datetime.datetime(year=2, month=8, day=13,
+        hour=14, minute=5, second=0)
+    with freeze_time(initial_datetime) as frozen_datetime:
+        initial_monotonic = time.monotonic()
+
+        frozen_datetime.move_to(other_datetime)
+        assert time.monotonic() - initial_monotonic == (other_datetime - initial_datetime).total_seconds()
+
+        frozen_datetime.move_to(initial_datetime)
+        assert time.monotonic() == initial_monotonic
+
+
 def test_bad_time_argument():
     try:
         freeze_time("2012-13-14", tz_offset=-4)
@@ -392,6 +429,23 @@ def test_nested_context_manager():
             _assert_datetime_date_and_time_are_all_equal(datetime.datetime(2012, 12, 25))
         _assert_datetime_date_and_time_are_all_equal(datetime.datetime(2012, 1, 14))
     assert datetime.datetime.now() > datetime.datetime(2013, 1, 1)
+
+
+def test_nested_monotonic():
+    if sys.version_info[0] != 3:
+        raise skip.SkipTest("test target is Python3")
+
+    with freeze_time('2012-01-14') as frozen_datetime_1:
+        initial_monotonic_1 = time.monotonic()
+        with freeze_time('2012-12-25') as frozen_datetime_2:
+            initial_monotonic_2 = time.monotonic()
+            frozen_datetime_2.tick()
+            initial_monotonic_2 += 1
+            assert time.monotonic() == initial_monotonic_2
+        assert time.monotonic() == initial_monotonic_1
+        frozen_datetime_1.tick()
+        initial_monotonic_1 += 1
+        assert time.monotonic() == initial_monotonic_1
 
 
 def _assert_datetime_date_and_time_are_all_equal(expected_datetime):

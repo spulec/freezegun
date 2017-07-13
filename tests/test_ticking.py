@@ -1,6 +1,9 @@
 import datetime
 import time
 import mock
+import sys
+
+from nose.plugins import skip
 
 from freezegun import freeze_time
 from tests import utils
@@ -43,3 +46,14 @@ def test_non_pypy_compat():
         freeze_time("Jan 14th, 2012, 23:59:59", tick=True)
     except Exception:
         raise AssertionError("tick=True should not error on CPython")
+
+
+@utils.cpython_only
+def test_ticking_datetime_monotonic():
+    if sys.version_info[0] != 3:
+        raise skip.SkipTest("test target is Python3")
+
+    with freeze_time("Jan 14th, 2012", tick=True):
+        initial_monotonic = time.monotonic()
+        time.sleep(0.001)  # Deal with potential clock resolution problems
+        assert time.monotonic() > initial_monotonic

@@ -21,6 +21,12 @@ real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
 
+# monotonic is available since python 3.3
+try:
+    real_monotonic = time.monotonic
+except AttributeError:
+    real_monotonic = None
+
 try:
     real_uuid_generate_time = uuid._uuid_generate_time
 except ImportError:
@@ -222,6 +228,18 @@ FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
 FakeDatetime.max = datetime_to_fakedatetime(real_datetime.max)
 
 
+class FakeMonotonic(object):
+    def __init__(self, time_to_freeze, previous_monotonic_function):
+        self.time_to_freeze = time_to_freeze
+        self.previous_monotonic_function = previous_monotonic_function
+        self._start_freeze_time = self.time_to_freeze()
+        self._start_monotonic = self.previous_monotonic_function()
+
+    def __call__(self):
+        current_time = self.time_to_freeze()
+        return self._start_monotonic + (current_time - self._start_freeze_time).total_seconds()
+
+
 def convert_to_timezone_naive(time_to_freeze):
     """
     Converts a potentially timezone-aware datetime to be a naive UTC datetime
@@ -404,6 +422,11 @@ class _freeze_time(object):
             ('real_strftime', real_strftime, 'FakeStrfTime', fake_strftime),
             ('real_time', real_time, 'FakeTime', fake_time),
         ]
+        if real_monotonic is not None:
+            fake_monotonic = FakeMonotonic(time_to_freeze, time.monotonic)
+            time.monotonic = fake_monotonic
+            to_patch.append(('real_monotonic', real_monotonic, 'FakeMonotonic', fake_monotonic))
+
         real_names = tuple(real_name for real_name, real, fake_name, fake in to_patch)
         self.fake_names = tuple(fake_name for real_name, real, fake_name, fake in to_patch)
         self.reals = dict((id(fake), real) for real_name, real, fake_name, fake in to_patch)
@@ -490,6 +513,8 @@ class _freeze_time(object):
         time.gmtime = time.gmtime.previous_gmtime_function
         time.localtime = time.localtime.previous_localtime_function
         time.strftime = time.strftime.previous_strftime_function
+        if real_monotonic is not None:
+            time.monotonic = time.monotonic.previous_monotonic_function
 
         uuid._uuid_generate_time = real_uuid_generate_time
         uuid._UuidCreate = real_uuid_create
