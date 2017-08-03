@@ -128,6 +128,22 @@ parameters which will keep time stopped.
     def test_nice_datetime():
         assert datetime.datetime.now() > datetime.datetime(2020, 1, 14)
 
+``auto_tick_seconds`` argument
+~~~~~~~~~~~~~~~~~
+
+FreezeGun has an additional ``auto_tick_seconds`` argument which will autoincrement the
+value every time by the given amount from the start value. This is alternative to the default
+parameters which will keep time stopped. Note that given ``auto_tick_seconds`` the ``tick`` parameter will be ignored.
+
+.. code-block:: python
+
+    @freeze_time("Jan 14th, 2020", auto_tick_seconds=15)
+    def test_nice_datetime():
+        first_time = datetime.datetime.now()
+        auto_incremented_time = datetime.datetime.now()
+        assert first_time + datetime.timedelta(seconds=15) == auto_incremented_time
+
+
 Manual ticks
 ~~~~~~~~~~~~
 
