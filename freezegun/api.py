@@ -36,6 +36,17 @@ try:
 except ImportError:
     import copyreg
 
+try:
+    import pytz
+except ImportError:
+    pytz = None
+
+try:
+    import tzlocal as tzlocalmod
+    real_get_localzone = tzlocalmod.get_localzone
+except ImportError:
+    tzlocalmod = None
+    real_get_localzone = None
 
 # Stolen from six
 def with_metaclass(meta, *bases):
@@ -80,6 +91,15 @@ class FakeGMTTime(object):
         if t is not None:
             return real_gmtime(t)
         return self.time_to_freeze().timetuple()
+
+
+class FakeGetLocalzone(object):
+    def __init__(self, time_to_freeze, previous_get_localzone_function):
+        self.time_to_freeze = time_to_freeze
+        self.previous_get_localzone_function = previous_get_localzone_function
+
+    def __call__(self):
+        return pytz.FixedOffset(datetime.datetime._tz_offset() * 60)
 
 
 class FakeStrfTime(object):
@@ -404,6 +424,14 @@ class _freeze_time(object):
             ('real_strftime', real_strftime, 'FakeStrfTime', fake_strftime),
             ('real_time', real_time, 'FakeTime', fake_time),
         ]
+
+        if tzlocalmod:
+            fake_get_localzone = FakeGetLocalzone(time_to_freeze, tzlocalmod.get_localzone)
+            tzlocalmod.get_localzone = fake_get_localzone
+            to_patch.append(
+                ('real_get_localzone', real_get_localzone, 'FakeGetLocalzone', fake_get_localzone),
+            )
+
         real_names = tuple(real_name for real_name, real, fake_name, fake in to_patch)
         self.fake_names = tuple(fake_name for real_name, real, fake_name, fake in to_patch)
         self.reals = dict((id(fake), real) for real_name, real, fake_name, fake in to_patch)
