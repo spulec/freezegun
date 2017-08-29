@@ -12,7 +12,7 @@ FreezeGun is a library that allows your python tests to travel through time by m
 Usage
 -----
 
-Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), datetime.date.today(), time.time(), time.localtime(), time.gmtime(), and time.strftime() will return the time that has been frozen.
+Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), datetime.date.today(), time.time(), time.localtime(), time.gmtime(), time.strftime() and time.monotonic() will return the time that has been frozen.
 
 Decorator
 ~~~~~~~~~
@@ -173,6 +173,7 @@ Freezegun allows moving time to specific dates.
 
 Parameter for ``move_to`` can be any valid ``freeze_time`` date (string, date, datetime).
 
+Note that for ``tick``, manual tick and ``move_to`` there is by default moved frozen time.monotonic(). If you need to turn this off just add ``'time.monotonic'`` to ``ignore`` parameter.
 
 Default Arguments
 ~~~~~~~~~~~~~~~~~

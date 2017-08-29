@@ -206,6 +206,27 @@ def test_move_to_monotonic():
         assert time.monotonic() == initial_monotonic
 
 
+def test_monotonic_can_be_ignored():
+    if sys.version_info[0] != 3:
+        raise skip.SkipTest("test target is Python3")
+
+    initial_datetime = datetime.datetime(year=1, month=7, day=12,
+                                         hour=15, minute=6, second=3)
+
+    other_datetime = datetime.datetime(year=2, month=8, day=13,
+                                       hour=14, minute=5, second=0)
+    # time.monotonic() will not affected by freeze_time
+    with freeze_time(initial_datetime, ignore=['time.monotonic']) as frozen_datetime:
+        initial_monotonic = time.monotonic()
+
+        frozen_datetime.move_to(other_datetime)
+        second_monotonic = time.monotonic()
+        assert second_monotonic > initial_monotonic
+
+        frozen_datetime.move_to(initial_datetime)
+        assert time.monotonic() > second_monotonic
+
+
 def test_bad_time_argument():
     try:
         freeze_time("2012-13-14", tz_offset=-4)

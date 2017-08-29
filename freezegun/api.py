@@ -422,7 +422,7 @@ class _freeze_time(object):
             ('real_strftime', real_strftime, 'FakeStrfTime', fake_strftime),
             ('real_time', real_time, 'FakeTime', fake_time),
         ]
-        if real_monotonic is not None:
+        if real_monotonic is not None and 'time.monotonic' not in self.ignore:
             fake_monotonic = FakeMonotonic(time_to_freeze, time.monotonic)
             time.monotonic = fake_monotonic
             to_patch.append(('real_monotonic', real_monotonic, 'FakeMonotonic', fake_monotonic))
@@ -449,6 +449,9 @@ class _freeze_time(object):
                 for module_attribute in dir(module):
                     if module_attribute in real_names:
                         continue
+                    if '{}.{}'.format(mod_name, module_attribute) in self.ignore:
+                        continue
+
                     try:
                         attribute_value = getattr(module, module_attribute)
                     except (ImportError, AttributeError, TypeError):
@@ -499,6 +502,9 @@ class _freeze_time(object):
 
                         if module_attribute in self.fake_names:
                             continue
+                        if '{}.{}'.format(mod_name, module_attribute) in self.ignore:
+                            continue
+
                         try:
                             attribute_value = getattr(module, module_attribute)
                         except (ImportError, AttributeError, TypeError):
@@ -513,7 +519,7 @@ class _freeze_time(object):
         time.gmtime = time.gmtime.previous_gmtime_function
         time.localtime = time.localtime.previous_localtime_function
         time.strftime = time.strftime.previous_strftime_function
-        if real_monotonic is not None:
+        if real_monotonic is not None and 'time.monotonic' not in self.ignore:
             time.monotonic = time.monotonic.previous_monotonic_function
 
         uuid._uuid_generate_time = real_uuid_generate_time
