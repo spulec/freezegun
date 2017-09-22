@@ -171,6 +171,13 @@ Freezegun allows moving time to specific dates.
             frozen_datetime.move_to(initial_datetime)
             assert frozen_datetime() == initial_datetime
 
+
+    @freeze_time("2012-01-14", as_arg=True)
+    def test(frozen_time):
+        assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
+        frozen_time.move_to("2014-02-12")
+        assert datetime.datetime.now() == datetime.datetime(2014, 2, 12)
+
 Parameter for ``move_to`` can be any valid ``freeze_time`` date (string, date, datetime).
 
 

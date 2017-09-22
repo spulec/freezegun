@@ -305,7 +305,7 @@ class FrozenDateTimeFactory(object):
 
 class _freeze_time(object):
 
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick):
+    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg):
 
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = tz_offset
@@ -313,6 +313,7 @@ class _freeze_time(object):
         self.tick = tick
         self.undo_changes = []
         self.modules_at_start = set()
+        self.as_arg = as_arg
 
     def __call__(self, func):
         if inspect.isclass(func):
@@ -496,8 +497,11 @@ class _freeze_time(object):
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
-            with self:
-                result = func(*args, **kwargs)
+            with self as time_factory:
+                if self.as_arg:
+                    result = func(time_factory, *args, **kwargs)
+                else:
+                    result = func(*args, **kwargs)
             return result
         functools.update_wrapper(wrapper, func)
 
@@ -508,7 +512,7 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
+def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False):
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
@@ -534,7 +538,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
     ignore.append('django.utils.six.moves')
     ignore.append('threading')
     ignore.append('Queue')
-    return _freeze_time(time_to_freeze, tz_offset, ignore, tick)
+    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg)
 
 
 # Setup adapters for sqlite
