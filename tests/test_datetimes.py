@@ -4,6 +4,8 @@ import unittest
 import locale
 import sys
 
+import tzlocal
+
 from nose.plugins import skip
 from nose.tools import assert_raises
 from tests import utils
@@ -75,6 +77,24 @@ def test_tz_offset():
     assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14, 3, 21, 34)
     assert time.time() == expected_timestamp
     freezer.stop()
+
+
+def test_tz_local():
+    orig_local_zone = tzlocal.get_localzone()
+
+    freezer = freeze_time("2012-01-14 03:21:34", tz_offset=-4)
+    freezer.start()
+    assert tzlocal.get_localzone().utcoffset(local_time).total_seconds() == -4 * 3600
+
+    nested_freezer = freeze_time("2012-01-14 03:21:34", tz_offset=-2.5)
+    freezer.start()
+    assert tzlocal.get_localzone().utcoffset(local_time).total_seconds() == -2.5 * 3600
+    nested_freezer.stop()
+
+    assert tzlocal.get_localzone().utcoffset(local_time).total_seconds() == -4 * 3600
+    freezer.stop()
+
+    assert orig_local_zone == tzlocal.get_localzone()
 
 
 def test_tz_offset_with_today():
