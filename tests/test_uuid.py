@@ -22,3 +22,10 @@ def test_uuid1():
     with freeze_time(target):
         assert time_from_uuid(uuid.uuid1()) == target
 
+    # Furthermore, test that jumping back in time works with uuid genration
+    # (regression test: internal uuid variable would
+    # keep the time part to the most recent one)
+    back_target = datetime.datetime(2017, 2, 1)
+    with freeze_time(back_target):
+        assert time_from_uuid(uuid.uuid1()) == back_target
+
