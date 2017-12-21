@@ -420,7 +420,7 @@ class _freeze_time(object):
             for mod_name, module in list(sys.modules.items()):
                 if mod_name is None or module is None:
                     continue
-                elif mod_name.startswith(self.ignore):
+                elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
                     continue
                 elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                     continue
