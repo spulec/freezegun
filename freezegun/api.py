@@ -535,7 +535,6 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     if ignore is None:
         ignore = []
     ignore.append('six.moves')
-    ignore.append('django.utils.six.moves')
     ignore.append('threading')
     ignore.append('Queue')
     return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg)
