@@ -36,6 +36,16 @@ try:
 except ImportError:
     import copyreg
 
+try:
+    import asyncio
+except ImportError:
+    asyncio = False
+
+try:
+    iscoroutinefunction = inspect.iscoroutinefunction
+except AttributeError:
+    iscoroutinefunction = lambda x: False
+
 
 # Stolen from six
 def with_metaclass(meta, *bases):
@@ -318,6 +328,8 @@ class _freeze_time(object):
     def __call__(self, func):
         if inspect.isclass(func):
             return self.decorate_class(func)
+        elif asyncio and iscoroutinefunction(func):
+            return self.decorate_coroutine(func)
         return self.decorate_callable(func)
 
     def decorate_class(self, klass):
@@ -494,6 +506,18 @@ class _freeze_time(object):
 
         uuid._uuid_generate_time = real_uuid_generate_time
         uuid._UuidCreate = real_uuid_create
+
+    def decorate_coroutine(self, coroutine):
+        @functools.wraps(coroutine)
+        @asyncio.coroutine
+        def wrapper(*args, **kwargs):
+            with self as time_factory:
+                if self.as_arg:
+                    result = yield from coroutine(time_factory, *args, **kwargs)
+                else:
+                    result = yield from coroutine(*args, **kwargs)
+            return result
+        return wrapper
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
