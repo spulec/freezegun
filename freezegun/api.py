@@ -37,14 +37,13 @@ except ImportError:
     import copyreg
 
 try:
-    import asyncio
-except ImportError:
-    asyncio = False
-
-try:
     iscoroutinefunction = inspect.iscoroutinefunction
+    from freezegun._async import wrap_coroutine
 except AttributeError:
     iscoroutinefunction = lambda x: False
+
+    def wrap_coroutine(*args):
+        raise NotImplementedError()
 
 
 # Stolen from six
@@ -328,7 +327,7 @@ class _freeze_time(object):
     def __call__(self, func):
         if inspect.isclass(func):
             return self.decorate_class(func)
-        elif asyncio and iscoroutinefunction(func):
+        elif iscoroutinefunction(func):
             return self.decorate_coroutine(func)
         return self.decorate_callable(func)
 
@@ -508,16 +507,7 @@ class _freeze_time(object):
         uuid._UuidCreate = real_uuid_create
 
     def decorate_coroutine(self, coroutine):
-        @functools.wraps(coroutine)
-        @asyncio.coroutine
-        def wrapper(*args, **kwargs):
-            with self as time_factory:
-                if self.as_arg:
-                    result = yield from coroutine(time_factory, *args, **kwargs)
-                else:
-                    result = yield from coroutine(*args, **kwargs)
-            return result
-        return wrapper
+        return wrap_coroutine(self, coroutine)
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
