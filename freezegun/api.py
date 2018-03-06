@@ -1,5 +1,6 @@
 import datetime
 import functools
+import hashlib
 import inspect
 import sys
 import time
@@ -8,6 +9,8 @@ import calendar
 import unittest
 import platform
 import warnings
+import types
+import numbers
 
 from dateutil import parser
 from dateutil.tz import tzlocal
@@ -18,6 +21,9 @@ real_gmtime = time.gmtime
 real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
+real_date_objects = [real_time, real_localtime, real_gmtime, real_strftime, real_date, real_datetime]
+_real_time_object_ids = set(id(obj) for obj in real_date_objects)
+
 
 try:
     real_uuid_generate_time = uuid._uuid_generate_time
@@ -33,6 +39,70 @@ try:
     import copy_reg as copyreg
 except ImportError:
     import copyreg
+
+
+# keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
+# start with `None` as the sentinel value.
+# if `{}` (empty dict) was the sentinel value, there's a chance that `setup_modules_cache()` will be called many times
+_GLOBAL_MODULES_CACHE = None
+
+
+def _get_global_modules_cache():
+    global _GLOBAL_MODULES_CACHE
+    # the first call to this function sets up the global module cache. it's expected to be slower than consecutive calls
+    if _GLOBAL_MODULES_CACHE is None:
+        _GLOBAL_MODULES_CACHE = {}
+        _setup_modules_cache()
+    return _GLOBAL_MODULES_CACHE
+
+
+def _get_module_attributes(module):
+    result = []
+    try:
+        module_attributes = dir(module)
+    except TypeError:
+        return result
+    for attribute_name in module_attributes:
+        try:
+            attribute_value = getattr(module, attribute_name)
+        except (ImportError, AttributeError, TypeError):
+            # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+            continue
+        else:
+            result.append((attribute_name, attribute_value))
+    return result
+
+
+def _setup_modules_cache():
+    for mod_name, module in list(sys.modules.items()):
+        # ignore modules from freezegun
+        if mod_name == __name__ or not mod_name or not module or not hasattr(module, "__name__"):
+            continue
+        _setup_module_cache(module)
+
+
+def _setup_module_cache(module):
+    global _GLOBAL_MODULES_CACHE
+    date_attrs = []
+    all_module_attributes = _get_module_attributes(module)
+    for attribute_name, attribute_value in all_module_attributes:
+        if id(attribute_value) in _real_time_object_ids:
+            date_attrs.append((attribute_name, attribute_value))
+    _GLOBAL_MODULES_CACHE[module.__name__] = (_get_module_attributes_hash(module), date_attrs)
+
+
+def _get_module_attributes_hash(module):
+    return '{0}-{1}'.format(id(module), hashlib.md5(','.join(dir(module)).encode('utf-8')).hexdigest())
+
+
+def _get_cached_module_attributes(mod_name, module):
+    global_modules_cache = _get_global_modules_cache()
+    module_hash, cached_attrs = global_modules_cache.get(mod_name, ('0', []))
+    if _get_module_attributes_hash(module) == module_hash:
+        return cached_attrs
+    else:
+        _setup_module_cache(module)
+        return _get_module_attributes(module)
 
 
 # Stolen from six
@@ -289,7 +359,10 @@ class FrozenDateTimeFactory(object):
         return self.time_to_freeze
 
     def tick(self, delta=datetime.timedelta(seconds=1)):
-        self.time_to_freeze += delta
+        if isinstance(delta, numbers.Real):
+            self.time_to_freeze += datetime.timedelta(seconds=delta)
+        else:
+            self.time_to_freeze += delta
 
     def move_to(self, target_datetime):
         """Moves frozen date to the given ``target_datetime``"""
@@ -300,7 +373,7 @@ class FrozenDateTimeFactory(object):
 
 class _freeze_time(object):
 
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick):
+    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg):
 
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = tz_offset
@@ -308,6 +381,7 @@ class _freeze_time(object):
         self.tick = tick
         self.undo_changes = []
         self.modules_at_start = set()
+        self.as_arg = as_arg
 
     def __call__(self, func):
         if inspect.isclass(func):
@@ -375,7 +449,13 @@ class _freeze_time(object):
 
         # Change the modules
         datetime.datetime = FakeDatetime
+        datetime.datetime.times_to_freeze.append(time_to_freeze)
+        datetime.datetime.tz_offsets.append(self.tz_offset)
+
         datetime.date = FakeDate
+        datetime.date.dates_to_freeze.append(time_to_freeze)
+        datetime.date.tz_offsets.append(self.tz_offset)
+
         fake_time = FakeTime(time_to_freeze, time.time)
         fake_localtime = FakeLocalTime(time_to_freeze, time.localtime)
         fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime)
@@ -399,7 +479,6 @@ class _freeze_time(object):
             ('real_strftime', real_strftime, 'FakeStrfTime', fake_strftime),
             ('real_time', real_time, 'FakeTime', fake_time),
         ]
-        real_names = tuple(real_name for real_name, real, fake_name, fake in to_patch)
         self.fake_names = tuple(fake_name for real_name, real, fake_name, fake in to_patch)
         self.reals = dict((id(fake), real) for real_name, real, fake_name, fake in to_patch)
         fakes = dict((id(real), fake) for real_name, real, fake_name, fake in to_patch)
@@ -412,30 +491,19 @@ class _freeze_time(object):
             warnings.filterwarnings('ignore')
 
             for mod_name, module in list(sys.modules.items()):
-                if mod_name is None or module is None:
+                if mod_name is None or module is None or mod_name == __name__:
                     continue
-                elif mod_name.startswith(self.ignore):
+                elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
                     continue
                 elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                     continue
-                for module_attribute in dir(module):
-                    if module_attribute in real_names:
-                        continue
-                    try:
-                        attribute_value = getattr(module, module_attribute)
-                    except (ImportError, AttributeError, TypeError):
-                        # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
-                        continue
+
+                module_attrs = _get_cached_module_attributes(mod_name, module)
+                for attribute_name, attribute_value in module_attrs:
                     fake = fakes.get(id(attribute_value))
                     if fake:
-                        setattr(module, module_attribute, fake)
-                        add_change((module, module_attribute, attribute_value))
-
-        datetime.datetime.times_to_freeze.append(time_to_freeze)
-        datetime.datetime.tz_offsets.append(self.tz_offset)
-
-        datetime.date.dates_to_freeze.append(time_to_freeze)
-        datetime.date.tz_offsets.append(self.tz_offset)
+                        setattr(module, attribute_name, fake)
+                        add_change((module, attribute_name, attribute_value))
 
         return time_to_freeze
 
@@ -463,7 +531,7 @@ class _freeze_time(object):
                     module = sys.modules.get(mod_name, None)
                     if mod_name is None or module is None:
                         continue
-                    elif mod_name.startswith(self.ignore):
+                    elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
                         continue
                     elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                         continue
@@ -491,8 +559,11 @@ class _freeze_time(object):
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
-            with self:
-                result = func(*args, **kwargs)
+            with self as time_factory:
+                if self.as_arg:
+                    result = func(time_factory, *args, **kwargs)
+                else:
+                    result = func(*args, **kwargs)
             return result
         functools.update_wrapper(wrapper, func)
 
@@ -503,18 +574,25 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
+def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False):
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
     except NameError:
         string_type = str
 
-    if not isinstance(time_to_freeze, (type(None), string_type, datetime.date)):
-        raise TypeError(('freeze_time() expected None, a string, date instance, or '
-                         'datetime instance, but got type {0}.').format(type(time_to_freeze)))
+    if not isinstance(time_to_freeze, (type(None), string_type, datetime.date,
+        types.FunctionType, types.GeneratorType)):
+        raise TypeError(('freeze_time() expected None, a string, date instance, datetime '
+                         'instance, function or a generator, but got type {0}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
+
+    if isinstance(time_to_freeze, types.FunctionType):
+        return freeze_time(time_to_freeze(), tz_offset, ignore, tick)
+
+    if isinstance(time_to_freeze, types.GeneratorType):
+        return freeze_time(next(time_to_freeze), tz_offset, ignore, tick)
 
     if ignore is None:
         ignore = []
@@ -523,7 +601,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
     ignore.append('google.gax')
     ignore.append('threading')
     ignore.append('Queue')
-    return _freeze_time(time_to_freeze, tz_offset, ignore, tick)
+    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg)
 
 
 # Setup adapters for sqlite

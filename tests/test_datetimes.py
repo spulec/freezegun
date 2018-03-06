@@ -5,6 +5,7 @@ import locale
 import sys
 
 from nose.plugins import skip
+from nose.tools import assert_raises
 from tests import utils
 
 from freezegun import freeze_time
@@ -137,6 +138,21 @@ def test_manual_increment():
         assert frozen_datetime() == initial_datetime
 
 
+def test_manual_increment_seconds():
+    initial_datetime = datetime.datetime(year=1, month=7, day=12,
+                                         hour=15, minute=6, second=3)
+    with freeze_time(initial_datetime) as frozen_datetime:
+        assert frozen_datetime() == initial_datetime
+
+        frozen_datetime.tick()
+        initial_datetime += datetime.timedelta(seconds=1)
+        assert frozen_datetime() == initial_datetime
+
+        frozen_datetime.tick(10)
+        initial_datetime += datetime.timedelta(seconds=10)
+        assert frozen_datetime() == initial_datetime
+
+
 def test_move_to():
     initial_datetime = datetime.datetime(year=1, month=7, day=12,
                                         hour=15, minute=6, second=3)
@@ -246,6 +262,35 @@ def test_datetime_object():
     datetime_freezer = freeze_time(frozen_datetime)
     regular_freezer = freeze_time('2012-11-10 04:15:30')
     assert datetime_freezer.time_to_freeze == regular_freezer.time_to_freeze
+
+
+def test_function_object():
+    frozen_datetime = datetime.datetime(year=2012, month=11, day=10,
+                                        hour=4, minute=15, second=30)
+    def function(): return frozen_datetime
+
+    with freeze_time(function):
+        assert frozen_datetime == datetime.datetime.now()
+
+
+def test_lambda_object():
+    frozen_datetime = datetime.datetime(year=2012, month=11, day=10,
+                                        hour=4, minute=15, second=30)
+    with freeze_time(lambda: frozen_datetime):
+        assert frozen_datetime == datetime.datetime.now()
+
+
+def test_generator_object():
+    frozen_datetimes = (datetime.datetime(year=y, month=1, day=1)
+        for y in range(2010, 2012))
+
+    with freeze_time(frozen_datetimes):
+        assert datetime.datetime(2010, 1, 1) == datetime.datetime.now()
+
+    with freeze_time(frozen_datetimes):
+        assert datetime.datetime(2011, 1, 1) == datetime.datetime.now()
+
+    assert_raises(StopIteration, freeze_time, frozen_datetimes)
 
 
 def test_old_datetime_object():

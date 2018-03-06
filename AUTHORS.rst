@@ -13,3 +13,4 @@ Patches and Suggestions
 - `Zach Smith <https://github.com/zmsmith>`_
 - `Adam Johnson <https://github.com/adamchainz>`_
 - `Alex Ehlke <https://github.com/aehlke>`_
+- `James Lu <github.com/CrazyPython>`_
