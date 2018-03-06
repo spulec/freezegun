@@ -1,5 +1,6 @@
 import datetime
 import functools
+import hashlib
 import inspect
 import sys
 import time
@@ -20,6 +21,9 @@ real_gmtime = time.gmtime
 real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
+real_date_objects = [real_time, real_localtime, real_gmtime, real_strftime, real_date, real_datetime]
+_real_time_object_ids = set(id(obj) for obj in real_date_objects)
+
 
 try:
     real_uuid_generate_time = uuid._uuid_generate_time
@@ -35,6 +39,70 @@ try:
     import copy_reg as copyreg
 except ImportError:
     import copyreg
+
+
+# keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
+# start with `None` as the sentinel value.
+# if `{}` (empty dict) was the sentinel value, there's a chance that `setup_modules_cache()` will be called many times
+_GLOBAL_MODULES_CACHE = None
+
+
+def _get_global_modules_cache():
+    global _GLOBAL_MODULES_CACHE
+    # the first call to this function sets up the global module cache. it's expected to be slower than consecutive calls
+    if _GLOBAL_MODULES_CACHE is None:
+        _GLOBAL_MODULES_CACHE = {}
+        _setup_modules_cache()
+    return _GLOBAL_MODULES_CACHE
+
+
+def _get_module_attributes(module):
+    result = []
+    try:
+        module_attributes = dir(module)
+    except TypeError:
+        return result
+    for attribute_name in module_attributes:
+        try:
+            attribute_value = getattr(module, attribute_name)
+        except (ImportError, AttributeError, TypeError):
+            # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+            continue
+        else:
+            result.append((attribute_name, attribute_value))
+    return result
+
+
+def _setup_modules_cache():
+    for mod_name, module in list(sys.modules.items()):
+        # ignore modules from freezegun
+        if mod_name == __name__ or not mod_name or not module or not hasattr(module, "__name__"):
+            continue
+        _setup_module_cache(module)
+
+
+def _setup_module_cache(module):
+    global _GLOBAL_MODULES_CACHE
+    date_attrs = []
+    all_module_attributes = _get_module_attributes(module)
+    for attribute_name, attribute_value in all_module_attributes:
+        if id(attribute_value) in _real_time_object_ids:
+            date_attrs.append((attribute_name, attribute_value))
+    _GLOBAL_MODULES_CACHE[module.__name__] = (_get_module_attributes_hash(module), date_attrs)
+
+
+def _get_module_attributes_hash(module):
+    return '{0}-{1}'.format(id(module), hashlib.md5(','.join(dir(module)).encode('utf-8')).hexdigest())
+
+
+def _get_cached_module_attributes(mod_name, module):
+    global_modules_cache = _get_global_modules_cache()
+    module_hash, cached_attrs = global_modules_cache.get(mod_name, ('0', []))
+    if _get_module_attributes_hash(module) == module_hash:
+        return cached_attrs
+    else:
+        _setup_module_cache(module)
+        return _get_module_attributes(module)
 
 
 # Stolen from six
@@ -411,7 +479,6 @@ class _freeze_time(object):
             ('real_strftime', real_strftime, 'FakeStrfTime', fake_strftime),
             ('real_time', real_time, 'FakeTime', fake_time),
         ]
-        real_names = tuple(real_name for real_name, real, fake_name, fake in to_patch)
         self.fake_names = tuple(fake_name for real_name, real, fake_name, fake in to_patch)
         self.reals = dict((id(fake), real) for real_name, real, fake_name, fake in to_patch)
         fakes = dict((id(real), fake) for real_name, real, fake_name, fake in to_patch)
@@ -424,30 +491,19 @@ class _freeze_time(object):
             warnings.filterwarnings('ignore')
 
             for mod_name, module in list(sys.modules.items()):
-                if mod_name is None or module is None:
+                if mod_name is None or module is None or mod_name == __name__:
                     continue
                 elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
                     continue
                 elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                     continue
-                try:
-                    module_attributes = dir(module)
-                except TypeError:
-                    # For certain libraries, like py, this breaks because
-                    # module.__dict__ isn't a real dictionary.
-                    continue
-                for module_attribute in module_attributes:
-                    if module_attribute in real_names:
-                        continue
-                    try:
-                        attribute_value = getattr(module, module_attribute)
-                    except (ImportError, AttributeError, TypeError):
-                        # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
-                        continue
+
+                module_attrs = _get_cached_module_attributes(mod_name, module)
+                for attribute_name, attribute_value in module_attrs:
                     fake = fakes.get(id(attribute_value))
                     if fake:
-                        setattr(module, module_attribute, fake)
-                        add_change((module, module_attribute, attribute_value))
+                        setattr(module, attribute_name, fake)
+                        add_change((module, attribute_name, attribute_value))
 
         return time_to_freeze
 
