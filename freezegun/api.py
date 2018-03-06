@@ -208,7 +208,7 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
 
     @classmethod
     def today(cls):
-        result = cls._date_to_freeze() + datetime.timedelta(hours=cls._tz_offset())
+        result = cls._date_to_freeze() + cls._tz_offset()
         return date_to_fakedate(result)
 
     @classmethod
@@ -260,9 +260,9 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
     def now(cls, tz=None):
         now = cls._time_to_freeze() or real_datetime.now()
         if tz:
-            result = tz.fromutc(now.replace(tzinfo=tz)) + datetime.timedelta(hours=cls._tz_offset())
+            result = tz.fromutc(now.replace(tzinfo=tz)) + cls._tz_offset()
         else:
-            result = now + datetime.timedelta(hours=cls._tz_offset())
+            result = now + cls._tz_offset()
         return datetime_to_fakedatetime(result)
 
     def date(self):
@@ -340,6 +340,13 @@ def _parse_time_to_freeze(time_to_freeze_str):
     return convert_to_timezone_naive(time_to_freeze)
 
 
+def _parse_tz_offset(tz_offset):
+    if isinstance(tz_offset, datetime.timedelta):
+        return tz_offset
+    else:
+        return datetime.timedelta(hours=tz_offset)
+
+
 class TickingDateTimeFactory(object):
 
     def __init__(self, time_to_freeze, start):
@@ -376,7 +383,7 @@ class _freeze_time(object):
     def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg):
 
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
-        self.tz_offset = tz_offset
+        self.tz_offset = _parse_tz_offset(tz_offset)
         self.ignore = tuple(ignore)
         self.tick = tick
         self.undo_changes = []
