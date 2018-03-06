@@ -27,8 +27,14 @@ _real_time_object_ids = set(id(obj) for obj in real_date_objects)
 
 try:
     real_uuid_generate_time = uuid._uuid_generate_time
-except (AttributeError, ImportError):
+    uuid_generate_time_attr = '_uuid_generate_time'
+except AttributeError:
+    uuid._load_system_functions()
+    real_uuid_generate_time = uuid._generate_time_safe
+    uuid_generate_time_attr = '_generate_time_safe'
+except ImportError:
     real_uuid_generate_time = None
+    uuid_generate_time_attr = None
 
 try:
     real_uuid_create = uuid._UuidCreate
@@ -482,7 +488,8 @@ class _freeze_time(object):
         time.localtime = fake_localtime
         time.gmtime = fake_gmtime
         time.strftime = fake_strftime
-        uuid._uuid_generate_time = None
+        if uuid_generate_time_attr:
+            setattr(uuid, uuid_generate_time_attr, None)
         uuid._UuidCreate = None
         uuid._last_timestamp = None
 
@@ -573,7 +580,8 @@ class _freeze_time(object):
         time.localtime = time.localtime.previous_localtime_function
         time.strftime = time.strftime.previous_strftime_function
 
-        uuid._uuid_generate_time = real_uuid_generate_time
+        if uuid_generate_time_attr:
+            setattr(uuid, uuid_generate_time_attr, real_uuid_generate_time)
         uuid._UuidCreate = real_uuid_create
         uuid._last_timestamp = None
 
