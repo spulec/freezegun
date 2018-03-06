@@ -11,7 +11,7 @@ else:
     # Py3k
     requires += ['python-dateutil>=2.0']
 
-with open('README.md', 'r', 'utf-8') as f:
+with open('README.rst') as f:
     readme = f.read()
 
 setup(
