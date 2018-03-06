@@ -7,6 +7,7 @@ python:
   - 3.4
   - 3.6
   - pypy3.3-5.2-alpha1
+  - 3.7-dev
 script: make travis
 install:
   - pip install .
