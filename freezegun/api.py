@@ -56,7 +56,11 @@ def _get_global_modules_cache():
 
 def _get_module_attributes(module):
     result = []
-    for attribute_name in dir(module):
+    try:
+        module_attributes = dir(module)
+    except TypeError:
+        return result
+    for attribute_name in module_attributes:
         try:
             attribute_value = getattr(module, attribute_name)
         except (ImportError, AttributeError, TypeError):
@@ -70,7 +74,7 @@ def _get_module_attributes(module):
 def _setup_modules_cache():
     for mod_name, module in list(sys.modules.items()):
         # ignore modules from freezegun
-        if mod_name == __name__ or not mod_name or not module:
+        if mod_name == __name__ or not mod_name or not module or not hasattr(module, "__name__"):
             continue
         _setup_module_cache(module)
 
