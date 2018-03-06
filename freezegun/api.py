@@ -381,7 +381,13 @@ class _freeze_time(object):
 
         # Change the modules
         datetime.datetime = FakeDatetime
+        datetime.datetime.times_to_freeze.append(time_to_freeze)
+        datetime.datetime.tz_offsets.append(self.tz_offset)
+
         datetime.date = FakeDate
+        datetime.date.dates_to_freeze.append(time_to_freeze)
+        datetime.date.tz_offsets.append(self.tz_offset)
+
         fake_time = FakeTime(time_to_freeze, time.time)
         fake_localtime = FakeLocalTime(time_to_freeze, time.localtime)
         fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime)
@@ -424,7 +430,13 @@ class _freeze_time(object):
                     continue
                 elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                     continue
-                for module_attribute in dir(module):
+                try:
+                    module_attributes = dir(module)
+                except TypeError:
+                    # For certain libraries, like py, this breaks because
+                    # module.__dict__ isn't a real dictionary.
+                    continue
+                for module_attribute in module_attributes:
                     if module_attribute in real_names:
                         continue
                     try:
@@ -436,12 +448,6 @@ class _freeze_time(object):
                     if fake:
                         setattr(module, module_attribute, fake)
                         add_change((module, module_attribute, attribute_value))
-
-        datetime.datetime.times_to_freeze.append(time_to_freeze)
-        datetime.datetime.tz_offsets.append(self.tz_offset)
-
-        datetime.date.dates_to_freeze.append(time_to_freeze)
-        datetime.date.tz_offsets.append(self.tz_offset)
 
         return time_to_freeze
 
