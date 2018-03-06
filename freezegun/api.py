@@ -21,6 +21,10 @@ real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
 
+
+datetime_or_time = set(('datetime', 'time'))
+
+
 try:
     real_uuid_generate_time = uuid._uuid_generate_time
 except ImportError:
@@ -405,10 +409,11 @@ class _freeze_time(object):
             ('real_strftime', real_strftime, 'FakeStrfTime', fake_strftime),
             ('real_time', real_time, 'FakeTime', fake_time),
         ]
-        real_names = tuple(real_name for real_name, real, fake_name, fake in to_patch)
-        self.fake_names = tuple(fake_name for real_name, real, fake_name, fake in to_patch)
+        real_names = set(real_name for real_name, real, fake_name, fake in to_patch)
+        self.fake_names = set(fake_name for real_name, real, fake_name, fake in to_patch)
         self.reals = dict((id(fake), real) for real_name, real, fake_name, fake in to_patch)
         fakes = dict((id(real), fake) for real_name, real, fake_name, fake in to_patch)
+        fake_ids = set(fakes.keys())
         add_change = self.undo_changes.append
 
         # Save the current loaded modules
@@ -422,19 +427,24 @@ class _freeze_time(object):
                     continue
                 elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
                     continue
-                elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                elif (
+                        not hasattr(module, "__name__") or
+                        module.__name__ in datetime_or_time
+                ):
                     continue
-                for module_attribute in dir(module):
-                    if module_attribute in real_names:
-                        continue
+                members = vars(module)
+                for module_attribute in set(dir(module)) - real_names:
                     try:
-                        attribute_value = getattr(module, module_attribute)
+                        if module_attribute in members:
+                            attribute_value = members[module_attribute]
+                        else:
+                            attribute_value = getattr(module, module_attribute)
                     except (ImportError, AttributeError, TypeError):
                         # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
                         continue
-                    fake = fakes.get(id(attribute_value))
-                    if fake:
-                        setattr(module, module_attribute, fake)
+                    fake_id = id(attribute_value)
+                    if fake_id in fake_ids:
+                        setattr(module, module_attribute, fakes.get(fake_id))
                         add_change((module, module_attribute, attribute_value))
 
         datetime.datetime.times_to_freeze.append(time_to_freeze)
@@ -471,14 +481,15 @@ class _freeze_time(object):
                         continue
                     elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
                         continue
-                    elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                    elif (not hasattr(module, "__name__") or module.__name__ in datetime_or_time):
                         continue
-                    for module_attribute in dir(module):
-
-                        if module_attribute in self.fake_names:
-                            continue
+                    members = vars(module)
+                    for module_attribute in set(dir(module)) - self.fake_names:
                         try:
-                            attribute_value = getattr(module, module_attribute)
+                            if module_attribute in members:
+                                attribute_value = members[module_attribute]
+                            else:
+                                attribute_value = getattr(module, module_attribute)
                         except (ImportError, AttributeError, TypeError):
                             # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
                             continue
