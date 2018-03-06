@@ -27,12 +27,12 @@ _real_time_object_ids = set(id(obj) for obj in real_date_objects)
 
 try:
     real_uuid_generate_time = uuid._uuid_generate_time
-except ImportError:
+except (AttributeError, ImportError):
     real_uuid_generate_time = None
 
 try:
     real_uuid_create = uuid._UuidCreate
-except ImportError:
+except (AttributeError, ImportError):
     real_uuid_create = None
 
 try:
