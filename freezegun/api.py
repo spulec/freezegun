@@ -38,7 +38,7 @@ except ImportError:
 
 try:
     real_uuid_create = uuid._UuidCreate
-except (AttributeError, ImportError):
+except (AttributeError, ImportError)    :
     real_uuid_create = None
 
 try:
@@ -107,7 +107,11 @@ def _setup_module_cache(module):
 
 
 def _get_module_attributes_hash(module):
-    return '{0}-{1}'.format(id(module), hashlib.md5(','.join(dir(module)).encode('utf-8')).hexdigest())
+    try:
+        module_dir = dir(module)
+    except TypeError:
+        module_dir = []
+    return '{0}-{1}'.format(id(module), hashlib.md5(','.join(module_dir).encode('utf-8')).hexdigest())
 
 
 def _get_cached_module_attributes(mod_name, module):
