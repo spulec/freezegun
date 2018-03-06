@@ -40,6 +40,15 @@ try:
 except ImportError:
     import copyreg
 
+try:
+    iscoroutinefunction = inspect.iscoroutinefunction
+    from freezegun._async import wrap_coroutine
+except AttributeError:
+    iscoroutinefunction = lambda x: False
+
+    def wrap_coroutine(*args):
+        raise NotImplementedError()
+
 
 # keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
 # start with `None` as the sentinel value.
@@ -393,6 +402,8 @@ class _freeze_time(object):
     def __call__(self, func):
         if inspect.isclass(func):
             return self.decorate_class(func)
+        elif iscoroutinefunction(func):
+            return self.decorate_coroutine(func)
         return self.decorate_callable(func)
 
     def decorate_class(self, klass):
@@ -565,6 +576,9 @@ class _freeze_time(object):
         uuid._uuid_generate_time = real_uuid_generate_time
         uuid._UuidCreate = real_uuid_create
         uuid._last_timestamp = None
+
+    def decorate_coroutine(self, coroutine):
+        return wrap_coroutine(self, coroutine)
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
