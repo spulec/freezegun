@@ -111,7 +111,7 @@ def _get_module_attributes_hash(module):
         module_dir = dir(module)
     except TypeError:
         module_dir = []
-    return '{0}-{1}'.format(id(module), hashlib.md5(','.join(module_dir).encode('utf-8')).hexdigest())
+    return '{0}-{1}'.format(id(module), hash(frozenset(module_dir)))
 
 
 def _get_cached_module_attributes(mod_name, module):
