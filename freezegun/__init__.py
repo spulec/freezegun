@@ -6,7 +6,7 @@ freezegun
 :copyright: (c) 2012 by Steve Pulec.
 
 """
-from .api import freeze_time
+from .api import freeze_time, freeze_times
 
 __title__ = 'freezegun'
 __version__ = '0.3.9'

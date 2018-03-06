@@ -584,15 +584,12 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     if not isinstance(time_to_freeze, (type(None), string_type, datetime.date,
         types.FunctionType, types.GeneratorType)):
         raise TypeError(('freeze_time() expected None, a string, date instance, datetime '
-                         'instance, function or a generator, but got type {0}.').format(type(time_to_freeze)))
+                         'instance or function, but got type {0}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
 
     if isinstance(time_to_freeze, types.FunctionType):
         return freeze_time(time_to_freeze(), tz_offset, ignore, tick)
-
-    if isinstance(time_to_freeze, types.GeneratorType):
-        return freeze_time(next(time_to_freeze), tz_offset, ignore, tick)
 
     if ignore is None:
         ignore = []
@@ -602,6 +599,13 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     ignore.append('threading')
     ignore.append('Queue')
     return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg)
+
+
+def freeze_times(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
+    if not isinstance(time_to_freeze, types.GeneratorType):
+        raise TypeError(('freeze_times() expected a generator, but got type {0}.').format(type(time_to_freeze)))
+
+    return freeze_time(next(time_to_freeze), tz_offset, ignore, tick)
 
 
 # Setup adapters for sqlite
