@@ -38,7 +38,7 @@ except ImportError:
 
 try:
     real_uuid_create = uuid._UuidCreate
-except (AttributeError, ImportError)    :
+except (AttributeError, ImportError):
     real_uuid_create = None
 
 try:
