@@ -9,6 +9,8 @@ import calendar
 import unittest
 import platform
 import warnings
+import types
+import numbers
 
 from dateutil import parser
 from dateutil.tz import tzlocal
@@ -357,7 +359,10 @@ class FrozenDateTimeFactory(object):
         return self.time_to_freeze
 
     def tick(self, delta=datetime.timedelta(seconds=1)):
-        self.time_to_freeze += delta
+        if isinstance(delta, numbers.Real):
+            self.time_to_freeze += datetime.timedelta(seconds=delta)
+        else:
+            self.time_to_freeze += delta
 
     def move_to(self, target_datetime):
         """Moves frozen date to the given ``target_datetime``"""
@@ -368,7 +373,7 @@ class FrozenDateTimeFactory(object):
 
 class _freeze_time(object):
 
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick):
+    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg):
 
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = tz_offset
@@ -376,6 +381,7 @@ class _freeze_time(object):
         self.tick = tick
         self.undo_changes = []
         self.modules_at_start = set()
+        self.as_arg = as_arg
 
     def __call__(self, func):
         if inspect.isclass(func):
@@ -443,7 +449,13 @@ class _freeze_time(object):
 
         # Change the modules
         datetime.datetime = FakeDatetime
+        datetime.datetime.times_to_freeze.append(time_to_freeze)
+        datetime.datetime.tz_offsets.append(self.tz_offset)
+
         datetime.date = FakeDate
+        datetime.date.dates_to_freeze.append(time_to_freeze)
+        datetime.date.tz_offsets.append(self.tz_offset)
+
         fake_time = FakeTime(time_to_freeze, time.time)
         fake_localtime = FakeLocalTime(time_to_freeze, time.localtime)
         fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime)
@@ -481,7 +493,7 @@ class _freeze_time(object):
             for mod_name, module in list(sys.modules.items()):
                 if mod_name is None or module is None or mod_name == __name__:
                     continue
-                elif mod_name.startswith(self.ignore):
+                elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
                     continue
                 elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                     continue
@@ -492,12 +504,6 @@ class _freeze_time(object):
                     if fake:
                         setattr(module, attribute_name, fake)
                         add_change((module, attribute_name, attribute_value))
-
-        datetime.datetime.times_to_freeze.append(time_to_freeze)
-        datetime.datetime.tz_offsets.append(self.tz_offset)
-
-        datetime.date.dates_to_freeze.append(time_to_freeze)
-        datetime.date.tz_offsets.append(self.tz_offset)
 
         return time_to_freeze
 
@@ -525,7 +531,7 @@ class _freeze_time(object):
                     module = sys.modules.get(mod_name, None)
                     if mod_name is None or module is None:
                         continue
-                    elif mod_name.startswith(self.ignore):
+                    elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
                         continue
                     elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                         continue
@@ -553,8 +559,11 @@ class _freeze_time(object):
 
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
-            with self:
-                result = func(*args, **kwargs)
+            with self as time_factory:
+                if self.as_arg:
+                    result = func(time_factory, *args, **kwargs)
+                else:
+                    result = func(*args, **kwargs)
             return result
         functools.update_wrapper(wrapper, func)
 
@@ -565,26 +574,32 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False):
+def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False):
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
     except NameError:
         string_type = str
 
-    if not isinstance(time_to_freeze, (type(None), string_type, datetime.date)):
-        raise TypeError(('freeze_time() expected None, a string, date instance, or '
-                         'datetime instance, but got type {0}.').format(type(time_to_freeze)))
+    if not isinstance(time_to_freeze, (type(None), string_type, datetime.date,
+        types.FunctionType, types.GeneratorType)):
+        raise TypeError(('freeze_time() expected None, a string, date instance, datetime '
+                         'instance, function or a generator, but got type {0}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
+
+    if isinstance(time_to_freeze, types.FunctionType):
+        return freeze_time(time_to_freeze(), tz_offset, ignore, tick)
+
+    if isinstance(time_to_freeze, types.GeneratorType):
+        return freeze_time(next(time_to_freeze), tz_offset, ignore, tick)
 
     if ignore is None:
         ignore = []
     ignore.append('six.moves')
-    ignore.append('django.utils.six.moves')
     ignore.append('threading')
     ignore.append('Queue')
-    return _freeze_time(time_to_freeze, tz_offset, ignore, tick)
+    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg)
 
 
 # Setup adapters for sqlite
