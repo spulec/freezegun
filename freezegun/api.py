@@ -57,18 +57,7 @@ except AttributeError:
 
 
 # keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
-# start with `None` as the sentinel value.
-# if `{}` (empty dict) was the sentinel value, there's a chance that `setup_modules_cache()` will be called many times
-_GLOBAL_MODULES_CACHE = None
-
-
-def _get_global_modules_cache():
-    global _GLOBAL_MODULES_CACHE
-    # the first call to this function sets up the global module cache. it's expected to be slower than consecutive calls
-    if _GLOBAL_MODULES_CACHE is None:
-        _GLOBAL_MODULES_CACHE = {}
-        _setup_modules_cache()
-    return _GLOBAL_MODULES_CACHE
+_GLOBAL_MODULES_CACHE = {}
 
 
 def _get_module_attributes(module):
@@ -88,16 +77,7 @@ def _get_module_attributes(module):
     return result
 
 
-def _setup_modules_cache():
-    for mod_name, module in list(sys.modules.items()):
-        # ignore modules from freezegun
-        if mod_name == __name__ or not mod_name or not module or not hasattr(module, "__name__"):
-            continue
-        _setup_module_cache(module)
-
-
 def _setup_module_cache(module):
-    global _GLOBAL_MODULES_CACHE
     date_attrs = []
     all_module_attributes = _get_module_attributes(module)
     for attribute_name, attribute_value in all_module_attributes:
@@ -114,14 +94,16 @@ def _get_module_attributes_hash(module):
     return '{0}-{1}'.format(id(module), hash(frozenset(module_dir)))
 
 
-def _get_cached_module_attributes(mod_name, module):
-    global_modules_cache = _get_global_modules_cache()
-    module_hash, cached_attrs = global_modules_cache.get(mod_name, ('0', []))
+def _get_cached_module_attributes(module):
+    module_hash, cached_attrs = _GLOBAL_MODULES_CACHE.get(module.__name__, ('0', []))
     if _get_module_attributes_hash(module) == module_hash:
         return cached_attrs
-    else:
-        _setup_module_cache(module)
-        return _get_module_attributes(module)
+
+    # cache miss: update the cache and return the refreshed value
+    _setup_module_cache(module)
+    # return the newly cached value
+    module_hash, cached_attrs = _GLOBAL_MODULES_CACHE[module.__name__]
+    return cached_attrs
 
 
 # Stolen from six
@@ -530,7 +512,7 @@ class _freeze_time(object):
                 elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                     continue
 
-                module_attrs = _get_cached_module_attributes(mod_name, module)
+                module_attrs = _get_cached_module_attributes(module)
                 for attribute_name, attribute_value in module_attrs:
                     fake = fakes.get(id(attribute_value))
                     if fake:
