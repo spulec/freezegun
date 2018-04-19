@@ -4,13 +4,18 @@ import unittest
 import locale
 import sys
 
-import maya
 from nose.plugins import skip
 from nose.tools import assert_raises
 from tests import utils
 
 from freezegun import freeze_time
 from freezegun.api import FakeDatetime, FakeDate
+
+try:
+    import maya
+
+except ImportError:
+    maya = None
 
 
 class temp_locale(object):
@@ -304,6 +309,10 @@ def test_generator_object():
 
 
 def test_maya_datetimes():
+    if not maya:
+        raise skip.SkipTest("maya is optional since it's not supported for "
+                            "enough python versions")
+
     with freeze_time(maya.when("October 2nd, 1997")):
         assert datetime.datetime.now() == datetime.datetime(
             year=1997,

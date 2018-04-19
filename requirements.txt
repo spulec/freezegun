@@ -1,5 +1,6 @@
 coverage==3.7.1
 coveralls
-maya
 mock
 nose
+
+maya[optional]
