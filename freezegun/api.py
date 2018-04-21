@@ -608,7 +608,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
         string_type = str
 
     acceptable_times = (type(None), string_type, datetime.date, datetime.timedelta,
-             types.FunctionType, MayaDT, types.GeneratorType)
+             types.FunctionType, types.GeneratorType)
 
     if MayaDT is not None:
         acceptable_times += MayaDT,

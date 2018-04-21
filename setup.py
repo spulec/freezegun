@@ -12,10 +12,6 @@ else:
     requires += ['python-dateutil>=2.0']
 
 
-if sys.version.startswith("3.6") or sys.version.startswith("2.7"):
-    requires += ["maya"]
-
-
 with open('README.rst') as f:
     readme = f.read()
 
