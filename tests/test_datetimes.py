@@ -201,6 +201,17 @@ def test_time_gmtime():
         assert time_struct.tm_isdst == -1
 
 
+def test_time_clock():
+    with freeze_time('2012-01-14 03:21:34'):
+        assert time.clock() == 0
+
+        with freeze_time('2012-01-14 03:21:35'):
+            assert time.clock() == 1
+
+        with freeze_time('2012-01-14 03:21:36'):
+            assert time.clock() == 2
+
+
 class modify_timezone(object):
 
     def __init__(self, new_timezone):
