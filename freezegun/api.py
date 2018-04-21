@@ -176,15 +176,13 @@ class FakeClock(object):
         first_frozen_time = self.times_to_freeze[0]()
         last_frozen_time = self.times_to_freeze[-1]()
 
-        if platform.python_version().startswith("2.6"):
-            # In Python 2.6 total_seconds() is not a function of timedelta,
-            # So we have to use the suggested alternative.
-            timedelta = (last_frozen_time - first_frozen_time)
-            return (timedelta.microseconds + 0.0 +
-                    (timedelta.seconds + timedelta.days * 24 * 3600)
-                    * 10 ** 6) / 10 ** 6
+        # We can't use total_seconds() as it is not a function of timedelta
+        # in Python 2.6, so we have to use the suggested alternative.
+        timedelta = (last_frozen_time - first_frozen_time)
+        return (timedelta.microseconds + 0.0 +
+                (timedelta.seconds + timedelta.days * 24 * 3600)
+                * 10 ** 6) / 10 ** 6
 
-        return (last_frozen_time - first_frozen_time).total_seconds()
 
 
 class FakeDateMeta(type):
