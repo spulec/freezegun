@@ -166,12 +166,13 @@ class FakeStrfTime(object):
 class FakeClock(object):
     times_to_freeze = []
 
-    def __init__(self, previous_clock_function):
+    def __init__(self, previous_clock_function, tick=False):
         self.previous_clock_function = previous_clock_function
+        self.tick = tick
 
     def __call__(self, *args, **kwargs):
         if len(self.times_to_freeze) == 1:
-            return 0.0
+            return 0.0 if not self.tick else self.previous_clock_function()
 
         first_frozen_time = self.times_to_freeze[0]()
         last_frozen_time = self.times_to_freeze[-1]()
@@ -179,10 +180,14 @@ class FakeClock(object):
         # We can't use total_seconds() as it is not a function of timedelta
         # in Python 2.6, so we have to use the suggested alternative.
         timedelta = (last_frozen_time - first_frozen_time)
-        return (timedelta.microseconds + 0.0 +
-                (timedelta.seconds + timedelta.days * 24 * 3600)
-                * 10 ** 6) / 10 ** 6
+        total_seconds = (timedelta.microseconds + 0.0 +
+                         (timedelta.seconds + timedelta.days * 24 * 3600)
+                         * 10 ** 6) / 10 ** 6
 
+        if self.tick:
+            total_seconds += self.previous_clock_function()
+
+        return total_seconds
 
 
 class FakeDateMeta(type):
@@ -495,7 +500,7 @@ class _freeze_time(object):
         fake_localtime = FakeLocalTime(time_to_freeze, time.localtime)
         fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime)
         fake_strftime = FakeStrfTime(time_to_freeze, time.strftime)
-        fake_clock = FakeClock(time.clock)
+        fake_clock = FakeClock(time.clock, tick=self.tick)
         fake_clock.times_to_freeze.append(time_to_freeze)
         time.time = fake_time
         time.localtime = fake_localtime
