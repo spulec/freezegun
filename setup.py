@@ -4,6 +4,7 @@ import sys
 from setuptools import setup
 
 requires = ['six']
+tests_require = ['mock', 'nose']
 
 if sys.version_info[0] == 2:
     requires += ['python-dateutil>=1.0, != 2.0']
@@ -24,6 +25,7 @@ setup(
     url='https://github.com/spulec/freezegun',
     packages=['freezegun'],
     install_requires=requires,
+    tests_require=tests_require,
     include_package_data=True,
     license='Apache 2.0',
     classifiers=[
