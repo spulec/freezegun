@@ -11,6 +11,12 @@ from tests import utils
 from freezegun import freeze_time
 from freezegun.api import FakeDatetime, FakeDate
 
+try:
+    import maya
+
+except ImportError:
+    maya = None
+
 
 class temp_locale(object):
     """Temporarily change the locale."""
@@ -311,6 +317,19 @@ def test_generator_object():
         assert datetime.datetime(2011, 1, 1) == datetime.datetime.now()
 
     assert_raises(StopIteration, freeze_time, frozen_datetimes)
+
+
+def test_maya_datetimes():
+    if not maya:
+        raise skip.SkipTest("maya is optional since it's not supported for "
+                            "enough python versions")
+
+    with freeze_time(maya.when("October 2nd, 1997")):
+        assert datetime.datetime.now() == datetime.datetime(
+            year=1997,
+            month=10,
+            day=2
+        )
 
 
 def test_old_datetime_object():

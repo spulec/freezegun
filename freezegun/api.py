@@ -15,6 +15,13 @@ import numbers
 from dateutil import parser
 from dateutil.tz import tzlocal
 
+
+try:
+    from maya import MayaDT
+except ImportError:
+    MayaDT = None
+
+
 real_time = time.time
 real_localtime = time.localtime
 real_gmtime = time.gmtime
@@ -634,10 +641,15 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     except NameError:
         string_type = str
 
-    if not isinstance(time_to_freeze, (type(None), string_type, datetime.date,
-        datetime.timedelta, types.FunctionType, types.GeneratorType)):
+    acceptable_times = (type(None), string_type, datetime.date, datetime.timedelta,
+             types.FunctionType, types.GeneratorType)
+
+    if MayaDT is not None:
+        acceptable_times += MayaDT,
+
+    if not isinstance(time_to_freeze, acceptable_times):
         raise TypeError(('freeze_time() expected None, a string, date instance, datetime '
-                         'instance timedelta instance, function or a generator, but got '
+                         'instance, MayaDT, timedelta instance, function or a generator, but got '
                          'type {0}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
@@ -647,6 +659,10 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
 
     if isinstance(time_to_freeze, types.GeneratorType):
         return freeze_time(next(time_to_freeze), tz_offset, ignore, tick)
+
+    if MayaDT is not None and isinstance(time_to_freeze, MayaDT):
+        return freeze_time(time_to_freeze.datetime(), tz_offset, ignore,
+                           tick, as_arg)
 
     if ignore is None:
         ignore = []
