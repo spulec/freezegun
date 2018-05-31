@@ -19,6 +19,7 @@ real_time = time.time
 real_localtime = time.localtime
 real_gmtime = time.gmtime
 real_strftime = time.strftime
+real_clock = time.clock
 real_date = datetime.date
 real_datetime = datetime.datetime
 real_date_objects = [real_time, real_localtime, real_gmtime, real_strftime, real_date, real_datetime]
@@ -160,6 +161,33 @@ class FakeStrfTime(object):
         if time_to_format is None:
             time_to_format = FakeLocalTime(self.time_to_freeze)()
         return real_strftime(format, time_to_format)
+
+
+class FakeClock(object):
+    times_to_freeze = []
+
+    def __init__(self, previous_clock_function, tick=False):
+        self.previous_clock_function = previous_clock_function
+        self.tick = tick
+
+    def __call__(self, *args, **kwargs):
+        if len(self.times_to_freeze) == 1:
+            return 0.0 if not self.tick else self.previous_clock_function()
+
+        first_frozen_time = self.times_to_freeze[0]()
+        last_frozen_time = self.times_to_freeze[-1]()
+
+        # We can't use total_seconds() as it is not a function of timedelta
+        # in Python 2.6, so we have to use the suggested alternative.
+        timedelta = (last_frozen_time - first_frozen_time)
+        total_seconds = (timedelta.microseconds + 0.0 +
+                         (timedelta.seconds + timedelta.days * 24 * 3600)
+                         * 10 ** 6) / 10 ** 6
+
+        if self.tick:
+            total_seconds += self.previous_clock_function()
+
+        return total_seconds
 
 
 class FakeDateMeta(type):
@@ -472,10 +500,13 @@ class _freeze_time(object):
         fake_localtime = FakeLocalTime(time_to_freeze, time.localtime)
         fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime)
         fake_strftime = FakeStrfTime(time_to_freeze, time.strftime)
+        fake_clock = FakeClock(time.clock, tick=self.tick)
+        fake_clock.times_to_freeze.append(time_to_freeze)
         time.time = fake_time
         time.localtime = fake_localtime
         time.gmtime = fake_gmtime
         time.strftime = fake_strftime
+        time.clock = fake_clock
         if uuid_generate_time_attr:
             setattr(uuid, uuid_generate_time_attr, None)
         uuid._UuidCreate = None
@@ -492,6 +523,7 @@ class _freeze_time(object):
             ('real_localtime', real_localtime, 'FakeLocalTime', fake_localtime),
             ('real_strftime', real_strftime, 'FakeStrfTime', fake_strftime),
             ('real_time', real_time, 'FakeTime', fake_time),
+            ('real_clock', real_clock, 'FakeClock', fake_clock),
         ]
         self.fake_names = tuple(fake_name for real_name, real, fake_name, fake in to_patch)
         self.reals = dict((id(fake), real) for real_name, real, fake_name, fake in to_patch)
@@ -526,6 +558,7 @@ class _freeze_time(object):
         datetime.datetime.tz_offsets.pop()
         datetime.date.dates_to_freeze.pop()
         datetime.date.tz_offsets.pop()
+        time.clock.times_to_freeze.pop()
 
         if not datetime.datetime.times_to_freeze:
             datetime.datetime = real_datetime
@@ -567,6 +600,7 @@ class _freeze_time(object):
         time.gmtime = time.gmtime.previous_gmtime_function
         time.localtime = time.localtime.previous_localtime_function
         time.strftime = time.strftime.previous_strftime_function
+        time.clock = time.clock.previous_clock_function
 
         if uuid_generate_time_attr:
             setattr(uuid, uuid_generate_time_attr, real_uuid_generate_time)

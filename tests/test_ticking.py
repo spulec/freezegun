@@ -14,6 +14,40 @@ def test_ticking_datetime():
 
 
 @utils.cpython_only
+def test_ticking_time_clock():
+    with freeze_time('2012-01-14 03:21:34', tick=True):
+        first = time.clock()
+        time.sleep(0.001)  # Deal with potential clock resolution problems
+        with freeze_time('2012-01-14 03:21:35', tick=True):
+            second = time.clock()
+            time.sleep(0.001)  # Deal with potential clock resolution problems
+
+        with freeze_time('2012-01-14 03:21:36', tick=True):
+            third = time.clock()
+            time.sleep(0.001)
+
+        # Rewind time backwards
+        with freeze_time('2012-01-14 03:20:00', tick=True):
+            fourth = time.clock()
+            time.sleep(0.001)
+            fifth = time.clock()
+
+        assert first > 0
+        assert second > first
+        assert second > first + 1
+        assert second > 1
+        assert third > second
+        assert third > second + 1
+        assert third > 2
+
+        assert third > fourth
+        assert second > fourth
+        assert first > fourth
+
+        assert fifth > fourth
+
+
+@utils.cpython_only
 def test_ticking_date():
     with freeze_time("Jan 14th, 2012, 23:59:59.9999999", tick=True):
         time.sleep(0.001)  # Deal with potential clock resolution problems
