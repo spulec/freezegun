@@ -11,6 +11,7 @@ import platform
 import warnings
 import types
 import numbers
+import inspect
 
 from dateutil import parser
 from dateutil.tz import tzlocal
@@ -125,13 +126,36 @@ _is_cpython = (
 )
 
 
-class FakeTime(object):
+class BaseFakeTime(object):
+    stack_inspection_limit = 5
 
-    def __init__(self, time_to_freeze, previous_time_function):
+    def _should_use_real_time(self, stack, modules_to_ignore):
+        if not self.stack_inspection_limit:
+            return False
+
+        if not modules_to_ignore:
+            return False
+
+        stack_limit = min(len(stack), self.stack_inspection_limit)
+        # Start at 1 to ignore the current frame (index 0)
+        for i in range(1, stack_limit):
+            mod = inspect.getmodule(stack[i][0])
+            if mod.__name__.startswith(modules_to_ignore):
+                return True
+        return False
+
+
+class FakeTime(BaseFakeTime):
+
+    def __init__(self, time_to_freeze, previous_time_function, ignore=None):
         self.time_to_freeze = time_to_freeze
         self.previous_time_function = previous_time_function
+        self.ignore = ignore
 
     def __call__(self):
+        stack = inspect.stack()
+        if self._should_use_real_time(stack, self.ignore):
+            return real_time()
         current_time = self.time_to_freeze()
         return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
 
@@ -503,7 +527,7 @@ class _freeze_time(object):
         datetime.date.dates_to_freeze.append(time_to_freeze)
         datetime.date.tz_offsets.append(self.tz_offset)
 
-        fake_time = FakeTime(time_to_freeze, time.time)
+        fake_time = FakeTime(time_to_freeze, time.time, ignore=self.ignore)
         fake_localtime = FakeLocalTime(time_to_freeze, time.localtime)
         fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime)
         fake_strftime = FakeStrfTime(time_to_freeze, time.strftime)
