@@ -5,6 +5,7 @@ python:
   - pypy
   - 3.3
   - 3.4
+  - 3.5
   - 3.6
   - pypy3.3-5.2-alpha1
   - 3.7-dev
