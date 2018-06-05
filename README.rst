@@ -7,7 +7,7 @@ FreezeGun: Let your Python tests travel through time
 .. image:: https://coveralls.io/repos/spulec/freezegun/badge.svg?branch=master
    :target: https://coveralls.io/r/spulec/freezegun
 
-FreezeGun is a library that allows your python tests to travel through time by mocking the datetime module.
+FreezeGun is a library that allows your Python tests to travel through time by mocking the datetime module.
 
 Usage
 -----
@@ -42,7 +42,7 @@ Decorator
         def test_the_class(self):
             assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
-Context Manager
+Context manager
 ~~~~~~~~~~~~~~~
 
 .. code-block:: python
@@ -135,7 +135,7 @@ parameters which will keep time stopped.
 Manual ticks
 ~~~~~~~~~~~~
 
-Freezegun allows for the time to be manually forwarded as well.
+FreezeGun allows for the time to be manually forwarded as well.
 
 .. code-block:: python
 
@@ -156,7 +156,7 @@ Freezegun allows for the time to be manually forwarded as well.
 Moving time to specify datetime
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Freezegun allows moving time to specific dates.
+FreezeGun allows moving time to specific dates.
 
 .. code-block:: python
 
@@ -185,10 +185,10 @@ Freezegun allows moving time to specific dates.
 Parameter for ``move_to`` can be any valid ``freeze_time`` date (string, date, datetime).
 
 
-Default Arguments
+Default arguments
 ~~~~~~~~~~~~~~~~~
 
-Note that Freezegun will not modify default arguments. The following code will
+Note that FreezeGun will not modify default arguments. The following code will
 print the current date. See `here <http://docs.python-guide.org/en/latest/writing/gotchas/#mutable-default-arguments>`_ for why.
 
 .. code-block:: python
