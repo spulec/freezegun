@@ -82,6 +82,10 @@ Timezones
         # datetime.date.today() uses local time
         assert datetime.date.today() == datetime.date(2012, 1, 13)
 
+    @freeze_time("2012-01-14 03:21:34", tz_offset=-datetime.timedelta(hours=3, minutes=30))
+    def test_timedelta_offset():
+        assert datetime.datetime.now() == datetime.datetime(2012, 1, 13, 23, 51, 34)
+
 Nice inputs
 ~~~~~~~~~~~
 
@@ -186,6 +190,13 @@ Freezegun allows moving time to specific dates.
 
             frozen_datetime.move_to(initial_datetime)
             assert frozen_datetime() == initial_datetime
+
+
+    @freeze_time("2012-01-14", as_arg=True)
+    def test(frozen_time):
+        assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
+        frozen_time.move_to("2014-02-12")
+        assert datetime.datetime.now() == datetime.datetime(2014, 2, 12)
 
 Parameter for ``move_to`` can be any valid ``freeze_time`` date (string, date, datetime).
 

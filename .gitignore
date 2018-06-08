@@ -4,3 +4,5 @@ build
 *.tox
 dist
 *.pyc
+venv/
+.idea

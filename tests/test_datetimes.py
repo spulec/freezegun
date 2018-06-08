@@ -11,6 +11,12 @@ from tests import utils
 from freezegun import freeze_time
 from freezegun.api import FakeDatetime, FakeDate
 
+try:
+    import maya
+
+except ImportError:
+    maya = None
+
 
 class temp_locale(object):
     """Temporarily change the locale."""
@@ -74,6 +80,15 @@ def test_tz_offset():
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 13, 23, 21, 34)
     assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14, 3, 21, 34)
     assert time.time() == expected_timestamp
+    freezer.stop()
+
+
+def test_timedelta_tz_offset():
+    freezer = freeze_time("2012-01-14 03:21:34",
+                          tz_offset=-datetime.timedelta(hours=3, minutes=30))
+    freezer.start()
+    assert datetime.datetime.now() == datetime.datetime(2012, 1, 13, 23, 51, 34)
+    assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14, 3, 21, 34)
     freezer.stop()
 
 
@@ -192,6 +207,17 @@ def test_time_gmtime():
         assert time_struct.tm_isdst == -1
 
 
+def test_time_clock():
+    with freeze_time('2012-01-14 03:21:34'):
+        assert time.clock() == 0
+
+        with freeze_time('2012-01-14 03:21:35'):
+            assert time.clock() == 1
+
+        with freeze_time('2012-01-14 03:21:36'):
+            assert time.clock() == 2
+
+
 class modify_timezone(object):
 
     def __init__(self, new_timezone):
@@ -291,6 +317,19 @@ def test_generator_object():
         assert datetime.datetime(2011, 1, 1) == datetime.datetime.now()
 
     assert_raises(StopIteration, freeze_time, frozen_datetimes)
+
+
+def test_maya_datetimes():
+    if not maya:
+        raise skip.SkipTest("maya is optional since it's not supported for "
+                            "enough python versions")
+
+    with freeze_time(maya.when("October 2nd, 1997")):
+        assert datetime.datetime.now() == datetime.datetime(
+            year=1997,
+            month=10,
+            day=2
+        )
 
 
 def test_old_datetime_object():

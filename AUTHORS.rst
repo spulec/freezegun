@@ -14,3 +14,4 @@ Patches and Suggestions
 - `Adam Johnson <https://github.com/adamchainz>`_
 - `Alex Ehlke <https://github.com/aehlke>`_
 - `James Lu <github.com/CrazyPython>`_
+- `Dan Elkis <github.com/rinslow>`_
