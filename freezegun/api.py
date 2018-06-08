@@ -184,12 +184,8 @@ class FakeClock(object):
         first_frozen_time = self.times_to_freeze[0]()
         last_frozen_time = self.times_to_freeze[-1]()
 
-        # We can't use total_seconds() as it is not a function of timedelta
-        # in Python 2.6, so we have to use the suggested alternative.
         timedelta = (last_frozen_time - first_frozen_time)
-        total_seconds = (timedelta.microseconds + 0.0 +
-                         (timedelta.seconds + timedelta.days * 24 * 3600)
-                         * 10 ** 6) / 10 ** 6
+        total_seconds = timedelta.total_seconds()
 
         if self.tick:
             total_seconds += self.previous_clock_function()
