@@ -20,7 +20,7 @@ setup(
     name='freezegun',
     version='0.3.10',
     description='Let your Python tests travel through time',
-    long_desciption=readme,
+    long_description=readme,
     author='Steve Pulec',
     author_email='spulec@gmail.com',
     url='https://github.com/spulec/freezegun',
