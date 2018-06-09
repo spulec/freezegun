@@ -1,12 +1,11 @@
 language: python
 python:
-  - 2.6
   - 2.7
   - pypy
-  - 3.3
   - 3.4
+  - 3.5
   - 3.6
-  - pypy3.3-5.2-alpha1
+  - pypy3
   - 3.7-dev
 script: make travis
 install:
