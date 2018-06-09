@@ -199,7 +199,10 @@ class FakeStrfTime(BaseFakeTime):
 
     def __call__(self, format, time_to_format=None):
         if time_to_format is None:
-            time_to_format = FakeLocalTime(self.time_to_freeze)()
+            call_stack = inspect.stack()
+            if not self._should_use_real_time(call_stack, self.ignore):
+                time_to_format = FakeLocalTime(self.time_to_freeze)()
+
         return real_strftime(format, time_to_format)
 
 
