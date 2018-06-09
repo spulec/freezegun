@@ -169,6 +169,9 @@ class FakeLocalTime(BaseFakeTime):
     def __call__(self, t=None):
         if t is not None:
             return real_localtime(t)
+        call_stack = inspect.stack()
+        if self._should_use_real_time(call_stack, self.ignore):
+            return real_localtime()
         shifted_time = self.time_to_freeze() - datetime.timedelta(seconds=time.timezone)
         return shifted_time.timetuple()
 
@@ -182,6 +185,9 @@ class FakeGMTTime(BaseFakeTime):
     def __call__(self, t=None):
         if t is not None:
             return real_gmtime(t)
+        call_stack = inspect.stack()
+        if self._should_use_real_time(call_stack, self.ignore):
+            return real_gmtime()
         return self.time_to_freeze().timetuple()
 
 
