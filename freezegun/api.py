@@ -127,19 +127,19 @@ _is_cpython = (
 
 
 class BaseFakeTime(object):
-    stack_inspection_limit = 5
+    call_stack_inspection_limit = 5
 
-    def _should_use_real_time(self, stack, modules_to_ignore):
+    def _should_use_real_time(self, call_stack, modules_to_ignore):
         if not self.stack_inspection_limit:
             return False
 
         if not modules_to_ignore:
             return False
 
-        stack_limit = min(len(stack), self.stack_inspection_limit)
+        stack_limit = min(len(call_stack), self.call_stack_inspection_limit)
         # Start at 1 to ignore the current frame (index 0)
         for i in range(1, stack_limit):
-            mod = inspect.getmodule(stack[i][0])
+            mod = inspect.getmodule(call_stack[i][0])
             if mod.__name__.startswith(modules_to_ignore):
                 return True
         return False
@@ -153,8 +153,8 @@ class FakeTime(BaseFakeTime):
         self.ignore = ignore
 
     def __call__(self):
-        stack = inspect.stack()
-        if self._should_use_real_time(stack, self.ignore):
+        call_stack = inspect.stack()
+        if self._should_use_real_time(call_stack, self.ignore):
             return real_time()
         current_time = self.time_to_freeze()
         return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
