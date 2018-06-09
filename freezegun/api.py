@@ -160,10 +160,11 @@ class FakeTime(BaseFakeTime):
         return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
 
 
-class FakeLocalTime(object):
-    def __init__(self, time_to_freeze, previous_localtime_function=None):
+class FakeLocalTime(BaseFakeTime):
+    def __init__(self, time_to_freeze, previous_localtime_function=None, ignore=None):
         self.time_to_freeze = time_to_freeze
         self.previous_localtime_function = previous_localtime_function
+        self.ignore = ignore
 
     def __call__(self, t=None):
         if t is not None:
@@ -172,10 +173,11 @@ class FakeLocalTime(object):
         return shifted_time.timetuple()
 
 
-class FakeGMTTime(object):
-    def __init__(self, time_to_freeze, previous_gmtime_function):
+class FakeGMTTime(BaseFakeTime):
+    def __init__(self, time_to_freeze, previous_gmtime_function, ignore=None):
         self.time_to_freeze = time_to_freeze
         self.previous_gmtime_function = previous_gmtime_function
+        self.ignore = ignore
 
     def __call__(self, t=None):
         if t is not None:
@@ -183,10 +185,11 @@ class FakeGMTTime(object):
         return self.time_to_freeze().timetuple()
 
 
-class FakeStrfTime(object):
-    def __init__(self, time_to_freeze, previous_strftime_function):
+class FakeStrfTime(BaseFakeTime):
+    def __init__(self, time_to_freeze, previous_strftime_function, ignore=None):
         self.time_to_freeze = time_to_freeze
         self.previous_strftime_function = previous_strftime_function
+        self.ignore = ignore
 
     def __call__(self, format, time_to_format=None):
         if time_to_format is None:
@@ -194,12 +197,13 @@ class FakeStrfTime(object):
         return real_strftime(format, time_to_format)
 
 
-class FakeClock(object):
+class FakeClock(BaseFakeTime):
     times_to_freeze = []
 
-    def __init__(self, previous_clock_function, tick=False):
+    def __init__(self, previous_clock_function, tick=False, ignore=None):
         self.previous_clock_function = previous_clock_function
         self.tick = tick
+        self.ignore = ignore
 
     def __call__(self, *args, **kwargs):
         if len(self.times_to_freeze) == 1:
