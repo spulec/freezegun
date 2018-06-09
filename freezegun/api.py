@@ -130,7 +130,7 @@ class BaseFakeTime(object):
     call_stack_inspection_limit = 5
 
     def _should_use_real_time(self, call_stack, modules_to_ignore):
-        if not self.stack_inspection_limit:
+        if not self.call_stack_inspection_limit:
             return False
 
         if not modules_to_ignore:
