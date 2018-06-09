@@ -215,6 +215,10 @@ class FakeClock(BaseFakeTime):
         self.ignore = ignore
 
     def __call__(self, *args, **kwargs):
+        call_stack = inspect.stack()
+        if self._should_use_real_time(call_stack, self.ignore):
+            return self.previous_clock_function()
+
         if len(self.times_to_freeze) == 1:
             return 0.0 if not self.tick else self.previous_clock_function()
 
