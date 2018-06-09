@@ -541,10 +541,10 @@ class _freeze_time(object):
         datetime.date.tz_offsets.append(self.tz_offset)
 
         fake_time = FakeTime(time_to_freeze, time.time, ignore=self.ignore)
-        fake_localtime = FakeLocalTime(time_to_freeze, time.localtime)
-        fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime)
-        fake_strftime = FakeStrfTime(time_to_freeze, time.strftime)
-        fake_clock = FakeClock(time.clock, tick=self.tick)
+        fake_localtime = FakeLocalTime(time_to_freeze, time.localtime, ignore=self.ignore)
+        fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime, ignore=self.ignore)
+        fake_strftime = FakeStrfTime(time_to_freeze, time.strftime, ignore=self.ignore)
+        fake_clock = FakeClock(time.clock, tick=self.tick, ignore=self.ignore)
         fake_clock.times_to_freeze.append(time_to_freeze)
         time.time = fake_time
         time.localtime = fake_localtime
