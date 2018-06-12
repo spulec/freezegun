@@ -70,14 +70,25 @@ def test_isinstance_works():
     freezer.stop()
 
 
+def test_fake_uses_real_when_ignored():
+    real_time_before = time.time()
+    with freeze_time('2012-01-14', ignore=['tests.fake_module']):
+        real_time = fake_time_function()
+    real_time_after = time.time()
+    assert real_time_before <= real_time <= real_time_after
+
+
 def test_can_ignore_email_module():
     from email.utils import formatdate
-    result_if_not_ignored = 'Sat, 14 Jan 2012 00:00:00 -0000'
+    with freeze_time('2012-01-14'):
+        faked_date_str = formatdate()
+
     before_date_str = formatdate()
     with freeze_time('2012-01-14', ignore=['email']):
         date_str = formatdate()
+
     after_date_str = formatdate()
-    assert date_str != result_if_not_ignored
+    assert date_str != faked_date_str
     assert before_date_str <= date_str <= after_date_str
 
 
