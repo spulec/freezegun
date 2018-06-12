@@ -70,6 +70,17 @@ def test_isinstance_works():
     freezer.stop()
 
 
+def test_can_ignore_email_module():
+    from email.utils import formatdate
+    result_if_not_ignored = 'Sat, 14 Jan 2012 00:00:00 -0000'
+    before_date_str = formatdate()
+    with freeze_time('2012-01-14', ignore=['email']):
+        date_str = formatdate()
+    after_date_str = formatdate()
+    assert date_str != result_if_not_ignored
+    assert before_date_str <= date_str <= after_date_str
+
+
 @freeze_time('2011-01-01')
 def test_avoid_replacing_equal_to_anything():
     assert fake_module.equal_to_anything.description == 'This is the equal_to_anything object'
