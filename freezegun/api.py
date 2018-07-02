@@ -2,6 +2,7 @@ import datetime
 import functools
 import hashlib
 import inspect
+import itertools
 import sys
 import time
 import uuid
@@ -12,6 +13,7 @@ import warnings
 import types
 import numbers
 
+from collections import Iterable
 from dateutil import parser
 from dateutil.tz import tzlocal
 
@@ -391,6 +393,33 @@ class TickingDateTimeFactory(object):
         return self.time_to_freeze + (real_datetime.now() - self.start)
 
 
+class LazyTickingDateTimeFactory(object):
+
+    def __init__(self, time_to_freeze, lazy_ticks):
+        self.time_to_freeze = time_to_freeze
+        self.lazy_ticks = lazy_ticks
+        self._frozen_times = None
+
+    @property
+    def frozen_times(self):
+        if self._frozen_times is None:
+            if isinstance(self.lazy_ticks, types.GeneratorType):
+                lazy_times = self.lazy_ticks
+            elif isinstance(self.lazy_ticks, Iterable):
+                lazy_times = (_parse_time_to_freeze(t) for t in self.lazy_ticks)
+            else:
+                timedelta = datetime.timedelta(seconds=1)
+                if isinstance(self.lazy_ticks, datetime.timedelta):
+                    timedelta = self.lazy_ticks
+                lazy_times = (self.time_to_freeze + timedelta for i in itertools.count())
+
+            self._frozen_times = itertools.chain([self.time_to_freeze], lazy_times)
+        yield next(self._frozen_times)
+
+    def __call__(self):
+        return next(self.frozen_times)
+
+
 class FrozenDateTimeFactory(object):
 
     def __init__(self, time_to_freeze):
@@ -414,12 +443,13 @@ class FrozenDateTimeFactory(object):
 
 class _freeze_time(object):
 
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg):
+    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, lazy_tick):
 
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = _parse_tz_offset(tz_offset)
         self.ignore = tuple(ignore)
         self.tick = tick
+        self.lazy_tick = lazy_tick
         self.undo_changes = []
         self.modules_at_start = set()
         self.as_arg = as_arg
@@ -487,6 +517,8 @@ class _freeze_time(object):
     def start(self):
         if self.tick:
             time_to_freeze = TickingDateTimeFactory(self.time_to_freeze, real_datetime.now())
+        elif self.lazy_tick:
+            time_to_freeze = LazyTickingDateTimeFactory(self.time_to_freeze, self.lazy_tick)
         else:
             time_to_freeze = FrozenDateTimeFactory(self.time_to_freeze)
 
@@ -630,7 +662,7 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False):
+def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, lazy_tick=None, as_arg=False):
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
@@ -650,6 +682,9 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
 
+    if lazy_tick not in (None, False) and not _is_cpython:
+        raise SystemError('Calling freeze_time with "tick" is only compatible with CPython')
+
     if isinstance(time_to_freeze, types.FunctionType):
         return freeze_time(time_to_freeze(), tz_offset, ignore, tick)
 
@@ -658,7 +693,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
 
     if MayaDT is not None and isinstance(time_to_freeze, MayaDT):
         return freeze_time(time_to_freeze.datetime(), tz_offset, ignore,
-                           tick, as_arg)
+                           tick, as_arg, lazy_tick)
 
     if ignore is None:
         ignore = []
@@ -668,7 +703,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     ignore.append('google.gax')
     ignore.append('threading')
     ignore.append('Queue')
-    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg)
+    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg, lazy_tick)
 
 
 # Setup adapters for sqlite
