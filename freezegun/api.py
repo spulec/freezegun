@@ -299,6 +299,13 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     def date(self):
         return date_to_fakedate(self)
+    
+    @property
+    def nanosecond(self):
+        try:
+            return real_datetime.nanosecond
+        except AttributeError:
+            return 0
 
     @classmethod
     def today(cls):
@@ -317,6 +324,7 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
     @classmethod
     def _tz_offset(cls):
         return cls.tz_offsets[-1]
+
 
 FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
 FakeDatetime.max = datetime_to_fakedatetime(real_datetime.max)
