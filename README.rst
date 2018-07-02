@@ -132,6 +132,57 @@ parameters which will keep time stopped.
     def test_nice_datetime():
         assert datetime.datetime.now() > datetime.datetime(2020, 1, 14)
 
+``lazy_tick`` argument
+~~~~~~~~~~~~~~~~~
+
+FreezeGun's ``lazy_tick`` allows time to only tick when the time functions are called.
+
+If ``lazy_tick`` is ``True``, then each tick will jump time forward 1 second.
+
+.. code-block:: python
+
+    @freeze_time("Jan 14th, 2020", lazy_tick=True)
+    def test_lazy_ticking():
+        assert datetime.datetime.now() == datetime.datetime(2020, 1, 14)
+        time.sleep(10)
+        # Even though 10 seconds have elapsed, datetime.datetime.now() will
+        # indicate that only 1 second has passed
+        assert datetime.datetime.now() == datetime.datetime(2020, 1, 14, 0, 0, 1)
+
+If ``lazy_tick`` is an iterable/generator of datetimes, then each tick will jump
+to the next datetime in the sequence.
+
+.. code-block:: python
+
+    dates = [
+        '1020-01-14',
+        'Jan 14th, 2020',
+        'January 1, 3020',
+    ]
+    @freeze_time("Jan 14th, 2020", lazy_tick=dates)
+    def test_list_of_datetimes():
+        assert datetime.datetime.now() == datetime.datetime(2020, 1, 14)
+        assert datetime.datetime.now() == datetime.datetime(1020, 1, 14)
+        assert datetime.datetime.now() == datetime.datetime(3020, 1, 1)
+
+        try:
+            # If no more times are available in the sequence,
+            # a StopIteration exception is raised
+            datetime.datetime.now()
+        except StopIteration:
+            pass
+
+Finally if ``lazy_tick`` is a dateime.timedelta instance, then each tick will jump
+forward by the specified amount of time.
+
+.. code-block:: python
+
+    @freeze_time("Jan 14th, 2020", lazy_tick=datetime.timedelta(months=1))
+    def test_nice_datetime():
+        assert datetime.datetime.now() == datetime.datetime(2020, 1, 14)
+        assert datetime.datetime.now() == datetime.datetime(2020, 2, 14)
+        assert datetime.datetime.now() == datetime.datetime(2020, 3, 14)
+
 Manual ticks
 ~~~~~~~~~~~~
 
