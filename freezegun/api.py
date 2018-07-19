@@ -11,6 +11,7 @@ import platform
 import warnings
 import types
 import numbers
+import inspect
 
 from dateutil import parser
 from dateutil.tz import tzlocal
@@ -125,59 +126,99 @@ _is_cpython = (
 )
 
 
-class FakeTime(object):
+class BaseFakeTime(object):
+    call_stack_inspection_limit = 5
 
-    def __init__(self, time_to_freeze, previous_time_function):
+    def _should_use_real_time(self, call_stack, modules_to_ignore):
+        if not self.call_stack_inspection_limit:
+            return False
+
+        if not modules_to_ignore:
+            return False
+
+        stack_limit = min(len(call_stack), self.call_stack_inspection_limit)
+        # Start at 1 to ignore the current frame (index 0)
+        for i in range(1, stack_limit):
+            mod = inspect.getmodule(call_stack[i][0])
+            if mod.__name__.startswith(modules_to_ignore):
+                return True
+        return False
+
+
+class FakeTime(BaseFakeTime):
+
+    def __init__(self, time_to_freeze, previous_time_function, ignore=None):
         self.time_to_freeze = time_to_freeze
         self.previous_time_function = previous_time_function
+        self.ignore = ignore
 
     def __call__(self):
+        call_stack = inspect.stack()
+        if self._should_use_real_time(call_stack, self.ignore):
+            return real_time()
         current_time = self.time_to_freeze()
         return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
 
 
-class FakeLocalTime(object):
-    def __init__(self, time_to_freeze, previous_localtime_function=None):
+class FakeLocalTime(BaseFakeTime):
+    def __init__(self, time_to_freeze, previous_localtime_function=None, ignore=None):
         self.time_to_freeze = time_to_freeze
         self.previous_localtime_function = previous_localtime_function
+        self.ignore = ignore
 
     def __call__(self, t=None):
         if t is not None:
             return real_localtime(t)
+        call_stack = inspect.stack()
+        if self._should_use_real_time(call_stack, self.ignore):
+            return real_localtime()
         shifted_time = self.time_to_freeze() - datetime.timedelta(seconds=time.timezone)
         return shifted_time.timetuple()
 
 
-class FakeGMTTime(object):
-    def __init__(self, time_to_freeze, previous_gmtime_function):
+class FakeGMTTime(BaseFakeTime):
+    def __init__(self, time_to_freeze, previous_gmtime_function, ignore=None):
         self.time_to_freeze = time_to_freeze
         self.previous_gmtime_function = previous_gmtime_function
+        self.ignore = ignore
 
     def __call__(self, t=None):
         if t is not None:
             return real_gmtime(t)
+        call_stack = inspect.stack()
+        if self._should_use_real_time(call_stack, self.ignore):
+            return real_gmtime()
         return self.time_to_freeze().timetuple()
 
 
-class FakeStrfTime(object):
-    def __init__(self, time_to_freeze, previous_strftime_function):
+class FakeStrfTime(BaseFakeTime):
+    def __init__(self, time_to_freeze, previous_strftime_function, ignore=None):
         self.time_to_freeze = time_to_freeze
         self.previous_strftime_function = previous_strftime_function
+        self.ignore = ignore
 
     def __call__(self, format, time_to_format=None):
         if time_to_format is None:
-            time_to_format = FakeLocalTime(self.time_to_freeze)()
+            call_stack = inspect.stack()
+            if not self._should_use_real_time(call_stack, self.ignore):
+                time_to_format = FakeLocalTime(self.time_to_freeze)()
+
         return real_strftime(format, time_to_format)
 
 
-class FakeClock(object):
+class FakeClock(BaseFakeTime):
     times_to_freeze = []
 
-    def __init__(self, previous_clock_function, tick=False):
+    def __init__(self, previous_clock_function, tick=False, ignore=None):
         self.previous_clock_function = previous_clock_function
         self.tick = tick
+        self.ignore = ignore
 
     def __call__(self, *args, **kwargs):
+        call_stack = inspect.stack()
+        if self._should_use_real_time(call_stack, self.ignore):
+            return self.previous_clock_function()
+
         if len(self.times_to_freeze) == 1:
             return 0.0 if not self.tick else self.previous_clock_function()
 
@@ -499,11 +540,11 @@ class _freeze_time(object):
         datetime.date.dates_to_freeze.append(time_to_freeze)
         datetime.date.tz_offsets.append(self.tz_offset)
 
-        fake_time = FakeTime(time_to_freeze, time.time)
-        fake_localtime = FakeLocalTime(time_to_freeze, time.localtime)
-        fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime)
-        fake_strftime = FakeStrfTime(time_to_freeze, time.strftime)
-        fake_clock = FakeClock(time.clock, tick=self.tick)
+        fake_time = FakeTime(time_to_freeze, time.time, ignore=self.ignore)
+        fake_localtime = FakeLocalTime(time_to_freeze, time.localtime, ignore=self.ignore)
+        fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime, ignore=self.ignore)
+        fake_strftime = FakeStrfTime(time_to_freeze, time.strftime, ignore=self.ignore)
+        fake_clock = FakeClock(time.clock, tick=self.tick, ignore=self.ignore)
         fake_clock.times_to_freeze.append(time_to_freeze)
         time.time = fake_time
         time.localtime = fake_localtime
