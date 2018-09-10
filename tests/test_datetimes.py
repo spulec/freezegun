@@ -608,3 +608,14 @@ def test_freeze_with_timezone_aware_datetime_in_non_utc():
     utc_now = datetime.datetime.utcnow()
     assert utc_now.tzinfo is None
     assert utc_now == datetime.datetime(1970, 1, 1, 4)
+
+
+@freeze_time('2015-01-01')
+def test_time_with_nested():
+    from time import time
+    first = 1420070400.0
+    second = 1420070760.0
+
+    assert time() == first
+    with freeze_time('2015-01-01T00:06:00'):
+        assert time() == second
