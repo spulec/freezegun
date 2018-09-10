@@ -33,6 +33,8 @@ real_datetime = datetime.datetime
 real_date_objects = [real_time, real_localtime, real_gmtime, real_strftime, real_date, real_datetime]
 _real_time_object_ids = set(id(obj) for obj in real_date_objects)
 
+times_to_freeze = []
+tz_offsets = []
 
 try:
     real_uuid_generate_time = uuid._uuid_generate_time
@@ -147,8 +149,7 @@ class BaseFakeTime(object):
 
 class FakeTime(BaseFakeTime):
 
-    def __init__(self, time_to_freeze, previous_time_function, ignore=None):
-        self.time_to_freeze = time_to_freeze
+    def __init__(self, previous_time_function, ignore=None):
         self.previous_time_function = previous_time_function
         self.ignore = ignore
 
@@ -156,13 +157,12 @@ class FakeTime(BaseFakeTime):
         call_stack = inspect.stack()
         if self._should_use_real_time(call_stack, self.ignore):
             return real_time()
-        current_time = self.time_to_freeze()
+        current_time = times_to_freeze[-1]()
         return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
 
 
 class FakeLocalTime(BaseFakeTime):
-    def __init__(self, time_to_freeze, previous_localtime_function=None, ignore=None):
-        self.time_to_freeze = time_to_freeze
+    def __init__(self, previous_localtime_function=None, ignore=None):
         self.previous_localtime_function = previous_localtime_function
         self.ignore = ignore
 
@@ -172,13 +172,12 @@ class FakeLocalTime(BaseFakeTime):
         call_stack = inspect.stack()
         if self._should_use_real_time(call_stack, self.ignore):
             return real_localtime()
-        shifted_time = self.time_to_freeze() - datetime.timedelta(seconds=time.timezone)
+        shifted_time = times_to_freeze[-1]() - datetime.timedelta(seconds=time.timezone)
         return shifted_time.timetuple()
 
 
 class FakeGMTTime(BaseFakeTime):
-    def __init__(self, time_to_freeze, previous_gmtime_function, ignore=None):
-        self.time_to_freeze = time_to_freeze
+    def __init__(self, previous_gmtime_function, ignore=None):
         self.previous_gmtime_function = previous_gmtime_function
         self.ignore = ignore
 
@@ -188,12 +187,11 @@ class FakeGMTTime(BaseFakeTime):
         call_stack = inspect.stack()
         if self._should_use_real_time(call_stack, self.ignore):
             return real_gmtime()
-        return self.time_to_freeze().timetuple()
+        return times_to_freeze[-1]().timetuple()
 
 
 class FakeStrfTime(BaseFakeTime):
-    def __init__(self, time_to_freeze, previous_strftime_function, ignore=None):
-        self.time_to_freeze = time_to_freeze
+    def __init__(self, previous_strftime_function, ignore=None):
         self.previous_strftime_function = previous_strftime_function
         self.ignore = ignore
 
@@ -201,14 +199,12 @@ class FakeStrfTime(BaseFakeTime):
         if time_to_format is None:
             call_stack = inspect.stack()
             if not self._should_use_real_time(call_stack, self.ignore):
-                time_to_format = FakeLocalTime(self.time_to_freeze)()
+                time_to_format = FakeLocalTime()()
 
         return real_strftime(format, time_to_format)
 
 
 class FakeClock(BaseFakeTime):
-    times_to_freeze = []
-
     def __init__(self, previous_clock_function, tick=False, ignore=None):
         self.previous_clock_function = previous_clock_function
         self.tick = tick
@@ -219,11 +215,11 @@ class FakeClock(BaseFakeTime):
         if self._should_use_real_time(call_stack, self.ignore):
             return self.previous_clock_function()
 
-        if len(self.times_to_freeze) == 1:
+        if len(times_to_freeze) == 1:
             return 0.0 if not self.tick else self.previous_clock_function()
 
-        first_frozen_time = self.times_to_freeze[0]()
-        last_frozen_time = self.times_to_freeze[-1]()
+        first_frozen_time = times_to_freeze[0]()
+        last_frozen_time = times_to_freeze[-1]()
 
         timedelta = (last_frozen_time - first_frozen_time)
         total_seconds = timedelta.total_seconds()
@@ -258,9 +254,6 @@ def date_to_fakedate(date):
 
 
 class FakeDate(with_metaclass(FakeDateMeta, real_date)):
-    dates_to_freeze = []
-    tz_offsets = []
-
     def __new__(cls, *args, **kwargs):
         return real_date.__new__(cls, *args, **kwargs)
 
@@ -284,13 +277,13 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
         result = cls._date_to_freeze() + cls._tz_offset()
         return date_to_fakedate(result)
 
-    @classmethod
-    def _date_to_freeze(cls):
-        return cls.dates_to_freeze[-1]()
+    @staticmethod
+    def _date_to_freeze():
+        return times_to_freeze[-1]()
 
     @classmethod
     def _tz_offset(cls):
-        return cls.tz_offsets[-1]
+        return tz_offsets[-1]
 
 FakeDate.min = date_to_fakedate(real_date.min)
 FakeDate.max = date_to_fakedate(real_date.max)
@@ -303,9 +296,6 @@ class FakeDatetimeMeta(FakeDateMeta):
 
 
 class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
-    times_to_freeze = []
-    tz_offsets = []
-
     def __new__(cls, *args, **kwargs):
         return real_datetime.__new__(cls, *args, **kwargs)
 
@@ -357,14 +347,14 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
         result = cls._time_to_freeze() or real_datetime.utcnow()
         return datetime_to_fakedatetime(result)
 
-    @classmethod
-    def _time_to_freeze(cls):
-        if cls.times_to_freeze:
-            return cls.times_to_freeze[-1]()
+    @staticmethod
+    def _time_to_freeze():
+        if times_to_freeze:
+            return times_to_freeze[-1]()
 
     @classmethod
     def _tz_offset(cls):
-        return cls.tz_offsets[-1]
+        return tz_offsets[-1]
 
 
 FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
@@ -541,19 +531,17 @@ class _freeze_time(object):
 
         # Change the modules
         datetime.datetime = FakeDatetime
-        datetime.datetime.times_to_freeze.append(time_to_freeze)
-        datetime.datetime.tz_offsets.append(self.tz_offset)
+        times_to_freeze.append(time_to_freeze)
+        tz_offsets.append(self.tz_offset)
 
         datetime.date = FakeDate
-        datetime.date.dates_to_freeze.append(time_to_freeze)
-        datetime.date.tz_offsets.append(self.tz_offset)
 
-        fake_time = FakeTime(time_to_freeze, time.time, ignore=self.ignore)
-        fake_localtime = FakeLocalTime(time_to_freeze, time.localtime, ignore=self.ignore)
-        fake_gmtime = FakeGMTTime(time_to_freeze, time.gmtime, ignore=self.ignore)
-        fake_strftime = FakeStrfTime(time_to_freeze, time.strftime, ignore=self.ignore)
+        fake_time = FakeTime(time.time, ignore=self.ignore)
+        fake_localtime = FakeLocalTime(time.localtime, ignore=self.ignore)
+        fake_gmtime = FakeGMTTime(time.gmtime, ignore=self.ignore)
+        fake_strftime = FakeStrfTime(time.strftime, ignore=self.ignore)
         fake_clock = FakeClock(time.clock, tick=self.tick, ignore=self.ignore)
-        fake_clock.times_to_freeze.append(time_to_freeze)
+
         time.time = fake_time
         time.localtime = fake_localtime
         time.gmtime = fake_gmtime
@@ -606,13 +594,10 @@ class _freeze_time(object):
         return time_to_freeze
 
     def stop(self):
-        datetime.datetime.times_to_freeze.pop()
-        datetime.datetime.tz_offsets.pop()
-        datetime.date.dates_to_freeze.pop()
-        datetime.date.tz_offsets.pop()
-        time.clock.times_to_freeze.pop()
+        times_to_freeze.pop()
+        tz_offsets.pop()
 
-        if not datetime.datetime.times_to_freeze:
+        if not times_to_freeze:
             datetime.datetime = real_datetime
             datetime.date = real_date
             copyreg.dispatch_table.pop(real_datetime)
