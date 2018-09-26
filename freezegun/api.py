@@ -530,10 +530,14 @@ class _freeze_time(object):
             time_to_freeze = FrozenDateTimeFactory(self.time_to_freeze)
 
         # Change the modules
-        datetime.datetime = FakeDatetime
+        is_already_started = len(times_to_freeze) > 0
         times_to_freeze.append(time_to_freeze)
         tz_offsets.append(self.tz_offset)
 
+        if is_already_started:
+            return time_to_freeze
+
+        datetime.datetime = FakeDatetime
         datetime.date = FakeDate
 
         fake_time = FakeTime(time.time, ignore=self.ignore)
@@ -633,16 +637,16 @@ class _freeze_time(object):
                         if real:
                             setattr(module, module_attribute, real)
 
-        time.time = time.time.previous_time_function
-        time.gmtime = time.gmtime.previous_gmtime_function
-        time.localtime = time.localtime.previous_localtime_function
-        time.strftime = time.strftime.previous_strftime_function
-        time.clock = time.clock.previous_clock_function
+            time.time = time.time.previous_time_function
+            time.gmtime = time.gmtime.previous_gmtime_function
+            time.localtime = time.localtime.previous_localtime_function
+            time.strftime = time.strftime.previous_strftime_function
+            time.clock = time.clock.previous_clock_function
 
-        if uuid_generate_time_attr:
-            setattr(uuid, uuid_generate_time_attr, real_uuid_generate_time)
-        uuid._UuidCreate = real_uuid_create
-        uuid._last_timestamp = None
+            if uuid_generate_time_attr:
+                setattr(uuid, uuid_generate_time_attr, real_uuid_generate_time)
+            uuid._UuidCreate = real_uuid_create
+            uuid._last_timestamp = None
 
     def decorate_coroutine(self, coroutine):
         return wrap_coroutine(self, coroutine)
