@@ -139,8 +139,8 @@ class BaseFakeTime(object):
         frame = inspect.currentframe().f_back.f_back
 
         for _ in range(self.call_stack_inspection_limit+100):
-            module_name = frame.f_globals["__name__"]
-            if module_name.startswith(self.ignore):
+            module_name = frame.f_globals.get('__name__')
+            if module_name and module_name.startswith(self.ignore):
                 return True
 
             frame = frame.f_back
