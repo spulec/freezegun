@@ -133,19 +133,20 @@ class BaseFakeTime(object):
         if not self.call_stack_inspection_limit:
             return False
 
-        modules_to_ignore = self.ignore
-
-        if not modules_to_ignore:
+        if not self.ignore:
             return False
 
-        call_stack = inspect.stack()
+        frame = inspect.currentframe().f_back.f_back
 
-        stack_limit = min(len(call_stack), self.call_stack_inspection_limit)
-        # Start at 2 to ignore the current frame and the next one which is always inside freezegun
-        for frame in call_stack[2:stack_limit]:
-            mod = inspect.getmodule(frame[0])
-            if mod and mod.__name__.startswith(modules_to_ignore):
+        for _ in range(self.call_stack_inspection_limit+100):
+            module_name = frame.f_globals["__name__"]
+            if module_name.startswith(self.ignore):
                 return True
+
+            frame = frame.f_back
+            if frame is None:
+                break
+
         return False
 
 
