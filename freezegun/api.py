@@ -1,7 +1,5 @@
 import datetime
 import functools
-import hashlib
-import inspect
 import sys
 import time
 import uuid
@@ -131,17 +129,21 @@ _is_cpython = (
 class BaseFakeTime(object):
     call_stack_inspection_limit = 5
 
-    def _should_use_real_time(self, call_stack, modules_to_ignore):
+    def _should_use_real_time(self):
         if not self.call_stack_inspection_limit:
             return False
+
+        modules_to_ignore = self.ignore
 
         if not modules_to_ignore:
             return False
 
+        call_stack = inspect.stack()
+
         stack_limit = min(len(call_stack), self.call_stack_inspection_limit)
-        # Start at 1 to ignore the current frame (index 0)
-        for i in range(1, stack_limit):
-            mod = inspect.getmodule(call_stack[i][0])
+        # Start at 2 to ignore the current frame and the next one which is always inside freezegun
+        for frame in call_stack[2:stack_limit]:
+            mod = inspect.getmodule(frame[0])
             if mod and mod.__name__.startswith(modules_to_ignore):
                 return True
         return False
@@ -154,8 +156,7 @@ class FakeTime(BaseFakeTime):
         self.ignore = ignore
 
     def __call__(self):
-        call_stack = inspect.stack()
-        if self._should_use_real_time(call_stack, self.ignore):
+        if self._should_use_real_time():
             return real_time()
         current_time = times_to_freeze[-1]()
         return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
@@ -169,8 +170,7 @@ class FakeLocalTime(BaseFakeTime):
     def __call__(self, t=None):
         if t is not None:
             return real_localtime(t)
-        call_stack = inspect.stack()
-        if self._should_use_real_time(call_stack, self.ignore):
+        if self._should_use_real_time():
             return real_localtime()
         shifted_time = times_to_freeze[-1]() - datetime.timedelta(seconds=time.timezone)
         return shifted_time.timetuple()
@@ -184,8 +184,7 @@ class FakeGMTTime(BaseFakeTime):
     def __call__(self, t=None):
         if t is not None:
             return real_gmtime(t)
-        call_stack = inspect.stack()
-        if self._should_use_real_time(call_stack, self.ignore):
+        if self._should_use_real_time():
             return real_gmtime()
         return times_to_freeze[-1]().timetuple()
 
@@ -197,8 +196,7 @@ class FakeStrfTime(BaseFakeTime):
 
     def __call__(self, format, time_to_format=None):
         if time_to_format is None:
-            call_stack = inspect.stack()
-            if not self._should_use_real_time(call_stack, self.ignore):
+            if not self._should_use_real_time():
                 time_to_format = FakeLocalTime()()
 
         return real_strftime(format, time_to_format)
@@ -211,8 +209,7 @@ class FakeClock(BaseFakeTime):
         self.ignore = ignore
 
     def __call__(self, *args, **kwargs):
-        call_stack = inspect.stack()
-        if self._should_use_real_time(call_stack, self.ignore):
+        if self._should_use_real_time():
             return self.previous_clock_function()
 
         if len(times_to_freeze) == 1:
