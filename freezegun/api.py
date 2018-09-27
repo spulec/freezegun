@@ -142,7 +142,7 @@ class BaseFakeTime(object):
         # Start at 1 to ignore the current frame (index 0)
         for i in range(1, stack_limit):
             mod = inspect.getmodule(call_stack[i][0])
-            if mod.__name__.startswith(modules_to_ignore):
+            if mod and mod.__name__.startswith(modules_to_ignore):
                 return True
         return False
 
