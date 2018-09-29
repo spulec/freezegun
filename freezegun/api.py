@@ -469,9 +469,8 @@ class StepTickTimeFactory(object):
 
 class _freeze_time(object):
 
-
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, auto_tick_seconds):
-        self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
+    def __init__(self, time_to_freeze, tz_offset, ignore, tick, as_arg, auto_tick_seconds, as_kwarg):
+        self.time_to_freeze = _parse_time_to_freeze(time_to_freeze)
         self.tz_offset = _parse_tz_offset(tz_offset)
         self.ignore = tuple(ignore)
         self.tick = tick
@@ -479,6 +478,7 @@ class _freeze_time(object):
         self.undo_changes = []
         self.modules_at_start = set()
         self.as_arg = as_arg
+        self.as_kwarg = as_kwarg
 
     def __call__(self, func):
         if inspect.isclass(func):
@@ -674,7 +674,9 @@ class _freeze_time(object):
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
             with self as time_factory:
-                if self.as_arg:
+                if self.as_kwarg:
+                    result = func(*args, frozen_time=time_factory, **kwargs)
+                elif self.as_arg:
                     result = func(time_factory, *args, **kwargs)
                 else:
                     result = func(*args, **kwargs)
@@ -688,12 +690,28 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, auto_tick_seconds=0):
-    acceptable_times = (type(None), string_type, datetime.date, datetime.timedelta,
-             types.FunctionType, types.GeneratorType)
+def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, auto_tick_seconds=False, as_kwarg=False):
+    acceptable_times = (
+        type(None),
+        string_type,
+        datetime.date,
+        datetime.timedelta,
+        types.FunctionType,
+        types.GeneratorType,
+    )
+
+    parameters = dict(
+        time_to_freeze=time_to_freeze,
+        tz_offset=tz_offset,
+        ignore=ignore,
+        tick=tick,
+        as_arg=as_arg,
+        auto_tick_seconds=auto_tick_seconds,
+        as_kwarg=as_kwarg,
+    )
 
     if MayaDT is not None:
-        acceptable_times += MayaDT,
+        acceptable_times += (MayaDT,)
 
     if not isinstance(time_to_freeze, acceptable_times):
         raise TypeError(('freeze_time() expected None, a string, date instance, datetime '
@@ -703,14 +721,16 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
 
     if isinstance(time_to_freeze, types.FunctionType):
-        return freeze_time(time_to_freeze(), tz_offset, ignore, tick, auto_tick_seconds)
+        parameters['time_to_freeze'] = time_to_freeze()
+        return freeze_time(**parameters)
 
     if isinstance(time_to_freeze, types.GeneratorType):
-        return freeze_time(next(time_to_freeze), tz_offset, ignore, tick, auto_tick_seconds)
+        parameters['time_to_freeze'] = next(time_to_freeze)
+        return freeze_time(**parameters)
 
     if MayaDT is not None and isinstance(time_to_freeze, MayaDT):
-        return freeze_time(time_to_freeze.datetime(), tz_offset, ignore,
-                           tick, as_arg)
+        parameters['time_to_freeze'] = time_to_freeze.datetime()
+        return freeze_time(**parameters)
 
     if ignore is None:
         ignore = []
@@ -724,8 +744,9 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     ignore.append('selenium')
     ignore.append('_pytest.terminal')
     ignore.append('_pytest.runner')
-    
-    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg, auto_tick_seconds)
+    parameters['ignore'] = ignore
+
+    return _freeze_time(**parameters)
 
 
 # Setup adapters for sqlite

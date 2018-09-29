@@ -9,7 +9,7 @@ from nose.tools import assert_raises
 from tests import utils
 
 from freezegun import freeze_time
-from freezegun.api import FakeDatetime, FakeDate
+from freezegun.api import FakeDatetime, FakeDate, FrozenDateTimeFactory
 
 try:
     import maya
@@ -643,3 +643,15 @@ def test_should_use_real_time():
         # assert time.localtime() != expected_frozen_local
         assert time.gmtime() != expected_frozen_gmt
         assert time.clock() != expected_clock
+
+
+def test_as_kwarg():
+    @freeze_time("1970-01-01T00:00:00-04:00", as_kwarg=True)
+    def foo(something, frozen_time):
+        assert something == 1
+        assert isinstance(frozen_time, FrozenDateTimeFactory)
+        utc_now = datetime.datetime.utcnow()
+        assert utc_now.tzinfo is None
+        assert utc_now == datetime.datetime(1970, 1, 1, 4)
+
+    foo(1)
