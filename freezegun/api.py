@@ -463,7 +463,7 @@ class FrozenDateTimeFactory(object):
 
 class _freeze_time(object):
 
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg):
+    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, as_member):
 
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = _parse_tz_offset(tz_offset)
@@ -472,6 +472,7 @@ class _freeze_time(object):
         self.undo_changes = []
         self.modules_at_start = set()
         self.as_arg = as_arg
+        self.as_member = as_member
 
     def __call__(self, func):
         if inspect.isclass(func):
@@ -491,7 +492,9 @@ class _freeze_time(object):
 
             @classmethod
             def setUpClass(cls):
-                self.start()
+                frozen_time = self.start()
+                if self.as_member:
+                    cls.frozen_time = frozen_time
                 if orig_setUpClass is not None:
                     orig_setUpClass()
 
@@ -679,7 +682,7 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False):
+def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, as_member=False):
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
@@ -717,7 +720,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     ignore.append('google.gax')
     ignore.append('threading')
     ignore.append('Queue')
-    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg)
+    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg, as_member)
 
 
 # Setup adapters for sqlite
