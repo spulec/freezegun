@@ -4,6 +4,7 @@ import unittest
 import locale
 import sys
 
+import pytest
 from nose.plugins import skip
 from nose.tools import assert_raises
 from tests import utils
@@ -608,3 +609,12 @@ def test_freeze_with_timezone_aware_datetime_in_non_utc():
     utc_now = datetime.datetime.utcnow()
     assert utc_now.tzinfo is None
     assert utc_now == datetime.datetime(1970, 1, 1, 4)
+
+
+@freeze_time("2017-1-14", as_member=True)
+class AccessFrozenTimeFromClass(unittest.TestCase):
+
+    def test_changing_time(self):
+        self.assertEqual(datetime.datetime.now(), datetime.datetime(2017, 1, 14))
+        self.frozen_time.tick(delta=datetime.timedelta(days=10))
+        self.assertEqual(datetime.datetime.now(), datetime.datetime(2017, 1, 24))
