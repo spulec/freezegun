@@ -4,10 +4,10 @@ from time import time, localtime, gmtime, strftime
 from freezegun.api import (
     FakeDatetime,
     FakeDate,
-    FakeTime,
-    FakeLocalTime,
-    FakeGMTTime,
-    FakeStrfTime,
+    fake_time,
+    fake_localtime,
+    fake_gmtime,
+    fake_strftime,
 )
 
 
@@ -48,16 +48,16 @@ def get_fake_date():
 
 
 def get_fake_time():
-    return FakeTime
+    return fake_time
 
 
 def get_fake_localtime():
-    return FakeLocalTime
+    return fake_localtime
 
 
 def get_fake_gmtime():
-    return FakeGMTTime
+    return fake_gmtime
 
 
 def get_fake_strftime():
-    return FakeStrfTime
+    return fake_strftime

@@ -31,7 +31,7 @@ real_datetime = datetime.datetime
 real_date_objects = [real_time, real_localtime, real_gmtime, real_strftime, real_date, real_datetime]
 _real_time_object_ids = set(id(obj) for obj in real_date_objects)
 
-times_to_freeze = []
+times_to_freeze_factories = []
 tz_offsets = []
 ignore_lists = []
 tick_flags = []
@@ -163,47 +163,51 @@ def _should_use_real_time():
     return False
 
 
-def FakeTime():
+def get_current_time():
+    return times_to_freeze_factories[-1]()
+
+
+def fake_time():
     if _should_use_real_time():
         return real_time()
-    current_time = times_to_freeze[-1]()
+    current_time = get_current_time()
     return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
 
 
-def FakeLocalTime(t=None):
+def fake_localtime(t=None):
     if t is not None:
         return real_localtime(t)
     if _should_use_real_time():
         return real_localtime()
-    shifted_time = times_to_freeze[-1]() - datetime.timedelta(seconds=time.timezone)
+    shifted_time = get_current_time() - datetime.timedelta(seconds=time.timezone)
     return shifted_time.timetuple()
 
 
-def FakeGMTTime(t=None):
+def fake_gmtime(t=None):
     if t is not None:
         return real_gmtime(t)
     if _should_use_real_time():
         return real_gmtime()
-    return times_to_freeze[-1]().timetuple()
+    return get_current_time().timetuple()
 
 
-def FakeStrfTime(format, time_to_format=None):
+def fake_strftime(format, time_to_format=None):
     if time_to_format is None:
         if not _should_use_real_time():
-            time_to_format = FakeLocalTime()
+            time_to_format = fake_localtime()
 
     return real_strftime(format, time_to_format)
 
 
-def FakeClock():
+def fake_clock():
     if _should_use_real_time():
         return real_clock()
 
-    if len(times_to_freeze) == 1:
+    if len(times_to_freeze_factories) == 1:
         return 0.0 if not tick_flags[-1] else real_clock()
 
-    first_frozen_time = times_to_freeze[0]()
-    last_frozen_time = times_to_freeze[-1]()
+    first_frozen_time = times_to_freeze_factories[0]()
+    last_frozen_time = get_current_time()
 
     timedelta = (last_frozen_time - first_frozen_time)
     total_seconds = timedelta.total_seconds()
@@ -263,7 +267,7 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
 
     @staticmethod
     def _date_to_freeze():
-        return times_to_freeze[-1]()
+        return get_current_time()
 
     @classmethod
     def _tz_offset(cls):
@@ -334,8 +338,8 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     @staticmethod
     def _time_to_freeze():
-        if times_to_freeze:
-            return times_to_freeze[-1]()
+        if times_to_freeze_factories:
+            return get_current_time()
 
     @classmethod
     def _tz_offset(cls):
@@ -548,8 +552,8 @@ class _freeze_time(object):
             time_to_freeze = FrozenDateTimeFactory(self.time_to_freeze)
 
         # Change the modules
-        is_already_started = len(times_to_freeze) > 0
-        times_to_freeze.append(time_to_freeze)
+        is_already_started = len(times_to_freeze_factories) > 0
+        times_to_freeze_factories.append(time_to_freeze)
         tz_offsets.append(self.tz_offset)
         ignore_lists.append(self.ignore)
         tick_flags.append(self.tick)
@@ -559,12 +563,6 @@ class _freeze_time(object):
 
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
-
-        fake_time = FakeTime
-        fake_localtime = FakeLocalTime
-        fake_gmtime = FakeGMTTime
-        fake_strftime = FakeStrfTime
-        fake_clock = FakeClock
 
         time.time = fake_time
         time.localtime = fake_localtime
@@ -581,17 +579,17 @@ class _freeze_time(object):
 
         # Change any place where the module had already been imported
         to_patch = [
-            ('real_date', real_date, 'FakeDate', FakeDate),
-            ('real_datetime', real_datetime, 'FakeDatetime', FakeDatetime),
-            ('real_gmtime', real_gmtime, 'FakeGMTTime', fake_gmtime),
-            ('real_localtime', real_localtime, 'FakeLocalTime', fake_localtime),
-            ('real_strftime', real_strftime, 'FakeStrfTime', fake_strftime),
-            ('real_time', real_time, 'FakeTime', fake_time),
-            ('real_clock', real_clock, 'FakeClock', fake_clock),
+            ('real_date', real_date, FakeDate),
+            ('real_datetime', real_datetime, FakeDatetime),
+            ('real_gmtime', real_gmtime, fake_gmtime),
+            ('real_localtime', real_localtime, fake_localtime),
+            ('real_strftime', real_strftime, fake_strftime),
+            ('real_time', real_time, fake_time),
+            ('real_clock', real_clock, fake_clock),
         ]
-        self.fake_names = tuple(fake_name for real_name, real, fake_name, fake in to_patch)
-        self.reals = dict((id(fake), real) for real_name, real, fake_name, fake in to_patch)
-        fakes = dict((id(real), fake) for real_name, real, fake_name, fake in to_patch)
+        self.fake_names = tuple(fake.__name__ for real_name, real, fake in to_patch)
+        self.reals = dict((id(fake), real) for real_name, real, fake in to_patch)
+        fakes = dict((id(real), fake) for real_name, real, fake in to_patch)
         add_change = self.undo_changes.append
 
         # Save the current loaded modules
@@ -618,10 +616,12 @@ class _freeze_time(object):
         return time_to_freeze
 
     def stop(self):
-        times_to_freeze.pop()
+        times_to_freeze_factories.pop()
+        ignore_lists.pop()
+        tick_flags.pop()
         tz_offsets.pop()
 
-        if not times_to_freeze:
+        if not times_to_freeze_factories:
             datetime.datetime = real_datetime
             datetime.date = real_date
             copyreg.dispatch_table.pop(real_datetime)
