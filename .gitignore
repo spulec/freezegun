@@ -6,3 +6,4 @@ dist
 *.pyc
 venv/
 .idea
+htmlcov/

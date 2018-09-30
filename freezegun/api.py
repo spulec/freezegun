@@ -33,12 +33,24 @@ _real_time_object_ids = set(id(obj) for obj in real_date_objects)
 
 times_to_freeze = []
 tz_offsets = []
+ignore_lists = []
+tick_flags = []
+
+# Python3 doesn't have basestring, but it does have str.
+try:
+    # noinspection PyUnresolvedReferences
+    string_type = basestring
+except NameError:
+    string_type = str
 
 try:
+    # noinspection PyUnresolvedReferences
     real_uuid_generate_time = uuid._uuid_generate_time
     uuid_generate_time_attr = '_uuid_generate_time'
 except AttributeError:
+    # noinspection PyUnresolvedReferences
     uuid._load_system_functions()
+    # noinspection PyUnresolvedReferences
     real_uuid_generate_time = uuid._generate_time_safe
     uuid_generate_time_attr = '_generate_time_safe'
 except ImportError:
@@ -46,6 +58,7 @@ except ImportError:
     uuid_generate_time_attr = None
 
 try:
+    # noinspection PyUnresolvedReferences
     real_uuid_create = uuid._UuidCreate
 except (AttributeError, ImportError):
     real_uuid_create = None
@@ -133,14 +146,14 @@ class BaseFakeTime(object):
         if not self.call_stack_inspection_limit:
             return False
 
-        if not self.ignore:
+        if not ignore_lists[-1]:
             return False
 
         frame = inspect.currentframe().f_back.f_back
 
         for _ in range(self.call_stack_inspection_limit):
             module_name = frame.f_globals.get('__name__')
-            if module_name and module_name.startswith(self.ignore):
+            if module_name and module_name.startswith(ignore_lists[-1]):
                 return True
 
             frame = frame.f_back
@@ -152,10 +165,6 @@ class BaseFakeTime(object):
 
 class FakeTime(BaseFakeTime):
 
-    def __init__(self, previous_time_function, ignore=None):
-        self.previous_time_function = previous_time_function
-        self.ignore = ignore
-
     def __call__(self):
         if self._should_use_real_time():
             return real_time()
@@ -164,10 +173,6 @@ class FakeTime(BaseFakeTime):
 
 
 class FakeLocalTime(BaseFakeTime):
-    def __init__(self, previous_localtime_function=None, ignore=None):
-        self.previous_localtime_function = previous_localtime_function
-        self.ignore = ignore
-
     def __call__(self, t=None):
         if t is not None:
             return real_localtime(t)
@@ -178,10 +183,6 @@ class FakeLocalTime(BaseFakeTime):
 
 
 class FakeGMTTime(BaseFakeTime):
-    def __init__(self, previous_gmtime_function, ignore=None):
-        self.previous_gmtime_function = previous_gmtime_function
-        self.ignore = ignore
-
     def __call__(self, t=None):
         if t is not None:
             return real_gmtime(t)
@@ -191,10 +192,6 @@ class FakeGMTTime(BaseFakeTime):
 
 
 class FakeStrfTime(BaseFakeTime):
-    def __init__(self, previous_strftime_function, ignore=None):
-        self.previous_strftime_function = previous_strftime_function
-        self.ignore = ignore
-
     def __call__(self, format, time_to_format=None):
         if time_to_format is None:
             if not self._should_use_real_time():
@@ -204,17 +201,12 @@ class FakeStrfTime(BaseFakeTime):
 
 
 class FakeClock(BaseFakeTime):
-    def __init__(self, previous_clock_function, tick=False, ignore=None):
-        self.previous_clock_function = previous_clock_function
-        self.tick = tick
-        self.ignore = ignore
-
     def __call__(self, *args, **kwargs):
         if self._should_use_real_time():
             return real_clock()
 
         if len(times_to_freeze) == 1:
-            return 0.0 if not self.tick else self.previous_clock_function()
+            return 0.0 if not tick_flags[-1] else real_clock()
 
         first_frozen_time = times_to_freeze[0]()
         last_frozen_time = times_to_freeze[-1]()
@@ -222,8 +214,8 @@ class FakeClock(BaseFakeTime):
         timedelta = (last_frozen_time - first_frozen_time)
         total_seconds = timedelta.total_seconds()
 
-        if self.tick:
-            total_seconds += self.previous_clock_function()
+        if tick_flags[-1]:
+            total_seconds += real_clock()
 
         return total_seconds
 
@@ -332,6 +324,7 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
     @property
     def nanosecond(self):
         try:
+            # noinspection PyUnresolvedReferences
             return real_datetime.nanosecond
         except AttributeError:
             return 0
@@ -438,6 +431,7 @@ class FrozenDateTimeFactory(object):
 
     def tick(self, delta=datetime.timedelta(seconds=1)):
         if isinstance(delta, numbers.Real):
+            # noinspection PyTypeChecker
             self.time_to_freeze += datetime.timedelta(seconds=delta)
         else:
             self.time_to_freeze += delta
@@ -504,12 +498,14 @@ class _freeze_time(object):
             orig_setUpClass = getattr(klass, 'setUpClass', None)
             orig_tearDownClass = getattr(klass, 'tearDownClass', None)
 
+            # noinspection PyDecorator
             @classmethod
             def setUpClass(cls):
                 self.start()
                 if orig_setUpClass is not None:
                     orig_setUpClass()
 
+            # noinspection PyDecorator
             @classmethod
             def tearDownClass(cls):
                 if orig_tearDownClass is not None:
@@ -561,6 +557,8 @@ class _freeze_time(object):
         is_already_started = len(times_to_freeze) > 0
         times_to_freeze.append(time_to_freeze)
         tz_offsets.append(self.tz_offset)
+        ignore_lists.append(self.ignore)
+        tick_flags.append(self.tick)
 
         if is_already_started:
             return time_to_freeze
@@ -568,11 +566,11 @@ class _freeze_time(object):
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
 
-        fake_time = FakeTime(time.time, ignore=self.ignore)
-        fake_localtime = FakeLocalTime(time.localtime, ignore=self.ignore)
-        fake_gmtime = FakeGMTTime(time.gmtime, ignore=self.ignore)
-        fake_strftime = FakeStrfTime(time.strftime, ignore=self.ignore)
-        fake_clock = FakeClock(time.clock, tick=self.tick, ignore=self.ignore)
+        fake_time = FakeTime()
+        fake_localtime = FakeLocalTime()
+        fake_gmtime = FakeGMTTime()
+        fake_strftime = FakeStrfTime()
+        fake_clock = FakeClock()
 
         time.time = fake_time
         time.localtime = fake_localtime
@@ -665,11 +663,11 @@ class _freeze_time(object):
                         if real:
                             setattr(module, module_attribute, real)
 
-            time.time = time.time.previous_time_function
-            time.gmtime = time.gmtime.previous_gmtime_function
-            time.localtime = time.localtime.previous_localtime_function
-            time.strftime = time.strftime.previous_strftime_function
-            time.clock = time.clock.previous_clock_function
+            time.time = real_time
+            time.gmtime = real_gmtime
+            time.localtime = real_localtime
+            time.strftime = real_strftime
+            time.clock = real_clock
 
             if uuid_generate_time_attr:
                 setattr(uuid, uuid_generate_time_attr, real_uuid_generate_time)
@@ -696,14 +694,7 @@ class _freeze_time(object):
         return wrapper
 
 
-
 def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, auto_tick_seconds=0):
-    # Python3 doesn't have basestring, but it does have str.
-    try:
-        string_type = basestring
-    except NameError:
-        string_type = str
-
     acceptable_times = (type(None), string_type, datetime.date, datetime.timedelta,
              types.FunctionType, types.GeneratorType)
 
@@ -742,6 +733,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
 
 # Setup adapters for sqlite
 try:
+    # noinspection PyUnresolvedReferences
     import sqlite3
 except ImportError:
     # Some systems have trouble with this
