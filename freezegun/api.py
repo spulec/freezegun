@@ -139,85 +139,79 @@ _is_cpython = (
 )
 
 
-class BaseFakeTime(object):
-    call_stack_inspection_limit = 5
+call_stack_inspection_limit = 5
 
-    def _should_use_real_time(self):
-        if not self.call_stack_inspection_limit:
-            return False
 
-        if not ignore_lists[-1]:
-            return False
-
-        frame = inspect.currentframe().f_back.f_back
-
-        for _ in range(self.call_stack_inspection_limit):
-            module_name = frame.f_globals.get('__name__')
-            if module_name and module_name.startswith(ignore_lists[-1]):
-                return True
-
-            frame = frame.f_back
-            if frame is None:
-                break
-
+def _should_use_real_time():
+    if not call_stack_inspection_limit:
         return False
 
+    if not ignore_lists[-1]:
+        return False
 
-class FakeTime(BaseFakeTime):
+    frame = inspect.currentframe().f_back.f_back
 
-    def __call__(self):
-        if self._should_use_real_time():
-            return real_time()
-        current_time = times_to_freeze[-1]()
-        return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
+    for _ in range(call_stack_inspection_limit):
+        module_name = frame.f_globals.get('__name__')
+        if module_name and module_name.startswith(ignore_lists[-1]):
+            return True
 
+        frame = frame.f_back
+        if frame is None:
+            break
 
-class FakeLocalTime(BaseFakeTime):
-    def __call__(self, t=None):
-        if t is not None:
-            return real_localtime(t)
-        if self._should_use_real_time():
-            return real_localtime()
-        shifted_time = times_to_freeze[-1]() - datetime.timedelta(seconds=time.timezone)
-        return shifted_time.timetuple()
+    return False
 
 
-class FakeGMTTime(BaseFakeTime):
-    def __call__(self, t=None):
-        if t is not None:
-            return real_gmtime(t)
-        if self._should_use_real_time():
-            return real_gmtime()
-        return times_to_freeze[-1]().timetuple()
+def FakeTime():
+    if _should_use_real_time():
+        return real_time()
+    current_time = times_to_freeze[-1]()
+    return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
 
 
-class FakeStrfTime(BaseFakeTime):
-    def __call__(self, format, time_to_format=None):
-        if time_to_format is None:
-            if not self._should_use_real_time():
-                time_to_format = FakeLocalTime()()
+def FakeLocalTime(t=None):
+    if t is not None:
+        return real_localtime(t)
+    if _should_use_real_time():
+        return real_localtime()
+    shifted_time = times_to_freeze[-1]() - datetime.timedelta(seconds=time.timezone)
+    return shifted_time.timetuple()
 
-        return real_strftime(format, time_to_format)
+
+def FakeGMTTime(t=None):
+    if t is not None:
+        return real_gmtime(t)
+    if _should_use_real_time():
+        return real_gmtime()
+    return times_to_freeze[-1]().timetuple()
 
 
-class FakeClock(BaseFakeTime):
-    def __call__(self, *args, **kwargs):
-        if self._should_use_real_time():
-            return real_clock()
+def FakeStrfTime(format, time_to_format=None):
+    if time_to_format is None:
+        if not _should_use_real_time():
+            time_to_format = FakeLocalTime()
 
-        if len(times_to_freeze) == 1:
-            return 0.0 if not tick_flags[-1] else real_clock()
+    return real_strftime(format, time_to_format)
 
-        first_frozen_time = times_to_freeze[0]()
-        last_frozen_time = times_to_freeze[-1]()
 
-        timedelta = (last_frozen_time - first_frozen_time)
-        total_seconds = timedelta.total_seconds()
+def FakeClock():
+    if _should_use_real_time():
+        return real_clock()
 
-        if tick_flags[-1]:
-            total_seconds += real_clock()
+    if len(times_to_freeze) == 1:
+        return 0.0 if not tick_flags[-1] else real_clock()
 
-        return total_seconds
+    first_frozen_time = times_to_freeze[0]()
+    last_frozen_time = times_to_freeze[-1]()
+
+    timedelta = (last_frozen_time - first_frozen_time)
+    total_seconds = timedelta.total_seconds()
+
+    if tick_flags[-1]:
+        total_seconds += real_clock()
+
+    return total_seconds
 
 
 class FakeDateMeta(type):
@@ -566,11 +560,11 @@ class _freeze_time(object):
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
 
-        fake_time = FakeTime()
-        fake_localtime = FakeLocalTime()
-        fake_gmtime = FakeGMTTime()
-        fake_strftime = FakeStrfTime()
-        fake_clock = FakeClock()
+        fake_time = FakeTime
+        fake_localtime = FakeLocalTime
+        fake_gmtime = FakeGMTTime
+        fake_strftime = FakeStrfTime
+        fake_clock = FakeClock
 
         time.time = fake_time
         time.localtime = fake_localtime
