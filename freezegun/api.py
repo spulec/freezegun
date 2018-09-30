@@ -31,7 +31,7 @@ real_datetime = datetime.datetime
 real_date_objects = [real_time, real_localtime, real_gmtime, real_strftime, real_date, real_datetime]
 _real_time_object_ids = set(id(obj) for obj in real_date_objects)
 
-times_to_freeze_factories = []
+freeze_factories = []
 tz_offsets = []
 ignore_lists = []
 tick_flags = []
@@ -164,7 +164,7 @@ def _should_use_real_time():
 
 
 def get_current_time():
-    return times_to_freeze_factories[-1]()
+    return freeze_factories[-1]()
 
 
 def fake_time():
@@ -203,10 +203,10 @@ def fake_clock():
     if _should_use_real_time():
         return real_clock()
 
-    if len(times_to_freeze_factories) == 1:
+    if len(freeze_factories) == 1:
         return 0.0 if not tick_flags[-1] else real_clock()
 
-    first_frozen_time = times_to_freeze_factories[0]()
+    first_frozen_time = freeze_factories[0]()
     last_frozen_time = get_current_time()
 
     timedelta = (last_frozen_time - first_frozen_time)
@@ -338,7 +338,7 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     @staticmethod
     def _time_to_freeze():
-        if times_to_freeze_factories:
+        if freeze_factories:
             return get_current_time()
 
     @classmethod
@@ -552,8 +552,8 @@ class _freeze_time(object):
             time_to_freeze = FrozenDateTimeFactory(self.time_to_freeze)
 
         # Change the modules
-        is_already_started = len(times_to_freeze_factories) > 0
-        times_to_freeze_factories.append(time_to_freeze)
+        is_already_started = len(freeze_factories) > 0
+        freeze_factories.append(time_to_freeze)
         tz_offsets.append(self.tz_offset)
         ignore_lists.append(self.ignore)
         tick_flags.append(self.tick)
@@ -616,12 +616,12 @@ class _freeze_time(object):
         return time_to_freeze
 
     def stop(self):
-        times_to_freeze_factories.pop()
+        freeze_factories.pop()
         ignore_lists.pop()
         tick_flags.pop()
         tz_offsets.pop()
 
-        if not times_to_freeze_factories:
+        if not freeze_factories:
             datetime.datetime = real_datetime
             datetime.date = real_date
             copyreg.dispatch_table.pop(real_datetime)
