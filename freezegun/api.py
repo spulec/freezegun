@@ -545,22 +545,22 @@ class _freeze_time(object):
     def start(self):
 
         if self.auto_tick_seconds:
-            time_to_freeze = StepTickTimeFactory(self.time_to_freeze, self.auto_tick_seconds)
+            freeze_factory = StepTickTimeFactory(self.time_to_freeze, self.auto_tick_seconds)
         elif self.tick:
-            time_to_freeze = TickingDateTimeFactory(self.time_to_freeze, real_datetime.now())
+            freeze_factory = TickingDateTimeFactory(self.time_to_freeze, real_datetime.now())
         else:
-            time_to_freeze = FrozenDateTimeFactory(self.time_to_freeze)
+            freeze_factory = FrozenDateTimeFactory(self.time_to_freeze)
 
-        # Change the modules
         is_already_started = len(freeze_factories) > 0
-        freeze_factories.append(time_to_freeze)
+        freeze_factories.append(freeze_factory)
         tz_offsets.append(self.tz_offset)
         ignore_lists.append(self.ignore)
         tick_flags.append(self.tick)
 
         if is_already_started:
-            return time_to_freeze
+            return freeze_factory
 
+        # Change the modules
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
 
@@ -613,7 +613,7 @@ class _freeze_time(object):
                         setattr(module, attribute_name, fake)
                         add_change((module, attribute_name, attribute_value))
 
-        return time_to_freeze
+        return freeze_factory
 
     def stop(self):
         freeze_factories.pop()
