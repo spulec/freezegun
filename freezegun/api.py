@@ -449,14 +449,41 @@ class FrozenDateTimeFactory(object):
         self.tick(delta=delta)
 
 
+class StepTickTimeFactory(object):
+
+    def __init__(self, time_to_freeze, step_width):
+        self.time_to_freeze = time_to_freeze
+        self.step_width = step_width
+
+    def __call__(self):
+        return_time = self.time_to_freeze
+        self.tick()
+        return return_time
+
+    def tick(self, delta=None):
+        if not delta:
+            delta = datetime.timedelta(seconds=self.step_width)
+        self.time_to_freeze += delta
+
+    def update_step_width(self, step_width):
+        self.step_width = step_width
+
+    def move_to(self, target_datetime):
+        """Moves frozen date to the given ``target_datetime``"""
+        target_datetime = _parse_time_to_freeze(target_datetime)
+        delta = target_datetime - self.time_to_freeze
+        self.tick(delta=delta)
+
+
 class _freeze_time(object):
 
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg):
 
+    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, auto_tick_seconds):
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = _parse_tz_offset(tz_offset)
         self.ignore = tuple(ignore)
         self.tick = tick
+        self.auto_tick_seconds = auto_tick_seconds
         self.undo_changes = []
         self.modules_at_start = set()
         self.as_arg = as_arg
@@ -522,7 +549,10 @@ class _freeze_time(object):
         self.stop()
 
     def start(self):
-        if self.tick:
+
+        if self.auto_tick_seconds:
+            time_to_freeze = StepTickTimeFactory(self.time_to_freeze, self.auto_tick_seconds)
+        elif self.tick:
             time_to_freeze = TickingDateTimeFactory(self.time_to_freeze, real_datetime.now())
         else:
             time_to_freeze = FrozenDateTimeFactory(self.time_to_freeze)
@@ -666,7 +696,8 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False):
+
+def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, auto_tick_seconds=0):
     # Python3 doesn't have basestring, but it does have str.
     try:
         string_type = basestring
@@ -687,10 +718,10 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
 
     if isinstance(time_to_freeze, types.FunctionType):
-        return freeze_time(time_to_freeze(), tz_offset, ignore, tick)
+        return freeze_time(time_to_freeze(), tz_offset, ignore, tick, auto_tick_seconds)
 
     if isinstance(time_to_freeze, types.GeneratorType):
-        return freeze_time(next(time_to_freeze), tz_offset, ignore, tick)
+        return freeze_time(next(time_to_freeze), tz_offset, ignore, tick, auto_tick_seconds)
 
     if MayaDT is not None and isinstance(time_to_freeze, MayaDT):
         return freeze_time(time_to_freeze.datetime(), tz_offset, ignore,
@@ -705,7 +736,8 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     ignore.append('google.gax')
     ignore.append('threading')
     ignore.append('Queue')
-    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg)
+    
+    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg, auto_tick_seconds)
 
 
 # Setup adapters for sqlite

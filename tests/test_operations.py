@@ -93,3 +93,11 @@ def test_replace():
     today = datetime.date.today()
     modified_date = today.replace(year=2013)
     assert utils.is_fake_date(modified_date)
+
+
+@freeze_time("Jan 14th, 2020", auto_tick_seconds=15)
+def test_auto_tick():
+    first_time = datetime.datetime.now()
+    auto_incremented_time = datetime.datetime.now()
+    assert first_time + datetime.timedelta(seconds=15) == auto_incremented_time
+
