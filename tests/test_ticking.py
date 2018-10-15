@@ -34,10 +34,8 @@ def test_ticking_time_clock():
 
         assert first > 0
         assert second > first
-        assert second > first + 1
         assert second > 1
         assert third > second
-        assert third > second + 1
         assert third > 2
 
         assert third > fourth

@@ -9,7 +9,7 @@ from nose.tools import assert_raises
 from tests import utils
 
 from freezegun import freeze_time
-from freezegun.api import FakeDatetime, FakeDate
+from freezegun.api import FakeDatetime, FakeDate, BaseFakeTime
 
 try:
     import maya
@@ -608,3 +608,37 @@ def test_freeze_with_timezone_aware_datetime_in_non_utc():
     utc_now = datetime.datetime.utcnow()
     assert utc_now.tzinfo is None
     assert utc_now == datetime.datetime(1970, 1, 1, 4)
+
+
+@freeze_time('2015-01-01')
+def test_time_with_nested():
+    from time import time
+    first = 1420070400.0
+    second = 1420070760.0
+
+    assert time() == first
+    with freeze_time('2015-01-01T00:06:00'):
+        assert time() == second
+
+
+def test_should_use_real_time():
+    frozen = datetime.datetime(2015, 3, 5)
+    expected_frozen = 1425513600.0
+    # TODO: local time seems to leak the local timezone, so this test fails in CI
+    # expected_frozen_local = (2015, 3, 5, 1, 0, 0, 3, 64, -1)
+    expected_frozen_gmt = (2015, 3, 5, 0, 0, 0, 3, 64, -1)
+    expected_clock = 0
+
+    BaseFakeTime.call_stack_inspection_limit = 100  # just to increase coverage
+
+    with freeze_time(frozen):
+        assert time.time() == expected_frozen
+        # assert time.localtime() == expected_frozen_local
+        assert time.gmtime() == expected_frozen_gmt
+        assert time.clock() == expected_clock
+
+    with freeze_time(frozen, ignore=['_pytest', 'nose']):
+        assert time.time() != expected_frozen
+        # assert time.localtime() != expected_frozen_local
+        assert time.gmtime() != expected_frozen_gmt
+        assert time.clock() != expected_clock
