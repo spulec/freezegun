@@ -9,7 +9,7 @@ from nose.tools import assert_raises
 from tests import utils
 
 from freezegun import freeze_time
-from freezegun.api import FakeDatetime, FakeDate, BaseFakeTime
+from freezegun.api import FakeDatetime, FakeDate
 
 try:
     import maya
@@ -629,7 +629,8 @@ def test_should_use_real_time():
     expected_frozen_gmt = (2015, 3, 5, 0, 0, 0, 3, 64, -1)
     expected_clock = 0
 
-    BaseFakeTime.call_stack_inspection_limit = 100  # just to increase coverage
+    from freezegun import api
+    api.call_stack_inspection_limit = 100  # just to increase coverage
 
     with freeze_time(frozen):
         assert time.time() == expected_frozen

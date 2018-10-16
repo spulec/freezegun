@@ -13,10 +13,10 @@ from freezegun import freeze_time
 from freezegun.api import (
     FakeDatetime,
     FakeDate,
-    FakeTime,
-    FakeLocalTime,
-    FakeGMTTime,
-    FakeStrfTime,
+    fake_time,
+    fake_localtime,
+    fake_gmtime,
+    fake_strftime,
 )
 import datetime
 
@@ -130,21 +130,21 @@ def test_import_after_start():
         assert another_module.get_date() is datetime.date
         assert another_module.get_date() is FakeDate
         assert another_module.get_time() is time.time
-        assert isinstance(another_module.get_time(), FakeTime)
+        assert another_module.get_time() is fake_time
         assert another_module.get_localtime() is time.localtime
-        assert isinstance(another_module.get_localtime(), FakeLocalTime)
+        assert another_module.get_localtime() is fake_localtime
         assert another_module.get_gmtime() is time.gmtime
-        assert isinstance(another_module.get_gmtime(), FakeGMTTime)
+        assert another_module.get_gmtime() is fake_gmtime
         assert another_module.get_strftime() is time.strftime
-        assert isinstance(another_module.get_strftime(), FakeStrfTime)
+        assert another_module.get_strftime() is fake_strftime
 
         # Fakes
         assert another_module.get_fake_datetime() is FakeDatetime
         assert another_module.get_fake_date() is FakeDate
-        assert another_module.get_fake_time() is FakeTime
-        assert another_module.get_fake_localtime() is FakeLocalTime
-        assert another_module.get_fake_gmtime() is FakeGMTTime
-        assert another_module.get_fake_strftime() is FakeStrfTime
+        assert another_module.get_fake_time() is fake_time
+        assert another_module.get_fake_localtime() is fake_localtime
+        assert another_module.get_fake_gmtime() is fake_gmtime
+        assert another_module.get_fake_strftime() is fake_strftime
 
     # Reals
     assert another_module.get_datetime() is datetime.datetime
@@ -152,21 +152,21 @@ def test_import_after_start():
     assert another_module.get_date() is datetime.date
     assert not another_module.get_date() is FakeDate
     assert another_module.get_time() is time.time
-    assert not isinstance(another_module.get_time(), FakeTime)
+    assert not another_module.get_time() is fake_time
     assert another_module.get_localtime() is time.localtime
-    assert not isinstance(another_module.get_localtime(), FakeLocalTime)
+    assert not another_module.get_localtime() is fake_localtime
     assert another_module.get_gmtime() is time.gmtime
-    assert not isinstance(another_module.get_gmtime(), FakeGMTTime)
+    assert not another_module.get_gmtime() is fake_gmtime
     assert another_module.get_strftime() is time.strftime
-    assert not isinstance(another_module.get_strftime(), FakeStrfTime)
+    assert not another_module.get_strftime() is fake_strftime
 
     # Fakes
     assert another_module.get_fake_datetime() is FakeDatetime
     assert another_module.get_fake_date() is FakeDate
-    assert another_module.get_fake_time() is FakeTime
-    assert another_module.get_fake_localtime() is FakeLocalTime
-    assert another_module.get_fake_gmtime() is FakeGMTTime
-    assert another_module.get_fake_strftime() is FakeStrfTime
+    assert another_module.get_fake_time() is fake_time
+    assert another_module.get_fake_localtime() is fake_localtime
+    assert another_module.get_fake_gmtime() is fake_gmtime
+    assert another_module.get_fake_strftime() is fake_strftime
 
 
 def test_none_as_initial():
