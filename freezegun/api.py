@@ -149,12 +149,14 @@ def _should_use_real_time():
     if not ignore_lists[-1]:
         return False
 
+    # skip _should_use_real_time and fake_*
     frame = inspect.currentframe().f_back.f_back
 
     for _ in range(call_stack_inspection_limit):
         module_name = frame.f_globals.get('__name__')
         if module_name and module_name.startswith(ignore_lists[-1]):
-            return True
+            if not module_name.startswith('_pytest') or _ == 0:
+                return True
 
         frame = frame.f_back
         if frame is None:
