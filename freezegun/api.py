@@ -722,6 +722,8 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     ignore.append('threading')
     ignore.append('Queue')
     ignore.append('selenium')
+    if tick:
+        ignore.append('freezegun.api')
     
     return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg, auto_tick_seconds)
 
