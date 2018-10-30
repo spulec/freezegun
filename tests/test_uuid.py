@@ -2,8 +2,6 @@ from __future__ import print_function, absolute_import, unicode_literals
 import datetime
 import uuid
 
-from nose.tools import assert_equal
-
 from freezegun import freeze_time
 
 
@@ -25,11 +23,11 @@ def test_uuid1_future():
     """
     future_target = datetime.datetime(2056, 2, 6, 14, 3, 21)
     with freeze_time(future_target):
-        assert_equal(time_from_uuid(uuid.uuid1()), future_target)
+        assert time_from_uuid(uuid.uuid1()) == future_target
 
     past_target = datetime.datetime(1978, 7, 6, 23, 6, 31)
     with freeze_time(past_target):
-        assert_equal(time_from_uuid(uuid.uuid1()), past_target)
+        assert time_from_uuid(uuid.uuid1()) == past_target
 
 
 def test_uuid1_past():
@@ -39,8 +37,8 @@ def test_uuid1_past():
     """
     past_target = datetime.datetime(1978, 7, 6, 23, 6, 31)
     with freeze_time(past_target):
-        assert_equal(time_from_uuid(uuid.uuid1()), past_target)
+        assert time_from_uuid(uuid.uuid1()) == past_target
 
     future_target = datetime.datetime(2056, 2, 6, 14, 3, 21)
     with freeze_time(future_target):
-        assert_equal(time_from_uuid(uuid.uuid1()), future_target)
+        assert time_from_uuid(uuid.uuid1()) == future_target
