@@ -4,6 +4,11 @@ Freezegun Changelog
 Latest
 ------
 
+0.3.12
+------
+
+* Feature: added `auto_tick_seconds` param to freezetime (PR #201)
+
 0.3.11
 ------
 
