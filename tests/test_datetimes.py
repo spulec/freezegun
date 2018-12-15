@@ -3,9 +3,9 @@ import datetime
 import unittest
 import locale
 import sys
+from unittest import SkipTest
 
-from nose.plugins import skip
-from nose.tools import assert_raises
+import pytest
 from tests import utils
 
 from freezegun import freeze_time
@@ -33,7 +33,7 @@ class temp_locale(object):
             except locale.Error:
                 pass
         msg = 'could not set locale to any of: %s' % ', '.join(self.targets)
-        raise skip.SkipTest(msg)
+        raise SkipTest(msg)
 
     def __exit__(self, *args):
         locale.setlocale(locale.LC_ALL, self.old)
@@ -316,12 +316,13 @@ def test_generator_object():
     with freeze_time(frozen_datetimes):
         assert datetime.datetime(2011, 1, 1) == datetime.datetime.now()
 
-    assert_raises(StopIteration, freeze_time, frozen_datetimes)
+    with pytest.raises(StopIteration):
+        freeze_time(frozen_datetimes)
 
 
 def test_maya_datetimes():
     if not maya:
-        raise skip.SkipTest("maya is optional since it's not supported for "
+        raise SkipTest("maya is optional since it's not supported for "
                             "enough python versions")
 
     with freeze_time(maya.when("October 2nd, 1997")):
@@ -392,12 +393,12 @@ class Tester(object):
 
     def test_class_decorator_skips_callable_object_py2(self):
         if sys.version_info[0] != 2:
-            raise skip.SkipTest("test target is Python2")
+            raise SkipTest("test target is Python2")
         assert self.a_mock.__class__ == Callable
 
     def test_class_decorator_wraps_callable_object_py3(self):
         if sys.version_info[0] != 3:
-            raise skip.SkipTest("test target is Python3")
+            raise SkipTest("test target is Python3")
         assert self.a_mock.__wrapped__.__class__ == Callable
 
     @staticmethod
