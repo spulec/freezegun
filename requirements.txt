@@ -2,5 +2,5 @@ coverage
 pytest-coverage
 coveralls
 mock
-pytest
+pytest==3.10.1
 maya; python_version == '2.7' or python_version >= '3.6'
