@@ -86,7 +86,7 @@ def _get_module_attributes(module):
     result = []
     try:
         module_attributes = dir(module)
-    except TypeError:
+    except (ImportError, TypeError):
         return result
     for attribute_name in module_attributes:
         try:
@@ -111,7 +111,7 @@ def _setup_module_cache(module):
 def _get_module_attributes_hash(module):
     try:
         module_dir = dir(module)
-    except TypeError:
+    except (ImportError, TypeError):
         module_dir = []
     return '{0}-{1}'.format(id(module), hash(frozenset(module_dir)))
 
