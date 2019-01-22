@@ -196,7 +196,10 @@ def fake_strftime(format, time_to_format=None):
         if not _should_use_real_time():
             time_to_format = fake_localtime()
 
-    return real_strftime(format, time_to_format)
+    if time_to_format is None:
+        return real_strftime(format)
+    else:
+        return real_strftime(format, time_to_format)
 
 
 def fake_clock():
