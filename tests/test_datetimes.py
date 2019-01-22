@@ -253,6 +253,12 @@ def test_strftime():
             assert time.strftime("%Y") == "1970"
 
 
+def test_real_strftime_fall_through():
+    with freeze_time(ignore=['_pytest']):
+        time.strftime('%Y')
+        time.strftime('%Y', (2001, 1, 1, 1, 1, 1, 1, 1, 1)) == '2001'
+
+
 def test_date_object():
     frozen_date = datetime.date(year=2012, month=11, day=10)
     date_freezer = freeze_time(frozen_date)
