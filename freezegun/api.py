@@ -727,6 +727,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     ignore.append('selenium')
     ignore.append('_pytest.terminal.')
     ignore.append('_pytest.runner.')
+    ignore.append('_pytest.runner')
     
     return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg, auto_tick_seconds)
 
