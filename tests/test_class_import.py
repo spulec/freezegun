@@ -70,6 +70,17 @@ def test_isinstance_works():
     freezer.stop()
 
 
+def test_issubclass_works():
+    real_date = datetime.date
+    real_datetime = datetime.datetime
+
+    freezer = freeze_time('2011-01-01')
+    freezer.start()
+    assert issubclass(real_date, datetime.date)
+    assert issubclass(real_datetime, datetime.datetime)
+    freezer.stop()
+
+
 def test_fake_uses_real_when_ignored():
     real_time_before = time.time()
     with freeze_time('2012-01-14', ignore=['tests.fake_module']):
