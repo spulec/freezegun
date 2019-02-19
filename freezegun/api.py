@@ -226,6 +226,10 @@ class FakeDateMeta(type):
     def __instancecheck__(self, obj):
         return isinstance(obj, real_date)
 
+    @classmethod
+    def __subclasscheck__(cls, subclass):
+        return issubclass(subclass, real_date)
+
 
 def datetime_to_fakedatetime(datetime):
     return FakeDatetime(datetime.year,
@@ -284,6 +288,10 @@ class FakeDatetimeMeta(FakeDateMeta):
     @classmethod
     def __instancecheck__(self, obj):
         return isinstance(obj, real_datetime)
+
+    @classmethod
+    def __subclasscheck__(cls, subclass):
+        return issubclass(subclass, real_datetime)
 
 
 class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
