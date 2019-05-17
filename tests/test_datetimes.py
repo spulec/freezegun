@@ -17,6 +17,8 @@ try:
 except ImportError:
     maya = None
 
+# time.clock was removed in Python 3.8
+HAS_CLOCK = hasattr(time, 'clock')
 
 class temp_locale(object):
     """Temporarily change the locale."""
@@ -207,6 +209,8 @@ def test_time_gmtime():
         assert time_struct.tm_isdst == -1
 
 
+@pytest.mark.skipif(not HAS_CLOCK,
+                    reason="time.clock was removed in Python 3.8")
 def test_time_clock():
     with freeze_time('2012-01-14 03:21:34'):
         assert time.clock() == 0
@@ -643,10 +647,12 @@ def test_should_use_real_time():
         assert time.time() == expected_frozen
         # assert time.localtime() == expected_frozen_local
         assert time.gmtime() == expected_frozen_gmt
-        assert time.clock() == expected_clock
+        if HAS_CLOCK:
+            assert time.clock() == expected_clock
 
     with freeze_time(frozen, ignore=['_pytest', 'nose']):
         assert time.time() != expected_frozen
         # assert time.localtime() != expected_frozen_local
         assert time.gmtime() != expected_frozen_gmt
-        assert time.clock() != expected_clock
+        if HAS_CLOCK:
+            assert time.clock() != expected_clock
