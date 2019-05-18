@@ -15,7 +15,9 @@ tdaemon:
 	tdaemon -t nose ./tests/ --custom-args="--with-growl"
 
 publish:
-	python setup.py sdist bdist_wheel upload
+	rm -rf dist
+	python setup.py sdist bdist_wheel
+	twine upload dist/*
 
 venv:
 	virtualenv venv
