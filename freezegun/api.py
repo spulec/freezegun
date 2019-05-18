@@ -25,11 +25,13 @@ real_time = time.time
 real_localtime = time.localtime
 real_gmtime = time.gmtime
 real_strftime = time.strftime
-real_clock = time.clock
 real_date = datetime.date
 real_datetime = datetime.datetime
 real_date_objects = [real_time, real_localtime, real_gmtime, real_strftime, real_date, real_datetime]
 _real_time_object_ids = set(id(obj) for obj in real_date_objects)
+
+# time.clock is deprecated and was removed in Python 3.8
+real_clock = getattr(time, 'clock', None)
 
 freeze_factories = []
 tz_offsets = []
@@ -201,24 +203,24 @@ def fake_strftime(format, time_to_format=None):
     else:
         return real_strftime(format, time_to_format)
 
+if real_clock is not None:
+    def fake_clock():
+        if _should_use_real_time():
+            return real_clock()
 
-def fake_clock():
-    if _should_use_real_time():
-        return real_clock()
+        if len(freeze_factories) == 1:
+            return 0.0 if not tick_flags[-1] else real_clock()
 
-    if len(freeze_factories) == 1:
-        return 0.0 if not tick_flags[-1] else real_clock()
+        first_frozen_time = freeze_factories[0]()
+        last_frozen_time = get_current_time()
 
-    first_frozen_time = freeze_factories[0]()
-    last_frozen_time = get_current_time()
+        timedelta = (last_frozen_time - first_frozen_time)
+        total_seconds = timedelta.total_seconds()
 
-    timedelta = (last_frozen_time - first_frozen_time)
-    total_seconds = timedelta.total_seconds()
+        if tick_flags[-1]:
+            total_seconds += real_clock()
 
-    if tick_flags[-1]:
-        total_seconds += real_clock()
-
-    return total_seconds
+        return total_seconds
 
 
 class FakeDateMeta(type):
@@ -579,7 +581,6 @@ class _freeze_time(object):
         time.localtime = fake_localtime
         time.gmtime = fake_gmtime
         time.strftime = fake_strftime
-        time.clock = fake_clock
         if uuid_generate_time_attr:
             setattr(uuid, uuid_generate_time_attr, None)
         uuid._UuidCreate = None
@@ -596,8 +597,13 @@ class _freeze_time(object):
             ('real_localtime', real_localtime, fake_localtime),
             ('real_strftime', real_strftime, fake_strftime),
             ('real_time', real_time, fake_time),
-            ('real_clock', real_clock, fake_clock),
         ]
+
+        if real_clock is not None:
+            # time.clock is deprecated and was removed in Python 3.8
+            time.clock = fake_clock
+            to_patch.append(('real_clock', real_clock, fake_clock))
+
         self.fake_names = tuple(fake.__name__ for real_name, real, fake in to_patch)
         self.reals = dict((id(fake), real) for real_name, real, fake in to_patch)
         fakes = dict((id(real), fake) for real_name, real, fake in to_patch)

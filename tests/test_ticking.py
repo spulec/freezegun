@@ -1,10 +1,10 @@
 import datetime
 import time
 import mock
+import pytest
 
 from freezegun import freeze_time
 from tests import utils
-
 
 @utils.cpython_only
 def test_ticking_datetime():
@@ -13,6 +13,8 @@ def test_ticking_datetime():
         assert datetime.datetime.now() > datetime.datetime(2012, 1, 14)
 
 
+@pytest.mark.skipif(not hasattr(time, "clock"),
+                    reason="time.clock was removed in Python 3.8")
 @utils.cpython_only
 def test_ticking_time_clock():
     with freeze_time('2012-01-14 03:21:34', tick=True):

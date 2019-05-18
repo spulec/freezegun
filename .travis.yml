@@ -11,6 +11,12 @@ matrix:
     - python: 3.7
       dist: xenial
       sudo: required
+    - python: 3.8-dev
+      dist: xenial
+      sudo: required
+  allow_failures:
+    - python: "3.8-dev"
+
 script: make travis
 install:
   - pip install .
