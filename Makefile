@@ -16,7 +16,7 @@ tdaemon:
 
 publish:
 	rm -rf dist
-	python setup.py sdist bdist_wheel
+	python -m pep517.build --source --binary .
 	twine upload dist/*
 
 venv:
