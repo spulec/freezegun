@@ -1,5 +1,6 @@
+from unittest import SkipTest
+
 import mock
-from nose.plugins import skip
 
 from freezegun import api
 from tests import utils
@@ -20,7 +21,7 @@ def test_should_not_skip_cpython():
     function_mock = mock.MagicMock(__name__='function')
     try:
         utils.cpython_only(function_mock)()
-    except skip.SkipTest:
+    except SkipTest:
         raise AssertionError("Test was skipped in CPython")
     assert function_mock.called
 
@@ -32,7 +33,7 @@ def test_should_skip_non_cpython():
     function_mock = mock.MagicMock(__name__='function', skipped=False)
     try:
         utils.cpython_only(function_mock)()
-    except skip.SkipTest:
+    except SkipTest:
         function_mock.skipped = True
     assert not function_mock.called
     assert function_mock.skipped

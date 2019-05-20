@@ -6,13 +6,17 @@ init:
 
 test:
 	rm -f .coverage
-	nosetests $(NOSE_ARGS) ./tests/
+	pytest
 
 travis:
-	nosetests --with-coverage ./tests/
+	pytest --cov
 
 tdaemon:
 	tdaemon -t nose ./tests/ --custom-args="--with-growl"
 
 publish:
 	python setup.py sdist bdist_wheel upload
+
+venv:
+	virtualenv venv
+	venv/bin/pip install -r requirements.txt

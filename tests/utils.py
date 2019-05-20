@@ -1,6 +1,5 @@
 from functools import wraps
-
-from nose.plugins import skip
+from unittest import SkipTest
 
 from freezegun.api import FakeDate, FakeDatetime, _is_cpython
 
@@ -17,6 +16,6 @@ def cpython_only(func):
     @wraps(func)
     def wrapper(*args):
         if not _is_cpython:
-            raise skip.SkipTest("Requires CPython")
+            raise SkipTest("Requires CPython")
         return func(*args)
     return wrapper

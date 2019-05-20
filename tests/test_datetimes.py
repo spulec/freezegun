@@ -3,9 +3,9 @@ import datetime
 import unittest
 import locale
 import sys
+from unittest import SkipTest
 
-from nose.plugins import skip
-from nose.tools import assert_raises
+import pytest
 from tests import utils
 
 from freezegun import freeze_time
@@ -17,6 +17,8 @@ try:
 except ImportError:
     maya = None
 
+# time.clock was removed in Python 3.8
+HAS_CLOCK = hasattr(time, 'clock')
 
 class temp_locale(object):
     """Temporarily change the locale."""
@@ -33,7 +35,7 @@ class temp_locale(object):
             except locale.Error:
                 pass
         msg = 'could not set locale to any of: %s' % ', '.join(self.targets)
-        raise skip.SkipTest(msg)
+        raise SkipTest(msg)
 
     def __exit__(self, *args):
         locale.setlocale(locale.LC_ALL, self.old)
@@ -207,6 +209,8 @@ def test_time_gmtime():
         assert time_struct.tm_isdst == -1
 
 
+@pytest.mark.skipif(not HAS_CLOCK,
+                    reason="time.clock was removed in Python 3.8")
 def test_time_clock():
     with freeze_time('2012-01-14 03:21:34'):
         assert time.clock() == 0
@@ -251,6 +255,12 @@ def test_strftime():
     with modify_timezone(0):
         with freeze_time('1970-01-01'):
             assert time.strftime("%Y") == "1970"
+
+
+def test_real_strftime_fall_through():
+    with freeze_time(ignore=['_pytest']):
+        time.strftime('%Y')
+        time.strftime('%Y', (2001, 1, 1, 1, 1, 1, 1, 1, 1)) == '2001'
 
 
 def test_date_object():
@@ -316,12 +326,13 @@ def test_generator_object():
     with freeze_time(frozen_datetimes):
         assert datetime.datetime(2011, 1, 1) == datetime.datetime.now()
 
-    assert_raises(StopIteration, freeze_time, frozen_datetimes)
+    with pytest.raises(StopIteration):
+        freeze_time(frozen_datetimes)
 
 
 def test_maya_datetimes():
     if not maya:
-        raise skip.SkipTest("maya is optional since it's not supported for "
+        raise SkipTest("maya is optional since it's not supported for "
                             "enough python versions")
 
     with freeze_time(maya.when("October 2nd, 1997")):
@@ -392,12 +403,12 @@ class Tester(object):
 
     def test_class_decorator_skips_callable_object_py2(self):
         if sys.version_info[0] != 2:
-            raise skip.SkipTest("test target is Python2")
+            raise SkipTest("test target is Python2")
         assert self.a_mock.__class__ == Callable
 
     def test_class_decorator_wraps_callable_object_py3(self):
         if sys.version_info[0] != 3:
-            raise skip.SkipTest("test target is Python3")
+            raise SkipTest("test target is Python3")
         assert self.a_mock.__wrapped__.__class__ == Callable
 
     @staticmethod
@@ -636,13 +647,16 @@ def test_should_use_real_time():
         assert time.time() == expected_frozen
         # assert time.localtime() == expected_frozen_local
         assert time.gmtime() == expected_frozen_gmt
-        assert time.clock() == expected_clock
+        if HAS_CLOCK:
+            assert time.clock() == expected_clock
 
     with freeze_time(frozen, ignore=['_pytest', 'nose']):
         assert time.time() != expected_frozen
         # assert time.localtime() != expected_frozen_local
         assert time.gmtime() != expected_frozen_gmt
-        assert time.clock() != expected_clock
+     
+        if HAS_CLOCK:
+            assert time.clock() != expected_clock
 
 
 def test_as_kwarg():

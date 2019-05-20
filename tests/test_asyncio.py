@@ -1,7 +1,7 @@
 import datetime
 from textwrap import dedent
+from unittest import SkipTest
 
-from nose.plugins import skip
 
 from freezegun import freeze_time
 
@@ -13,7 +13,7 @@ except ImportError:
 
 def test_time_freeze_coroutine():
     if not asyncio:
-        raise skip.SkipTest('asyncio required')
+        raise SkipTest('asyncio required')
     @asyncio.coroutine
     @freeze_time('1970-01-01')
     def frozen_coroutine():
@@ -26,7 +26,7 @@ def test_time_freeze_async_def():
     try:
         exec('async def foo(): pass')
     except SyntaxError:
-        raise skip.SkipTest('async def not supported')
+        raise SkipTest('async def not supported')
     else:
         exec(dedent('''
         @freeze_time('1970-01-01')
