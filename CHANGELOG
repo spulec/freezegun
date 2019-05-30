@@ -4,6 +4,14 @@ Freezegun Changelog
 Latest
 ------
 
+0.3.12
+------
+
+* Refactor classes to functions
+* Ignore Selenium
+* Move to pytest
+* Conditionally patch time.clock
+
 0.3.11
 ------
 
