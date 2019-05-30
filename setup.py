@@ -4,7 +4,7 @@ import sys
 from setuptools import setup
 
 requires = ['six']
-tests_require = ['mock', 'nose']
+tests_require = ['mock', 'pytest']
 
 if sys.version_info.major == 2:
     requires += ['python-dateutil>=1.0, != 2.0']
