@@ -134,7 +134,7 @@ parameters which will keep time stopped.
         assert datetime.datetime.now() > datetime.datetime(2020, 1, 14)
 
 ``auto_tick_seconds`` argument
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 FreezeGun has an additional ``auto_tick_seconds`` argument which will autoincrement the
 value every time by the given amount from the start value. This is alternative to the default
