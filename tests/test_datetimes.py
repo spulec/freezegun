@@ -8,7 +8,7 @@ from unittest import SkipTest
 import pytest
 from tests import utils
 
-from freezegun import freeze_time
+from freezegun import api, freeze_time
 from freezegun.api import FakeDatetime, FakeDate
 
 try:
@@ -632,6 +632,16 @@ def test_time_with_nested():
         assert time() == second
 
 
+@pytest.fixture
+def change_stack_limit():
+    ori_val = api.call_stack_inspection_limit
+    api.call_stack_inspection_limit = 100  # just to increase coverage
+    yield
+    # Restore to normal after test(s)
+    api.call_stack_inspection_limit = ori_val
+
+
+@pytest.mark.usefixtures('change_stack_limit')
 def test_should_use_real_time():
     frozen = datetime.datetime(2015, 3, 5)
     expected_frozen = 1425513600.0
@@ -639,9 +649,6 @@ def test_should_use_real_time():
     # expected_frozen_local = (2015, 3, 5, 1, 0, 0, 3, 64, -1)
     expected_frozen_gmt = (2015, 3, 5, 0, 0, 0, 3, 64, -1)
     expected_clock = 0
-
-    from freezegun import api
-    api.call_stack_inspection_limit = 100  # just to increase coverage
 
     with freeze_time(frozen):
         assert time.time() == expected_frozen
