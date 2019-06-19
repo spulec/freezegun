@@ -1,4 +1,5 @@
 language: python
+cache: pip
 python:
   - 2.7
   - pypy
@@ -14,8 +15,6 @@ matrix:
     - python: 3.8-dev
       dist: xenial
       sudo: required
-  allow_failures:
-    - python: "3.8-dev"
 
 script: make travis
 install:

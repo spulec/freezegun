@@ -19,6 +19,7 @@ except ImportError:
 
 # time.clock was removed in Python 3.8
 HAS_CLOCK = hasattr(time, 'clock')
+HAS_TIME_NS = hasattr(time, 'time_ns')
 
 class temp_locale(object):
     """Temporarily change the locale."""
@@ -649,6 +650,8 @@ def test_should_use_real_time():
         assert time.gmtime() == expected_frozen_gmt
         if HAS_CLOCK:
             assert time.clock() == expected_clock
+        if HAS_TIME_NS:
+            assert time.time_ns() == expected_frozen * 1e9
 
     with freeze_time(frozen, ignore=['_pytest', 'nose']):
         assert time.time() != expected_frozen
@@ -656,3 +659,20 @@ def test_should_use_real_time():
         assert time.gmtime() != expected_frozen_gmt
         if HAS_CLOCK:
             assert time.clock() != expected_clock
+        if HAS_TIME_NS:
+            assert time.time_ns() != expected_frozen * 1e9
+
+
+@pytest.mark.skipif(not HAS_TIME_NS,
+                    reason="time.time_ns is present only on 3.7 and above")
+def test_time_ns():
+    freezer = freeze_time("2012-01-14")
+    local_time = datetime.datetime(2012, 1, 14)
+    utc_time = local_time - datetime.timedelta(seconds=time.timezone)
+    expected_timestamp = time.mktime(utc_time.timetuple())
+
+    freezer.start()
+    assert time.time() == expected_timestamp
+    assert time.time_ns() == expected_timestamp * 1e9
+    freezer.stop()
+    assert time.time() != expected_timestamp
