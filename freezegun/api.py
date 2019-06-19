@@ -20,6 +20,7 @@ try:
 except ImportError:
     MayaDT = None
 
+_TIME_NS_PRESENT = hasattr(time, 'time_ns')
 
 real_time = time.time
 real_localtime = time.localtime
@@ -28,6 +29,11 @@ real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
 real_date_objects = [real_time, real_localtime, real_gmtime, real_strftime, real_date, real_datetime]
+
+if _TIME_NS_PRESENT:
+    real_time_ns = time.time_ns
+    real_date_objects.append(real_time_ns)
+
 _real_time_object_ids = set(id(obj) for obj in real_date_objects)
 
 # time.clock is deprecated and was removed in Python 3.8
@@ -174,6 +180,12 @@ def fake_time():
         return real_time()
     current_time = get_current_time()
     return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
+
+if _TIME_NS_PRESENT:
+    def fake_time_ns():
+        if _should_use_real_time():
+            return real_time_ns()
+        return int(int(fake_time()) * 1e9)
 
 
 def fake_localtime(t=None):
@@ -331,7 +343,7 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     def date(self):
         return date_to_fakedate(self)
-    
+
     @property
     def nanosecond(self):
         try:
@@ -599,6 +611,10 @@ class _freeze_time(object):
             ('real_time', real_time, fake_time),
         ]
 
+        if _TIME_NS_PRESENT:
+            time.time_ns = fake_time_ns
+            to_patch.append(('real_time_ns', real_time_ns, fake_time_ns))
+
         if real_clock is not None:
             # time.clock is deprecated and was removed in Python 3.8
             time.clock = fake_clock
@@ -741,7 +757,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     ignore.append('selenium')
     ignore.append('_pytest.terminal.')
     ignore.append('_pytest.runner.')
-    
+
     return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg, auto_tick_seconds)
 
 

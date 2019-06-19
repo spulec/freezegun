@@ -11,6 +11,7 @@ Latest
 * Ignore Selenium
 * Move to pytest
 * Conditionally patch time.clock
+* Patch time.time_ns added in Python 3.7
 
 0.3.11
 ------
