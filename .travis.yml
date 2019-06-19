@@ -7,7 +7,6 @@ python:
   - 3.5
   - 3.6
   - pypy3
-  - 3.8-dev
 matrix:
   include:
     - python: 3.7
