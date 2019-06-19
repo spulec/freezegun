@@ -650,6 +650,8 @@ def test_should_use_real_time():
         assert time.gmtime() == expected_frozen_gmt
         if HAS_CLOCK:
             assert time.clock() == expected_clock
+        if HAS_TIME_NS:
+            assert time.time_ns() == expected_frozen * 1e9
 
     with freeze_time(frozen, ignore=['_pytest', 'nose']):
         assert time.time() != expected_frozen
@@ -657,6 +659,8 @@ def test_should_use_real_time():
         assert time.gmtime() != expected_frozen_gmt
         if HAS_CLOCK:
             assert time.clock() != expected_clock
+        if HAS_TIME_NS:
+            assert time.time_ns() != expected_frozen * 1e9
 
 
 @pytest.mark.skipif(not HAS_TIME_NS,
