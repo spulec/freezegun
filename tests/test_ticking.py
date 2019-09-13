@@ -1,6 +1,9 @@
 import datetime
 import time
-import mock
+try:
+    from unittest import mock
+except (ImportError, AttributeError):
+    import mock
 import pytest
 
 from freezegun import freeze_time
