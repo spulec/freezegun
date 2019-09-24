@@ -1,6 +1,9 @@
 from unittest import SkipTest
 
-import mock
+try:
+    from unittest import mock
+except (ImportError, AttributeError):
+    import mock
 
 from freezegun import api
 from tests import utils
