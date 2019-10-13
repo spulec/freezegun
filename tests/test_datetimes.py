@@ -652,6 +652,8 @@ def test_should_use_real_time():
     from freezegun import api
     api.call_stack_inspection_limit = 100  # just to increase coverage
 
+    current_time = time.gmtime()
+
     with freeze_time(frozen):
         assert time.time() == expected_frozen
         # assert time.localtime() == expected_frozen_local
@@ -661,6 +663,8 @@ def test_should_use_real_time():
         if HAS_TIME_NS:
             assert time.time_ns() == expected_frozen * 1e9
 
+        assert calendar.timegm(current_time) == expected_frozen
+
     with freeze_time(frozen, ignore=['_pytest', 'nose']):
         assert time.time() != expected_frozen
         # assert time.localtime() != expected_frozen_local
@@ -669,6 +673,8 @@ def test_should_use_real_time():
             assert time.clock() != expected_clock
         if HAS_TIME_NS:
             assert time.time_ns() != expected_frozen * 1e9
+
+        assert calendar.timegm(current_time) != expected_frozen
 
 
 @pytest.mark.skipif(not HAS_TIME_NS,
