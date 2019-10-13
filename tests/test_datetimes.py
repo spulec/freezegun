@@ -1,4 +1,5 @@
 import time
+import calendar
 import datetime
 import unittest
 import locale
@@ -208,6 +209,13 @@ def test_time_gmtime():
         assert time_struct.tm_wday == 5
         assert time_struct.tm_yday == 14
         assert time_struct.tm_isdst == -1
+
+
+def test_calendar_timegm():
+    time_struct = time.gmtime()
+    assert calendar.timegm(time_struct) != 1326511294
+    with freeze_time('2012-01-14 03:21:34'):
+        assert calendar.timegm(time_struct) == 1326511294
 
 
 @pytest.mark.skipif(not HAS_CLOCK,

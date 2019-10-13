@@ -1,3 +1,5 @@
+import calendar
+import datetime
 import time
 import sys
 from .fake_module import (
@@ -17,8 +19,8 @@ from freezegun.api import (
     fake_localtime,
     fake_gmtime,
     fake_strftime,
+    fake_timegm,
 )
-import datetime
 
 
 @freeze_time("2012-01-14")
@@ -148,6 +150,8 @@ def test_import_after_start():
         assert another_module.get_gmtime() is fake_gmtime
         assert another_module.get_strftime() is time.strftime
         assert another_module.get_strftime() is fake_strftime
+        assert another_module.get_timegm() is calendar.timegm
+        assert another_module.get_timegm() is fake_timegm
 
         # Fakes
         assert another_module.get_fake_datetime() is FakeDatetime
@@ -156,6 +160,7 @@ def test_import_after_start():
         assert another_module.get_fake_localtime() is fake_localtime
         assert another_module.get_fake_gmtime() is fake_gmtime
         assert another_module.get_fake_strftime() is fake_strftime
+        assert another_module.get_fake_timegm() is fake_timegm
 
     # Reals
     assert another_module.get_datetime() is datetime.datetime
@@ -170,6 +175,8 @@ def test_import_after_start():
     assert not another_module.get_gmtime() is fake_gmtime
     assert another_module.get_strftime() is time.strftime
     assert not another_module.get_strftime() is fake_strftime
+    assert another_module.get_timegm() is calendar.timegm
+    assert not another_module.get_timegm() is fake_timegm
 
     # Fakes
     assert another_module.get_fake_datetime() is FakeDatetime
@@ -178,6 +185,7 @@ def test_import_after_start():
     assert another_module.get_fake_localtime() is fake_localtime
     assert another_module.get_fake_gmtime() is fake_gmtime
     assert another_module.get_fake_strftime() is fake_strftime
+    assert another_module.get_fake_timegm() is fake_timegm
 
 
 def test_none_as_initial():
