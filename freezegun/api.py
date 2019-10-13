@@ -709,6 +709,9 @@ class _freeze_time(object):
             time.strftime = real_strftime
             time.clock = real_clock
 
+            if _TIME_NS_PRESENT:
+                time.time_ns = real_time_ns
+
             if uuid_generate_time_attr:
                 setattr(uuid, uuid_generate_time_attr, real_uuid_generate_time)
             uuid._UuidCreate = real_uuid_create
