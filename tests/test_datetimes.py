@@ -1,4 +1,5 @@
 import time
+import calendar
 import datetime
 import unittest
 import locale
@@ -208,6 +209,13 @@ def test_time_gmtime():
         assert time_struct.tm_wday == 5
         assert time_struct.tm_yday == 14
         assert time_struct.tm_isdst == -1
+
+
+def test_calendar_timegm():
+    time_struct = time.gmtime()
+    assert calendar.timegm(time_struct) != 1326511294
+    with freeze_time('2012-01-14 03:21:34'):
+        assert calendar.timegm(time_struct) == 1326511294
 
 
 @pytest.mark.skipif(not HAS_CLOCK,
@@ -644,6 +652,8 @@ def test_should_use_real_time():
     from freezegun import api
     api.call_stack_inspection_limit = 100  # just to increase coverage
 
+    current_time = time.gmtime()
+
     with freeze_time(frozen):
         assert time.time() == expected_frozen
         # assert time.localtime() == expected_frozen_local
@@ -653,6 +663,8 @@ def test_should_use_real_time():
         if HAS_TIME_NS:
             assert time.time_ns() == expected_frozen * 1e9
 
+        assert calendar.timegm(current_time) == expected_frozen
+
     with freeze_time(frozen, ignore=['_pytest', 'nose']):
         assert time.time() != expected_frozen
         # assert time.localtime() != expected_frozen_local
@@ -661,6 +673,8 @@ def test_should_use_real_time():
             assert time.clock() != expected_clock
         if HAS_TIME_NS:
             assert time.time_ns() != expected_frozen * 1e9
+
+        assert calendar.timegm(current_time) != expected_frozen
 
 
 @pytest.mark.skipif(not HAS_TIME_NS,
