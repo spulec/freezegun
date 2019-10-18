@@ -48,9 +48,9 @@ tick_flags = []
 # Python3 doesn't have basestring, but it does have str.
 try:
     # noinspection PyUnresolvedReferences
-    string_type = basestring
+    _string_type = basestring
 except NameError:
-    string_type = str
+    _string_type = str
 
 try:
     # noinspection PyUnresolvedReferences
@@ -735,7 +735,7 @@ class _freeze_time(object):
 
 
 def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, auto_tick_seconds=0):
-    acceptable_times = (type(None), string_type, datetime.date, datetime.timedelta,
+    acceptable_times = (type(None), _string_type, datetime.date, datetime.timedelta,
              types.FunctionType, types.GeneratorType)
 
     if MayaDT is not None:
