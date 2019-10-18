@@ -690,3 +690,37 @@ def test_time_ns():
     assert time.time_ns() == expected_timestamp * 1e9
     freezer.stop()
     assert time.time() != expected_timestamp
+
+
+@pytest.mark.skip("timezone handling is currently incorrect")
+def test_compare_datetime_and_time_with_timezone(monkeypatch):
+    """
+    Compare the result of datetime.datetime.now() and time.time() in a non-UTC timezone. These
+    should be consistent.
+    """
+    try:
+        with monkeypatch.context() as m, freeze_time("1970-01-01 00:00:00"):
+            m.setenv("TZ", "Europe/Berlin")
+            time.tzset()
+
+            dt1 = datetime.datetime.now()
+            dt2 = datetime.datetime.fromtimestamp(time.time())
+            assert dt1 == dt2
+    finally:
+        time.tzset()  # set the timezone back to what is was before
+
+
+@pytest.mark.skip("timezone handling is currently incorrect")
+def test_datetime_in_timezone(monkeypatch):
+    """
+    It is assumed that the argument passed to freeze_time is in UTC, unless explicitly indicated
+    otherwise. Therefore datetime.now() should return the frozen time with an offset.
+    """
+    try:
+        with monkeypatch.context() as m, freeze_time("1970-01-01 00:00:00"):
+            m.setenv("TZ", "Europe/Berlin")
+            time.tzset()
+
+            assert datetime.datetime.now() == datetime.datetime(1970, 1, 1, 1, 0, 0)
+    finally:
+        time.tzset()  # set the timezone back to what is was before
