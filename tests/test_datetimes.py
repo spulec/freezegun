@@ -690,6 +690,7 @@ def test_time_ns():
     assert time.time_ns() == expected_timestamp * 1e9
     freezer.stop()
     assert time.time() != expected_timestamp
+    assert time.time_ns() != expected_timestamp * 1e9
 
 
 @pytest.mark.skip("timezone handling is currently incorrect")
