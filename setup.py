@@ -28,6 +28,8 @@ setup(
     author_email='spulec@gmail.com',
     url='https://github.com/spulec/freezegun',
     packages=['freezegun'],
+    package_data={'freezegun':['py.typed']},
+    zip_safe=False,
     install_requires=requires,
     tests_require=tests_require,
     include_package_data=True,
