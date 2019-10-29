@@ -19,6 +19,8 @@ from typing import (
 from dateutil import parser
 from dateutil.tz import tzlocal
 
+from freezegun._async import wrap_coroutine
+
 try:
     from maya import MayaDT as _MayaDT  # type: ignore
 except ImportError:
@@ -79,14 +81,7 @@ except (AttributeError, ImportError):
     real_uuid_create = None
 
 
-if sys.version_info >= (3, 5):
-    iscoroutinefunction = inspect.iscoroutinefunction
-    from freezegun._async import wrap_coroutine
-else:
-    iscoroutinefunction = lambda x: False
 
-    def wrap_coroutine(api: _freeze_time, coroutine: _CallableT) -> _CallableT:
-        raise NotImplementedError()
 
 
 # keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
@@ -552,7 +547,7 @@ class _freeze_time(object):
     def __call__(self, func: _CallableOrTypeT) -> _CallableOrTypeT:
         if inspect.isclass(func):
             return cast(_CallableOrTypeT, self.decorate_class(cast(Any, func)))
-        elif iscoroutinefunction(func):
+        elif inspect.iscoroutinefunction(func):
             return self.decorate_coroutine(func)
         return self.decorate_callable(func)
 
