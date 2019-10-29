@@ -44,24 +44,24 @@ real_datetime = datetime.datetime
 real_date_objects = [real_time, real_localtime, real_gmtime, real_strftime, real_timegm, real_date, real_datetime]
 
 if _TIME_NS_PRESENT:
-    real_time_ns = time.time_ns
+    real_time_ns = getattr(time, 'time_ns')  # type: Callable[[], int]
     real_date_objects.append(real_time_ns)
 
 _real_time_object_ids = set(id(obj) for obj in real_date_objects)
 
 # time.clock is deprecated and was removed in Python 3.8
-real_clock: Optional[Callable[[], float]] = getattr(time, 'clock', None)
+real_clock = getattr(time, 'clock', None)  # type: Optional[Callable[[], float]]
 
-freeze_factories: List[_FactoryType] = []
-tz_offsets: List[datetime.timedelta] = []
-ignore_lists: List[Tuple[str,...]] = []
-tick_flags: List[bool] = []
+freeze_factories = []  # type: List[_FactoryType]
+tz_offsets = []  # type: List[datetime.timedelta]
+ignore_lists = []  # type: List[Tuple[str,...]]
+tick_flags = []  # type: List[bool]
 
 
 try:
     # noinspection PyUnresolvedReferences
     real_uuid_generate_time = uuid._uuid_generate_time  # type: ignore
-    uuid_generate_time_attr: Optional[str] = '_uuid_generate_time'
+    uuid_generate_time_attr = '_uuid_generate_time'  # type: Optional[str]
 except AttributeError:
     # noinspection PyUnresolvedReferences
     uuid._load_system_functions()  # type: ignore
@@ -90,11 +90,11 @@ else:
 
 
 # keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
-_GLOBAL_MODULES_CACHE: Dict[str, Tuple[str, List[Any]]] = {}
+_GLOBAL_MODULES_CACHE = {}  # type: Dict[str, Tuple[str, List[Any]]]
 
 
 def _get_module_attributes(module: types.ModuleType) -> List[Tuple[str, Any]]:
-    result: List[Tuple[str, Any]] = []
+    result = []  # type: List[Tuple[str, Any]]
     try:
         module_attributes = dir(module)
     except (ImportError, TypeError):
@@ -359,7 +359,7 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
 
     @classmethod
     def now(cls, tz: Optional[datetime.tzinfo] = None) -> 'FakeDatetime':
-        now: datetime.datetime = cls._time_to_freeze() or real_datetime.now()
+        now = cls._time_to_freeze() or real_datetime.now()  # type: datetime.datetime
         if tz:
             result = tz.fromutc(now.replace(tzinfo=tz)) + cls._tz_offset()
         else:
@@ -458,9 +458,9 @@ def _parse_tz_offset(tz_offset: Union[datetime.timedelta, int]) -> datetime.time
 
 
 class TickingDateTimeFactory(object):
+    # time_to_freeze: datetime.datetime
+    # start: datetime.datetime
 
-    time_to_freeze: datetime.datetime
-    start: datetime.datetime
     def __init__(self, time_to_freeze: datetime.datetime, start: datetime.datetime) -> None:
         self.time_to_freeze = time_to_freeze
         self.start = start
@@ -470,8 +470,8 @@ class TickingDateTimeFactory(object):
 
 
 class FrozenDateTimeFactory(object):
+    # time_to_freeze: datetime.datetime
 
-    time_to_freeze: datetime.datetime
     def __init__(self, time_to_freeze: datetime.datetime) -> None:
         self.time_to_freeze = time_to_freeze
 
@@ -493,9 +493,9 @@ class FrozenDateTimeFactory(object):
 
 
 class StepTickTimeFactory(object):
+    # time_to_freeze: datetime.datetime
+    # step_width: int
 
-    time_to_freeze: datetime.datetime
-    step_width: int
     def __init__(self, time_to_freeze: datetime.datetime, step_width: int) -> None:
         self.time_to_freeze = time_to_freeze
         self.step_width = step_width
@@ -520,16 +520,16 @@ class StepTickTimeFactory(object):
         self.tick(delta=delta)
 
 class _freeze_time(object):
-    time_to_freeze: datetime.datetime
-    tz_offset: datetime.timedelta
-    ignore: Tuple[str, ...]
-    tick: bool
-    auto_tick_seconds: int
-    undo_changes: List[Tuple]
-    modules_at_start: Set[str]
-    as_arg: bool
-    fake_names: Optional[Tuple[str, ...]]
-    reals: Optional[Mapping[int, object]]
+    # time_to_freeze: datetime.datetime
+    # tz_offset: datetime.timedelta
+    # ignore: Tuple[str, ...]
+    # tick: bool
+    # auto_tick_seconds: int
+    # undo_changes: List[Tuple[types.ModuleType, str, Any]]
+    # modules_at_start: Set[str]
+    # as_arg: bool
+    # fake_names: Optional[Tuple[str, ...]]
+    # reals: Optional[Mapping[int, object]]
 
     def __init__(
         self,
@@ -545,8 +545,8 @@ class _freeze_time(object):
         self.ignore = tuple(ignore)
         self.tick = tick
         self.auto_tick_seconds = auto_tick_seconds
-        self.undo_changes = []
-        self.modules_at_start = set()
+        self.undo_changes = []  # type: List[Tuple[types.ModuleType, str, Any]]
+        self.modules_at_start = set()  # type: Set[str]
         self.as_arg = as_arg
 
     def __call__(self, func: _CallableOrTypeT) -> _CallableOrTypeT:
@@ -585,11 +585,10 @@ class _freeze_time(object):
             return klass
 
         else:
-
-            seen: Set[str] = set()
+            seen = set()  # type: Set[str]
 
             if hasattr(klass, 'mro'):
-                klasses: List[Type] = klass.mro()
+                klasses = klass.mro()  # type: List[Type]
             else:
                 klasses = cast(List[Type], [klass]) + list(klass.__bases__)
             for base_klass in klasses:
@@ -615,9 +614,8 @@ class _freeze_time(object):
         self.stop()
 
     def start(self) -> _FactoryType:
-
         if self.auto_tick_seconds:
-            freeze_factory: _FactoryType = StepTickTimeFactory(self.time_to_freeze, self.auto_tick_seconds)
+            freeze_factory = StepTickTimeFactory(self.time_to_freeze, self.auto_tick_seconds)  # type: _FactoryType
         elif self.tick:
             freeze_factory = TickingDateTimeFactory(self.time_to_freeze, real_datetime.now())
         else:
@@ -663,7 +661,7 @@ class _freeze_time(object):
         ]
 
         if _TIME_NS_PRESENT:
-            time.time_ns = fake_time_ns
+            setattr(time, 'time_ns', fake_time_ns)
             to_patch.append(('real_time_ns', real_time_ns, fake_time_ns))
 
         if real_clock is not None:
@@ -722,26 +720,26 @@ class _freeze_time(object):
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
                 for mod_name in modules_to_restore:
-                    module = sys.modules.get(mod_name, None)
-                    if mod_name is None or module is None:
+                    to_restore = sys.modules.get(mod_name) 
+                    if mod_name is None or to_restore is None:
                         continue
                     elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
                         continue
-                    elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                    elif (not hasattr(to_restore, "__name__") or to_restore.__name__ in ('datetime', 'time')):
                         continue
-                    for module_attribute in dir(module):
+                    for module_attribute in dir(to_restore):
 
                         if self.fake_names and module_attribute in self.fake_names:
                             continue
                         try:
-                            attribute_value = getattr(module, module_attribute)
+                            attribute_value = getattr(to_restore, module_attribute)
                         except (ImportError, AttributeError, TypeError):
                             # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
                             continue
 
                         real = self.reals.get(id(attribute_value)) if self.reals else None
                         if real:
-                            setattr(module, module_attribute, real)
+                            setattr(to_restore, module_attribute, real)
 
             time.time = real_time
             time.gmtime = real_gmtime
@@ -783,8 +781,8 @@ def freeze_time(
     as_arg: bool = False,
     auto_tick_seconds: int = 0,
 ) -> _freeze_time:
-    acceptable_times: Tuple[Type,...] = (type(None), str, datetime.date, datetime.timedelta,
-             types.FunctionType, types.GeneratorType)
+    acceptable_times = (type(None), str, datetime.date, datetime.timedelta,
+             types.FunctionType, types.GeneratorType)  # type: Tuple[Type,...]
 
     if _MayaDT is not None:
         acceptable_times += _MayaDT,
