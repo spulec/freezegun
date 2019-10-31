@@ -79,7 +79,10 @@ except ImportError:
 
 try:
     iscoroutinefunction = inspect.iscoroutinefunction
-    from freezegun._async import wrap_coroutine
+    if sys.version_info < (3, 5):
+        from freezegun._async_coroutine import wrap_coroutine
+    else:
+        from freezegun._async import wrap_coroutine
 except AttributeError:
     iscoroutinefunction = lambda x: False
 
