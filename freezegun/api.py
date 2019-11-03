@@ -35,7 +35,7 @@ if _TIME_NS_PRESENT:
     real_time_ns = time.time_ns
     real_date_objects.append(real_time_ns)
 
-_real_time_object_ids = set(id(obj) for obj in real_date_objects)
+_real_time_object_ids = {id(obj) for obj in real_date_objects}
 
 # time.clock is deprecated and was removed in Python 3.8
 real_clock = getattr(time, 'clock', None)
@@ -125,7 +125,7 @@ def _get_module_attributes_hash(module):
         module_dir = dir(module)
     except (ImportError, TypeError):
         module_dir = []
-    return '{0}-{1}'.format(id(module), hash(frozenset(module_dir)))
+    return '{}-{}'.format(id(module), hash(frozenset(module_dir)))
 
 
 def _get_cached_module_attributes(module):
@@ -636,8 +636,8 @@ class _freeze_time(object):
             to_patch.append(('real_clock', real_clock, fake_clock))
 
         self.fake_names = tuple(fake.__name__ for real_name, real, fake in to_patch)
-        self.reals = dict((id(fake), real) for real_name, real, fake in to_patch)
-        fakes = dict((id(real), fake) for real_name, real, fake in to_patch)
+        self.reals = {id(fake): real for real_name, real, fake in to_patch}
+        fakes = {id(real): fake for real_name, real, fake in to_patch}
         add_change = self.undo_changes.append
 
         # Save the current loaded modules
@@ -750,7 +750,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     if not isinstance(time_to_freeze, acceptable_times):
         raise TypeError(('freeze_time() expected None, a string, date instance, datetime '
                          'instance, MayaDT, timedelta instance, function or a generator, but got '
-                         'type {0}.').format(type(time_to_freeze)))
+                         'type {}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
 
