@@ -416,8 +416,8 @@ class Tester(object):
         assert self.a_mock.__class__ == Callable
 
     def test_class_decorator_wraps_callable_object_py3(self):
-        if sys.version_info[0] != 3:
-            raise SkipTest("test target is Python3")
+        if sys.version_info[0] == 2:
+            raise SkipTest("test target is Python3+")
         assert self.a_mock.__wrapped__.__class__ == Callable
 
     @staticmethod
