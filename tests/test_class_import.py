@@ -2,6 +2,7 @@ import calendar
 import datetime
 import time
 import sys
+import tests.utils
 from .fake_module import (
     fake_date_function,
     fake_datetime_function,
@@ -35,7 +36,7 @@ def test_import_date_works():
 
 @freeze_time("2012-01-14")
 def test_import_time():
-    utc_time = datetime.datetime(2012, 1, 14, tzinfo=datetime.timezone.utc)
+    utc_time = datetime.datetime(2012, 1, 14, tzinfo=tests.utils.UTC)
     expected_timestamp = calendar.timegm(utc_time.timetuple())
     assert fake_time_function() == expected_timestamp
 

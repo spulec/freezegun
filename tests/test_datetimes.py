@@ -51,7 +51,7 @@ def test_simple_api():
     # time to freeze is always provided in UTC
     freezer = freeze_time("2012-01-14")
     # expected timestamp must be a timestamp, corresponding to 2012-01-14 UTC
-    utc_time = datetime.datetime(2012, 1, 14, tzinfo=datetime.timezone.utc)
+    utc_time = datetime.datetime(2012, 1, 14, tzinfo=utils.UTC)
     expected_timestamp = calendar.timegm(utc_time.timetuple())
 
     freezer.start()
@@ -454,8 +454,8 @@ def test_nested_context_manager():
 def _assert_datetime_date_and_time_are_all_equal(expected_datetime):
     assert datetime.datetime.now() == expected_datetime
     assert datetime.date.today() == expected_datetime.date()
-    datetime_from_time = datetime.datetime.fromtimestamp(time.time(), tz=datetime.timezone.utc)
-    assert datetime_from_time == expected_datetime.replace(tzinfo=datetime.timezone.utc)
+    datetime_from_time = datetime.datetime.fromtimestamp(time.time(), tz=utils.UTC)
+    assert datetime_from_time == expected_datetime.replace(tzinfo=utils.UTC)
 
 
 def test_nested_context_manager_with_tz_offsets():
