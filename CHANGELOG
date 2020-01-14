@@ -4,6 +4,12 @@ Freezegun Changelog
 Latest
 ------
 
+0.3.13
+------
+
+* Fix for Py3.8
+* Reset time.time_ns on stop
+
 0.3.12
 ------
 
