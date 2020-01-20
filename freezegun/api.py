@@ -356,7 +356,7 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     def timestamp(self):
         if self.tzinfo is None:
-            return (self - _EPOCH).total_seconds()
+            return (self - _EPOCH - self._tz_offset()).total_seconds()
         return (self - _EPOCHTZ).total_seconds()
 
     @classmethod

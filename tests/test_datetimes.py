@@ -710,6 +710,17 @@ def test_compare_datetime_and_time_with_timezone(monkeypatch):
         time.tzset()  # set the timezone back to what is was before
 
 
+def test_timestamp_with_tzoffset():
+    with freeze_time("2000-01-01", tz_offset=6):
+        utcnow = datetime.datetime(2000, 1, 1, 0)
+        now = datetime.datetime(2000, 1, 1, 6)
+        assert now == datetime.datetime.now()
+        assert now == datetime.datetime.fromtimestamp(time.time())
+        assert now.timestamp() == time.time()
+
+        assert utcnow == datetime.datetime.utcfromtimestamp(time.time())
+        assert utcnow == datetime.datetime.utcnow()
+
 @pytest.mark.skip("timezone handling is currently incorrect")
 def test_datetime_in_timezone(monkeypatch):
     """
