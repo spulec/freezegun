@@ -21,6 +21,8 @@ except ImportError:
     MayaDT = None
 
 _TIME_NS_PRESENT = hasattr(time, 'time_ns')
+_EPOCH = datetime.datetime(1970, 1, 1)
+_EPOCHTZ = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
 
 real_time = time.time
 real_localtime = time.localtime
@@ -343,6 +345,19 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
         if tz is None:
             tz = tzlocal()
         return datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
+
+    @classmethod
+    def fromtimestamp(cls, t, tz=None):
+        if tz is None:
+            return real_datetime.fromtimestamp(
+                    t, tz=datetime.timezone(cls._tz_offset())
+                ).replace(tzinfo=None)
+        return real_datetime.fromtimestamp(t, tz=tz)
+
+    def timestamp(self):
+        if self.tzinfo is None:
+            return (self - _EPOCH).total_seconds()
+        return (self - _EPOCHTZ).total_seconds()
 
     @classmethod
     def now(cls, tz=None):

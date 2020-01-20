@@ -456,9 +456,7 @@ def test_nested_context_manager():
 def _assert_datetime_date_and_time_are_all_equal(expected_datetime):
     assert datetime.datetime.now() == expected_datetime
     assert datetime.date.today() == expected_datetime.date()
-    datetime_from_time = datetime.datetime.fromtimestamp(time.time())
-    timezone_adjusted_datetime = datetime_from_time + datetime.timedelta(seconds=time.timezone)
-    assert timezone_adjusted_datetime == expected_datetime
+    assert datetime.datetime.fromtimestamp(time.time()) == expected_datetime
 
 
 def test_nested_context_manager_with_tz_offsets():
@@ -693,7 +691,6 @@ def test_time_ns():
     assert time.time_ns() != expected_timestamp * 1e9
 
 
-@pytest.mark.skip("timezone handling is currently incorrect")
 def test_compare_datetime_and_time_with_timezone(monkeypatch):
     """
     Compare the result of datetime.datetime.now() and time.time() in a non-UTC timezone. These
@@ -704,9 +701,11 @@ def test_compare_datetime_and_time_with_timezone(monkeypatch):
             m.setenv("TZ", "Europe/Berlin")
             time.tzset()
 
-            dt1 = datetime.datetime.now()
-            dt2 = datetime.datetime.fromtimestamp(time.time())
-            assert dt1 == dt2
+            now = datetime.datetime.now()
+            assert now == datetime.datetime.fromtimestamp(time.time())
+            assert now == datetime.datetime.utcfromtimestamp(time.time())
+            assert now == datetime.datetime.utcnow()
+            assert now.timestamp() == time.time()
     finally:
         time.tzset()  # set the timezone back to what is was before
 
