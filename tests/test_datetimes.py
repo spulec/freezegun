@@ -5,6 +5,7 @@ import unittest
 import locale
 import sys
 from unittest import SkipTest
+from dateutil.tz import UTC
 
 import pytest
 from tests import utils
@@ -713,10 +714,12 @@ def test_compare_datetime_and_time_with_timezone(monkeypatch):
 def test_timestamp_with_tzoffset():
     with freeze_time("2000-01-01", tz_offset=6):
         utcnow = datetime.datetime(2000, 1, 1, 0)
+        nowtz = datetime.datetime(2000, 1, 1, 0, tzinfo=UTC)
         now = datetime.datetime(2000, 1, 1, 6)
         assert now == datetime.datetime.now()
         assert now == datetime.datetime.fromtimestamp(time.time())
         assert now.timestamp() == time.time()
+        assert nowtz.timestamp() == time.time()
 
         assert utcnow == datetime.datetime.utcfromtimestamp(time.time())
         assert utcnow == datetime.datetime.utcnow()

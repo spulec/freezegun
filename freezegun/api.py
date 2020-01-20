@@ -1,3 +1,4 @@
+import dateutil
 import datetime
 import functools
 import sys
@@ -22,7 +23,7 @@ except ImportError:
 
 _TIME_NS_PRESENT = hasattr(time, 'time_ns')
 _EPOCH = datetime.datetime(1970, 1, 1)
-_EPOCHTZ = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
+_EPOCHTZ = datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.UTC)
 
 real_time = time.time
 real_localtime = time.localtime
@@ -350,9 +351,9 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
     def fromtimestamp(cls, t, tz=None):
         if tz is None:
             return real_datetime.fromtimestamp(
-                    t, tz=datetime.timezone(cls._tz_offset())
+                    t, tz=dateutil.tz.tzoffset("freezegun", cls._tz_offset())
                 ).replace(tzinfo=None)
-        return real_datetime.fromtimestamp(t, tz=tz)
+        return datetime_to_fakedatetime(real_datetime.fromtimestamp(t, tz))
 
     def timestamp(self):
         if self.tzinfo is None:
