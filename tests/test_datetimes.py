@@ -1,4 +1,5 @@
 import time
+import calendar
 import datetime
 import unittest
 import locale
@@ -644,6 +645,9 @@ def test_should_use_real_time():
     from freezegun import api
     api.call_stack_inspection_limit = 100  # just to increase coverage
 
+    timestamp_to_convert = 1579602312
+    time_tuple = time.gmtime(timestamp_to_convert)
+
     with freeze_time(frozen):
         assert time.time() == expected_frozen
         # assert time.localtime() == expected_frozen_local
@@ -653,6 +657,9 @@ def test_should_use_real_time():
         if HAS_TIME_NS:
             assert time.time_ns() == expected_frozen * 1e9
 
+        assert calendar.timegm(time.gmtime()) == expected_frozen
+        assert calendar.timegm(time_tuple) == timestamp_to_convert
+
     with freeze_time(frozen, ignore=['_pytest', 'nose']):
         assert time.time() != expected_frozen
         # assert time.localtime() != expected_frozen_local
@@ -661,6 +668,9 @@ def test_should_use_real_time():
             assert time.clock() != expected_clock
         if HAS_TIME_NS:
             assert time.time_ns() != expected_frozen * 1e9
+
+        assert calendar.timegm(time.gmtime()) != expected_frozen
+        assert calendar.timegm(time_tuple) == timestamp_to_convert
 
 
 @pytest.mark.skipif(not HAS_TIME_NS,
