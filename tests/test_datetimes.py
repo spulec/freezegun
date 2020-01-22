@@ -51,9 +51,8 @@ def test_simple_api():
     # time to freeze is always provided in UTC
     freezer = freeze_time("2012-01-14")
     # expected timestamp must be a timestamp, corresponding to 2012-01-14 UTC
-    local_time = datetime.datetime(2012, 1, 14)
-    utc_time = local_time - datetime.timedelta(seconds=time.timezone)
-    expected_timestamp = time.mktime(utc_time.timetuple())
+    utc_time = datetime.datetime(2012, 1, 14)
+    expected_timestamp = calendar.timegm(utc_time.timetuple())
 
     freezer.start()
     assert time.time() == expected_timestamp
@@ -76,9 +75,8 @@ def test_tz_offset():
     # expected timestamp must be a timestamp,
     # corresponding to 2012-01-14 03:21:34 UTC
     # and it doesn't depend on tz_offset
-    local_time = datetime.datetime(2012, 1, 14, 3, 21, 34)
-    utc_time = local_time - datetime.timedelta(seconds=time.timezone)
-    expected_timestamp = time.mktime(utc_time.timetuple())
+    utc_time = datetime.datetime(2012, 1, 14, 3, 21, 34)
+    expected_timestamp = calendar.timegm(utc_time.timetuple())
 
     freezer.start()
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 13, 23, 21, 34)
@@ -449,9 +447,8 @@ def test_nested_context_manager():
 def _assert_datetime_date_and_time_are_all_equal(expected_datetime):
     assert datetime.datetime.now() == expected_datetime
     assert datetime.date.today() == expected_datetime.date()
-    datetime_from_time = datetime.datetime.fromtimestamp(time.time())
-    timezone_adjusted_datetime = datetime_from_time + datetime.timedelta(seconds=time.timezone)
-    assert timezone_adjusted_datetime == expected_datetime
+    datetime_from_time = datetime.datetime.utcfromtimestamp(time.time())
+    assert datetime_from_time == expected_datetime
 
 
 def test_nested_context_manager_with_tz_offsets():
