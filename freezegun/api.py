@@ -26,10 +26,9 @@ real_time = time.time
 real_localtime = time.localtime
 real_gmtime = time.gmtime
 real_strftime = time.strftime
-real_timegm = calendar.timegm
 real_date = datetime.date
 real_datetime = datetime.datetime
-real_date_objects = [real_time, real_localtime, real_gmtime, real_strftime, real_timegm, real_date, real_datetime]
+real_date_objects = [real_time, real_localtime, real_gmtime, real_strftime, real_date, real_datetime]
 
 if _TIME_NS_PRESENT:
     real_time_ns = time.time_ns
@@ -183,7 +182,7 @@ def fake_time():
     if _should_use_real_time():
         return real_time()
     current_time = get_current_time()
-    return real_timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
+    return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
 
 if _TIME_NS_PRESENT:
     def fake_time_ns():
@@ -218,14 +217,6 @@ def fake_strftime(format, time_to_format=None):
         return real_strftime(format)
     else:
         return real_strftime(format, time_to_format)
-
-
-def fake_timegm(struct_time):
-    if _should_use_real_time():
-        return real_timegm(struct_time)
-    else:
-        return real_timegm(get_current_time().timetuple())
-
 
 if real_clock is not None:
     def fake_clock():
@@ -598,8 +589,6 @@ class _freeze_time(object):
             return freeze_factory
 
         # Change the modules
-        calendar.timegm = fake_timegm
-
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
 
@@ -623,7 +612,6 @@ class _freeze_time(object):
             ('real_localtime', real_localtime, fake_localtime),
             ('real_strftime', real_strftime, fake_strftime),
             ('real_time', real_time, fake_time),
-            ('real_timegm', real_timegm, fake_timegm),
         ]
 
         if _TIME_NS_PRESENT:
@@ -670,7 +658,6 @@ class _freeze_time(object):
         tz_offsets.pop()
 
         if not freeze_factories:
-            calendar.timegm = real_timegm
             datetime.datetime = real_datetime
             datetime.date = real_date
             copyreg.dispatch_table.pop(real_datetime)

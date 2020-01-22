@@ -1,4 +1,3 @@
-from calendar import timegm
 from datetime import date, datetime
 from time import time, localtime, gmtime, strftime
 
@@ -9,7 +8,6 @@ from freezegun.api import (
     fake_localtime,
     fake_gmtime,
     fake_strftime,
-    fake_timegm,
 )
 
 
@@ -39,10 +37,6 @@ def get_strftime():
     return strftime
 
 
-def get_timegm():
-    return timegm
-
-
 # Fakes
 
 def get_fake_datetime():
@@ -67,7 +61,3 @@ def get_fake_gmtime():
 
 def get_fake_strftime():
     return fake_strftime
-
-
-def get_fake_timegm():
-    return fake_timegm

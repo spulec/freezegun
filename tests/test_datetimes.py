@@ -211,13 +211,6 @@ def test_time_gmtime():
         assert time_struct.tm_isdst == -1
 
 
-def test_calendar_timegm():
-    time_struct = time.gmtime()
-    assert calendar.timegm(time_struct) != 1326511294
-    with freeze_time('2012-01-14 03:21:34'):
-        assert calendar.timegm(time_struct) == 1326511294
-
-
 @pytest.mark.skipif(not HAS_CLOCK,
                     reason="time.clock was removed in Python 3.8")
 def test_time_clock():
@@ -652,7 +645,8 @@ def test_should_use_real_time():
     from freezegun import api
     api.call_stack_inspection_limit = 100  # just to increase coverage
 
-    current_time = time.gmtime()
+    timestamp_to_convert = 1579602312
+    time_tuple = time.gmtime(timestamp_to_convert)
 
     with freeze_time(frozen):
         assert time.time() == expected_frozen
@@ -663,7 +657,8 @@ def test_should_use_real_time():
         if HAS_TIME_NS:
             assert time.time_ns() == expected_frozen * 1e9
 
-        assert calendar.timegm(current_time) == expected_frozen
+        assert calendar.timegm(time.gmtime()) == expected_frozen
+        assert calendar.timegm(time_tuple) == timestamp_to_convert
 
     with freeze_time(frozen, ignore=['_pytest', 'nose']):
         assert time.time() != expected_frozen
@@ -674,7 +669,8 @@ def test_should_use_real_time():
         if HAS_TIME_NS:
             assert time.time_ns() != expected_frozen * 1e9
 
-        assert calendar.timegm(current_time) != expected_frozen
+        assert calendar.timegm(time.gmtime()) != expected_frozen
+        assert calendar.timegm(time_tuple) == timestamp_to_convert
 
 
 @pytest.mark.skipif(not HAS_TIME_NS,
