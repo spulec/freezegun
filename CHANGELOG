@@ -4,6 +4,11 @@ Freezegun Changelog
 Latest
 ------
 
+0.3.14
+------
+
+* Fix calendar.timegm behavior
+
 0.3.13
 ------
 
