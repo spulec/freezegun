@@ -13,7 +13,7 @@ if sys.version_info.major == 2:
     requires += ['python-dateutil>=1.0, != 2.0']
 else:
     # Py3k
-    requires += ['python-dateutil>=2.0']
+    requires += ['python-dateutil>=2.7']
 
 
 with open('README.rst') as f:
