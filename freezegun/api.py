@@ -770,15 +770,17 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     if ignore is None:
         ignore = []
     ignore = ignore[:]
-    ignore.append('nose.plugins')
-    ignore.append('six.moves')
-    ignore.append('django.utils.six.moves')
-    ignore.append('google.gax')
-    ignore.append('threading')
-    ignore.append('Queue')
-    ignore.append('selenium')
-    ignore.append('_pytest.terminal.')
-    ignore.append('_pytest.runner.')
+    ignore.extend(['nose.plugins'
+        'six.moves',
+        'django.utils.six.moves',
+        'google.gax',
+        'threading',
+        'Queue',
+        'selenium',
+        '_pytest.terminal.',
+        '_pytest.runner.',
+        'gi',
+    ])
 
     return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg, auto_tick_seconds)
 
