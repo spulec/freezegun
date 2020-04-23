@@ -770,7 +770,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     if ignore is None:
         ignore = []
     ignore = ignore[:]
-    ignore.extend(['nose.plugins'
+    ignore.extend(['nose.plugins',
         'six.moves',
         'django.utils.six.moves',
         'google.gax',
