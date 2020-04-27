@@ -261,9 +261,10 @@ def test_strftime():
 
 
 def test_real_strftime_fall_through():
-    with freeze_time(ignore=['_pytest']):
-        time.strftime('%Y')
-        time.strftime('%Y', (2001, 1, 1, 1, 1, 1, 1, 1, 1)) == '2001'
+    this_real_year = datetime.datetime.now().year
+    with freeze_time():
+        assert time.strftime('%Y') == str(this_real_year)
+        assert time.strftime('%Y', (2001, 1, 1, 1, 1, 1, 1, 1, 1)) == '2001'
 
 
 def test_date_object():
