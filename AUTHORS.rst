@@ -15,3 +15,4 @@ Patches and Suggestions
 - `Alex Ehlke <https://github.com/aehlke>`_
 - `James Lu <github.com/CrazyPython>`_
 - `Dan Elkis <github.com/rinslow>`_
+- `Bastien Vallet <github.com/djailla>`_
