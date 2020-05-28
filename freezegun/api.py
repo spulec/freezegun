@@ -730,7 +730,7 @@ class _freeze_time(object):
         def wrapper(*args, **kwargs):
             with self as time_factory:
                 if self.as_arg and self.as_kwarg:
-                    raise Exception()
+                    assert False, "You can't specify both as_arg and as_kwarg at the same time. Pick one."
                 elif self.as_arg:
                     result = func(time_factory, *args, **kwargs)
                 elif self.as_kwarg:
