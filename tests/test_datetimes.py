@@ -485,6 +485,22 @@ def test_isinstance_without_active():
     assert isinstance(today, datetime.date)
 
 
+class TestUnitTestMethodDecorator(unittest.TestCase):
+    @freeze_time('2013-04-09')
+    def test_method_decorator_works_on_unittest(self):
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
+
+    @freeze_time('2013-04-09', as_kwarg='frozen_time')
+    def test_method_decorator_works_on_unittest(self, frozen_time):
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
+        self.assertEqual(datetime.date(2013, 4, 9), frozen_time.time_to_freeze.today())
+
+    @freeze_time('2013-04-09', as_kwarg='hello')
+    def test_method_decorator_works_on_unittest(self, **kwargs):
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
+        self.assertEqual(datetime.date(2013, 4, 9), kwargs.get('hello').time_to_freeze.today())
+
+
 @freeze_time('2013-04-09')
 class TestUnitTestClassDecorator(unittest.TestCase):
 

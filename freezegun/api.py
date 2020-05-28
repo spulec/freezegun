@@ -513,8 +513,7 @@ class StepTickTimeFactory(object):
 
 class _freeze_time(object):
 
-
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, auto_tick_seconds):
+    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, as_kwarg, auto_tick_seconds):
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = _parse_tz_offset(tz_offset)
         self.ignore = tuple(ignore)
@@ -523,6 +522,7 @@ class _freeze_time(object):
         self.undo_changes = []
         self.modules_at_start = set()
         self.as_arg = as_arg
+        self.as_kwarg = as_kwarg
 
     def __call__(self, func):
         if inspect.isclass(func):
@@ -693,7 +693,7 @@ class _freeze_time(object):
                         continue
                     elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
                         continue
-                    elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                    elif not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time'):
                         continue
                     for module_attribute in dir(module):
 
@@ -729,8 +729,13 @@ class _freeze_time(object):
     def decorate_callable(self, func):
         def wrapper(*args, **kwargs):
             with self as time_factory:
-                if self.as_arg:
+                if self.as_arg and self.as_kwarg:
+                    assert False, "You can't specify both as_arg and as_kwarg at the same time. Pick one."
+                elif self.as_arg:
                     result = func(time_factory, *args, **kwargs)
+                elif self.as_kwarg:
+                    kwargs[self.as_kwarg] = time_factory
+                    result = func(*args, **kwargs)
                 else:
                     result = func(*args, **kwargs)
             return result
@@ -743,7 +748,8 @@ class _freeze_time(object):
         return wrapper
 
 
-def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, auto_tick_seconds=0):
+def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, as_kwarg='',
+                auto_tick_seconds=0):
     acceptable_times = (type(None), _string_type, datetime.date, datetime.timedelta,
              types.FunctionType, types.GeneratorType)
 
@@ -782,7 +788,7 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
         'gi',
     ])
 
-    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg, auto_tick_seconds)
+    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg, as_kwarg, auto_tick_seconds)
 
 
 # Setup adapters for sqlite
