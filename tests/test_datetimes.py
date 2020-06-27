@@ -751,3 +751,13 @@ def test_datetime_in_timezone(monkeypatch):
             assert datetime.datetime.now() == datetime.datetime(1970, 1, 1, 1, 0, 0)
     finally:
         time.tzset()  # set the timezone back to what is was before
+
+
+@pytest.mark.parametrize('test_date', [(2010, 10, 10), (2010, 6, 1)])
+def test_compare_timestamp_and_strftime(test_date):
+    with freeze_time("1970-01-01 00:00"):
+
+        freeze_timestamp = datetime.datetime(*test_date).timestamp()
+        freeze_strftime = datetime.datetime(*test_date).strftime('%s')
+
+        assert freeze_timestamp == int(freeze_strftime)
