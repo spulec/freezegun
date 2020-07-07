@@ -1,20 +1,16 @@
 #!/usr/bin/env python
 
-import sys
 from setuptools import setup
 
-requires = ['six']
+requires = [
+    'six',
+    'python-dateutil>1.0,!=2.0; python_version<"3"',
+    'python-dateutil>=2.7; python_version>="3"',
+]
 tests_require = [
     'mock;python_version<"3.4"',
     'nose'
 ]
-
-if sys.version_info.major == 2:
-    requires += ['python-dateutil>=1.0, != 2.0']
-else:
-    # Py3k
-    requires += ['python-dateutil>=2.7']
-
 
 with open('README.rst') as f:
     readme = f.read()
