@@ -1,5 +1,4 @@
-from datetime import datetime
-from datetime import date
+from datetime import date, datetime
 from time import time, localtime, gmtime, strftime
 
 

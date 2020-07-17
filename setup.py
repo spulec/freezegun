@@ -2,9 +2,6 @@
 
 from setuptools import setup
 
-requires = ['python-dateutil>=2.7']
-tests_require = ['nose']
-
 with open('README.rst') as f:
     readme = f.read()
 
@@ -17,8 +14,7 @@ setup(
     author_email='spulec@gmail.com',
     url='https://github.com/spulec/freezegun',
     packages=['freezegun'],
-    install_requires=requires,
-    tests_require=tests_require,
+    install_requires=['python-dateutil>=2.7'],
     include_package_data=True,
     license='Apache 2.0',
     python_requires='>=3.5',

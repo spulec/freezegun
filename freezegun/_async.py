@@ -1,7 +1,5 @@
 import functools
 
-import asyncio
-
 
 def wrap_coroutine(api, coroutine):
     @functools.wraps(coroutine)
