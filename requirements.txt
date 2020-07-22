@@ -1,6 +1,4 @@
-coverage
+pytest
 pytest-coverage
 coveralls
-mock
-pytest>=4.6
-maya; python_version >= '3.6'
+maya; python_version >= '3.7'

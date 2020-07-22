@@ -15,7 +15,6 @@ from freezegun.api import FakeDatetime, FakeDate
 
 try:
     import maya
-
 except ImportError:
     maya = None
 
