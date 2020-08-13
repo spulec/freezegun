@@ -1,7 +1,7 @@
 FreezeGun: Let your Python tests travel through time
 ====================================================
 
-.. image:: https://img.shields.io/pypi/v/freezegun.svg
+.. image:: https://img.shields.io/pypi/v/freezegun.svg#foo
    :target: https://pypi.python.org/pypi/freezegun/
 .. image:: https://secure.travis-ci.org/spulec/freezegun.svg?branch=master
    :target: https://travis-ci.org/spulec/freezegun
