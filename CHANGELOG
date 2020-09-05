@@ -4,6 +4,12 @@ Freezegun Changelog
 Latest
 ------
 
+1.0.0
+------
+
+* Dropped Py2 support
+* Added as_kwarg argument in order to have the frozen time object passed with the name provided in as_kwarg argument
+
 0.3.15
 ------
 

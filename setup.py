@@ -7,7 +7,7 @@ with open('README.rst') as f:
 
 setup(
     name='freezegun',
-    version='0.3.15',
+    version='1.0.0',
     description='Let your Python tests travel through time',
     long_description=readme,
     author='Steve Pulec',
