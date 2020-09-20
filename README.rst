@@ -24,6 +24,7 @@ Decorator
     import datetime
     import unittest
 
+    # Freeze time for a pytest style test:
 
     @freeze_time("2012-01-14")
     def test():
