@@ -16,3 +16,4 @@ Patches and Suggestions
 - `James Lu <github.com/CrazyPython>`_
 - `Dan Elkis <github.com/rinslow>`_
 - `Bastien Vallet <github.com/djailla>`_
+- `Julian Mehnle <github.com/jmehnle>`_

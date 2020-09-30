@@ -21,6 +21,7 @@ except ImportError:
 # time.clock was removed in Python 3.8
 HAS_CLOCK = hasattr(time, 'clock')
 HAS_TIME_NS = hasattr(time, 'time_ns')
+HAS_MONOTONIC_NS = hasattr(time, 'monotonic_ns')
 
 class temp_locale(object):
     """Temporarily change the locale."""
@@ -57,12 +58,14 @@ def test_simple_api():
 
     freezer.start()
     assert time.time() == expected_timestamp
+    assert time.monotonic() >= 0.0
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
     assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14)
     assert datetime.date.today() == datetime.date(2012, 1, 14)
     assert datetime.datetime.now().today() == datetime.datetime(2012, 1, 14)
     freezer.stop()
     assert time.time() != expected_timestamp
+    assert time.monotonic() >= 0.0
     assert datetime.datetime.now() != datetime.datetime(2012, 1, 14)
     assert datetime.datetime.utcnow() != datetime.datetime(2012, 1, 14)
     freezer = freeze_time("2012-01-10 13:52:01")
@@ -113,6 +116,7 @@ def test_zero_tz_offset_with_time():
     assert datetime.datetime.now() == datetime.datetime(1970, 1, 1)
     assert datetime.datetime.utcnow() == datetime.datetime(1970, 1, 1)
     assert time.time() == 0.0
+    assert time.monotonic() >= 0.0
     freezer.stop()
 
 
@@ -125,6 +129,7 @@ def test_tz_offset_with_time():
     assert datetime.datetime.now() == datetime.datetime(1969, 12, 31, 20)
     assert datetime.datetime.utcnow() == datetime.datetime(1970, 1, 1)
     assert time.time() == 0.0
+    assert time.monotonic() >= 0
     freezer.stop()
 
 
@@ -195,6 +200,29 @@ def test_bad_time_argument():
         pass
     else:
         assert False, "Bad values should raise a ValueError"
+
+
+def test_time_monotonic():
+    initial_datetime = datetime.datetime(year=1, month=7, day=12,
+                                        hour=15, minute=6, second=3)
+    with freeze_time(initial_datetime) as frozen_datetime:
+        monotonic_t0 = time.monotonic()
+        if HAS_MONOTONIC_NS:
+            monotonic_ns_t0 = time.monotonic_ns()
+
+        frozen_datetime.tick()
+        monotonic_t1 = time.monotonic()
+        assert monotonic_t1 == monotonic_t0 + 1.0
+        if HAS_MONOTONIC_NS:
+            monotonic_ns_t1 = time.monotonic_ns()
+            assert monotonic_ns_t1 == monotonic_ns_t0 + 1000000000
+
+        frozen_datetime.tick(10)
+        monotonic_t11 = time.monotonic()
+        assert monotonic_t11 == monotonic_t1 + 10.0
+        if HAS_MONOTONIC_NS:
+            monotonic_ns_t11 = time.monotonic_ns()
+            assert monotonic_ns_t11 == monotonic_ns_t1 + 10000000000
 
 
 def test_time_gmtime():
@@ -647,6 +675,20 @@ def test_time_with_nested():
     assert time() == first
     with freeze_time('2015-01-01T00:06:00'):
         assert time() == second
+
+
+def test_monotonic_with_nested():
+    from time import monotonic
+
+    with freeze_time('2015-01-01') as frozen_datetime_1:
+        initial_monotonic_1 = time.monotonic()
+        with freeze_time('2015-12-25') as frozen_datetime_2:
+            initial_monotonic_2 = time.monotonic()
+            frozen_datetime_2.tick()
+            assert time.monotonic() == initial_monotonic_2 + 1
+        assert time.monotonic() == initial_monotonic_1
+        frozen_datetime_1.tick()
+        assert time.monotonic() == initial_monotonic_1 + 1
 
 
 def test_should_use_real_time():

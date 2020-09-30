@@ -62,6 +62,14 @@ def test_ticking_time():
         assert time.time() > 1326585599.0
 
 
+@utils.cpython_only
+def test_ticking_monotonic():
+    with freeze_time("Jan 14th, 2012, 23:59:59", tick=True):
+        initial_monotonic = time.monotonic()
+        time.sleep(0.001)  # Deal with potential clock resolution problems
+        assert time.monotonic() > initial_monotonic
+
+
 @mock.patch('freezegun.api._is_cpython', False)
 def test_pypy_compat():
     try:
