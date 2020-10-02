@@ -13,7 +13,7 @@ FreezeGun is a library that allows your Python tests to travel through time by m
 Usage
 -----
 
-Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), datetime.date.today(), time.time(), time.localtime(), time.gmtime(), and time.strftime() will return the time that has been frozen.
+Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), datetime.date.today(), time.time(), time.localtime(), time.gmtime(), and time.strftime() will return the time that has been frozen. time.monotonic() will also be frozen, but as usual it makes no guarantees about its absolute value, only its changes over time.
 
 Decorator
 ~~~~~~~~~
@@ -174,7 +174,7 @@ FreezeGun allows for the time to be manually forwarded as well.
 
 .. code-block:: python
 
-    def test_manual_increment():
+    def test_manual_tick():
         initial_datetime = datetime.datetime(year=1, month=7, day=12,
                                             hour=15, minute=6, second=3)
         with freeze_time(initial_datetime) as frozen_datetime:
@@ -187,6 +187,18 @@ FreezeGun allows for the time to be manually forwarded as well.
             frozen_datetime.tick(delta=datetime.timedelta(seconds=10))
             initial_datetime += datetime.timedelta(seconds=10)
             assert frozen_datetime() == initial_datetime
+
+.. code-block:: python
+
+    def test_monotonic_manual_tick():
+        initial_datetime = datetime.datetime(year=1, month=7, day=12,
+                                            hour=15, minute=6, second=3)
+        with freeze_time(initial_datetime) as frozen_datetime:
+            monotonic_t0 = time.monotonic()
+            frozen_datetime.tick(1.0)
+            monotonic_t1 = time.monotonic()
+            assert monotonic_t1 == monotonic_t0 + 1.0
+
 
 Moving time to specify datetime
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
