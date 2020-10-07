@@ -17,3 +17,4 @@ Patches and Suggestions
 - `Dan Elkis <github.com/rinslow>`_
 - `Bastien Vallet <github.com/djailla>`_
 - `Julian Mehnle <github.com/jmehnle>`_
+- `Lukasz Balcerzak <https://github.com/lukaszb>`_
