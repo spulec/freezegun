@@ -1,6 +1,6 @@
 
 
-DEFAULT_IGNORE = [
+DEFAULT_IGNORE_LIST = [
     'nose.plugins',
     'six.moves',
     'django.utils.six.moves',
@@ -15,12 +15,26 @@ DEFAULT_IGNORE = [
 
 
 class Settings:
-    def __init__(self, default_ignore=None):
-        self.default_ignore = default_ignore or DEFAULT_IGNORE[:]
+    def __init__(self, default_ignore_list=None):
+        self.default_ignore_list = default_ignore_list or DEFAULT_IGNORE_LIST[:]
 
 
 settings = Settings()
 
 
-def configure(default_ignore=None):
-    settings.default_ignore = default_ignore
+class ConfigurationError(Exception):
+    pass
+
+
+def configure(default_ignore_list=None, extend_ignore_list=None):
+    if default_ignore_list is not None and extend_ignore_list is not None:
+        raise ConfigurationError("Either default_ignore_list or extend_ignore_list might be given, not both")
+    if default_ignore_list:
+        settings.default_ignore_list = default_ignore_list
+    if extend_ignore_list:
+        settings.default_ignore_list = [*settings.default_ignore_list, *extend_ignore_list]
+
+
+def reset_config():
+    global settings
+    settings = Settings()

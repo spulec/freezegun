@@ -305,7 +305,14 @@ It's possible to set your own default ignore list:
 
     import freezegun
 
-    freezegun.configure(default_ignore=['threading', 'tensorflow'])
+    freezegun.configure(default_ignore_list=['threading', 'tensorflow'])
 
 
-Please note this will override default ignore list.
+Please note this will override default ignore list. If you want to extend existing defaults
+please use:
+
+.. code-block:: python
+
+    import freezegun
+
+    freezegun.configure(extend_ignore_list=['tensorflow'])

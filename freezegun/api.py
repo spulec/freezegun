@@ -810,8 +810,8 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     if ignore is None:
         ignore = []
     ignore = ignore[:]
-    if config.settings.default_ignore:
-        ignore.extend(config.settings.default_ignore)
+    if config.settings.default_ignore_list:
+        ignore.extend(config.settings.default_ignore_list)
 
     return _freeze_time(
         time_to_freeze_str=time_to_freeze,
