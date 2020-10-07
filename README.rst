@@ -264,3 +264,48 @@ On Debian systems:
 .. code-block:: bash
 
     $ sudo apt-get install python-freezegun
+
+
+Ignore packages
+---------------
+
+Sometimes it's desired to ignore FreezeGun behaviour for particular packages (i.e. libraries).
+It's possible to ignore them for a single invocation:
+
+
+.. code-block:: python
+
+    from freezegun import freeze_time
+
+    with freeze_time('2020-10-06', ignore=['threading']):
+        # ...
+
+
+By default FreezeGun ignores following packages:
+
+.. code-block:: python
+
+    [
+        'nose.plugins',
+        'six.moves',
+        'django.utils.six.moves',
+        'google.gax',
+        'threading',
+        'Queue',
+        'selenium',
+        '_pytest.terminal.',
+        '_pytest.runner.',
+        'gi',
+    ]
+
+
+It's possible to set your own default ignore list:
+
+.. code-block:: python
+
+    import freezegun
+
+    freezegun.configure(default_ignore=['threading', 'tensorflow'])
+
+
+Please note this will override default ignore list.

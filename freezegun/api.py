@@ -1,3 +1,4 @@
+from . import config
 import dateutil
 import datetime
 import functools
@@ -809,19 +810,18 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     if ignore is None:
         ignore = []
     ignore = ignore[:]
-    ignore.extend(['nose.plugins',
-        'six.moves',
-        'django.utils.six.moves',
-        'google.gax',
-        'threading',
-        'Queue',
-        'selenium',
-        '_pytest.terminal.',
-        '_pytest.runner.',
-        'gi',
-    ])
+    if config.settings.default_ignore:
+        ignore.extend(config.settings.default_ignore)
 
-    return _freeze_time(time_to_freeze, tz_offset, ignore, tick, as_arg, as_kwarg, auto_tick_seconds)
+    return _freeze_time(
+        time_to_freeze_str=time_to_freeze,
+        tz_offset=tz_offset,
+        ignore=ignore,
+        tick=tick,
+        as_arg=as_arg,
+        as_kwarg=as_kwarg,
+        auto_tick_seconds=auto_tick_seconds,
+    )
 
 
 # Setup adapters for sqlite
