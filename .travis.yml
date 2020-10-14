@@ -1,3 +1,6 @@
+arch:
+   - amd64
+   - ppc64le
 language: python
 python:
   - 3.5
@@ -5,8 +8,15 @@ python:
   - 3.7
   - 3.8
   - pypy3
-
-install: pip install tox-travis
+matrix:
+  exclude:
+     - python: 3.7       
+       arch: ppc64le
+     - python: pypy3     # No pypy3 support for ppc64le
+       arch: ppc64le
+before_install:
+        - if [ "$TRAVIS_ARCH" = "ppc64le" ]; then sudo chown -Rv $USER:$GROUP ~/.cache/pip/wheels; fi
+install:  pip install tox-travis
 script:
   tox
 after_success:
