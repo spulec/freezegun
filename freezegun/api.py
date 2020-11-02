@@ -167,6 +167,10 @@ def _should_use_real_time():
     if not call_stack_inspection_limit:
         return False
 
+    # Means stop() has already been called, so we can now return the real time
+    if not ignore_lists:
+        return True
+
     if not ignore_lists[-1]:
         return False
 
