@@ -1,13 +1,24 @@
 #!/usr/bin/env python
+import os
+import re
 
 from setuptools import setup
 
 with open('README.rst') as f:
     readme = f.read()
 
+
+def read_version():
+    with open(os.path.join('freezegun', '__init__.py')) as f:
+        m = re.search(r'''__version__\s*=\s*['"]([^'"]*)['"]''', f.read())
+        if m:
+            return m.group(1)
+        raise ValueError("couldn't find version")
+
+
 setup(
     name='freezegun',
-    version='1.0.0',
+    version=read_version(),
     description='Let your Python tests travel through time',
     long_description=readme,
     author='Steve Pulec',
