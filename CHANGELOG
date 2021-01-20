@@ -1,8 +1,15 @@
 Freezegun Changelog
 ===================
 
-Latest
-------
+1.1.0
+-----
+
+* Add support for `time.monotonic` (and `…_ns`)
+
+* Allow to configure default ignore list, and also to just extend the default
+
+* Fixed when accessing from thread after stop()
+
 
 1.0.0
 ------

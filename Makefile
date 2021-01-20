@@ -14,6 +14,9 @@ travis:
 tdaemon:
 	tdaemon -t nose ./tests/ --custom-args="--with-growl"
 
+tag:
+	python create_tag.py
+
 publish:
 	rm -rf dist
 	python -m pep517.build --source --binary .
