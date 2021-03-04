@@ -1,6 +1,7 @@
 from unittest import mock
 import freezegun
 import freezegun.config
+from freezegun import TargetsDefault
 
 
 def setup_function():
@@ -31,7 +32,9 @@ def test_default_ignore_list_is_overridden():
             as_arg=False,
             as_kwarg='',
             auto_tick_seconds=0,
+            targets=TargetsDefault,
         )
+
 
 def test_extend_default_ignore_list():
     freezegun.configure(extend_ignore_list=['tensorflow'])
@@ -62,4 +65,5 @@ def test_extend_default_ignore_list():
             as_arg=False,
             as_kwarg='',
             auto_tick_seconds=0,
+            targets=TargetsDefault,
         )
