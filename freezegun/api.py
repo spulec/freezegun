@@ -858,6 +858,9 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
     )
 
 
+freeze_time_with_monotonic = functools.partial(freeze_time, targets=TargetsAll)
+
+
 # Setup adapters for sqlite
 try:
     # noinspection PyUnresolvedReferences

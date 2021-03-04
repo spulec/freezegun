@@ -8,6 +8,7 @@ from freezegun.api import (
     Target, real_date, real_datetime, FakeDate, FakeDatetime, real_gmtime,
     fake_gmtime, real_localtime, fake_localtime, fake_monotonic, real_monotonic,
     real_strftime, fake_strftime, real_time, fake_time,
+    freeze_time_with_monotonic,
 )
 
 HAS_TIME_NS = hasattr(time, 'time_ns')
@@ -61,6 +62,15 @@ def test_default_targets():
                 if target not in (Target.MONOTONIC, Target.MONOTONIC_NS)
                 else real
             )
+
+    for target, module, real, fake in TARGETS:
+        assert getattr(module, target) == real
+
+
+def test_freeze_time_with_monotonic():
+    with freeze_time_with_monotonic():
+        for target, module, real, fake in TARGETS:
+            assert getattr(module, target) == fake
 
     for target, module, real, fake in TARGETS:
         assert getattr(module, target) == real
