@@ -574,7 +574,7 @@ class _freeze_time(object):
         self.modules_at_start = set()
         self.as_arg = as_arg
         self.as_kwarg = as_kwarg
-        self.targets = targets
+        self.targets = frozenset(map(Target, targets))
 
     def __call__(self, func):
         if inspect.isclass(func):
