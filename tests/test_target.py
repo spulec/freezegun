@@ -74,3 +74,8 @@ def test_freeze_time_with_monotonic():
 
     for target, module, real, fake in TARGETS:
         assert getattr(module, target) == real
+
+
+def test_invalid_target():
+    with pytest.raises(ValueError, match="'invalid' is not a valid Target"):
+        freeze_time(targets=('invalid',))
