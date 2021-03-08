@@ -6,7 +6,9 @@ freezegun
 :copyright: (c) 2012 by Steve Pulec.
 
 """
-from .api import freeze_time
+from .api import (
+    freeze_time, freeze_time_with_monotonic, Target, TargetsAll, TargetsDefault,
+)
 from .config import configure
 
 __title__ = 'freezegun'
@@ -16,4 +18,8 @@ __license__ = 'Apache License 2.0'
 __copyright__ = 'Copyright 2012 Steve Pulec'
 
 
-__all__ = ["freeze_time", "configure"]
+__all__ = [
+    "freeze_time", "freeze_time_with_monotonic",
+    "Target", "TargetsAll", "TargetsDefault",
+    "configure"
+]

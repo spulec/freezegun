@@ -1,3 +1,5 @@
+from enum import Enum
+
 from . import config
 import dateutil
 import datetime
@@ -539,9 +541,30 @@ class StepTickTimeFactory(object):
         self.tick(delta=delta)
 
 
+class Target(str, Enum):
+    DATE = 'date'
+    DATETIME = 'datetime'
+    GMTIME = 'gmtime'
+    LOCALTIME = 'localtime'
+    MONOTONIC = 'monotonic'
+    STRFTIME = 'strftime'
+    TIME = 'time'
+    TIME_NS = 'time_ns'
+    MONOTONIC_NS = 'monotonic_ns'
+    CLOCK = 'clock'
+
+
+TargetsDefault = frozenset(
+    target
+    for target in Target
+    if target not in (Target.MONOTONIC, Target.MONOTONIC_NS)
+)
+TargetsAll = frozenset(Target)
+
+
 class _freeze_time(object):
 
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, as_kwarg, auto_tick_seconds):
+    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, as_kwarg, auto_tick_seconds, targets):
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = _parse_tz_offset(tz_offset)
         self.ignore = tuple(ignore)
@@ -551,6 +574,7 @@ class _freeze_time(object):
         self.modules_at_start = set()
         self.as_arg = as_arg
         self.as_kwarg = as_kwarg
+        self.targets = frozenset(map(Target, targets))
 
     def __call__(self, func):
         if inspect.isclass(func):
@@ -633,45 +657,50 @@ class _freeze_time(object):
             return freeze_factory
 
         # Change the modules
-        datetime.datetime = FakeDatetime
-        datetime.date = FakeDate
+        to_patch = []
 
-        time.time = fake_time
-        time.monotonic = fake_monotonic
-        time.localtime = fake_localtime
-        time.gmtime = fake_gmtime
-        time.strftime = fake_strftime
+        if Target.DATETIME in self.targets:
+            datetime.datetime = FakeDatetime
+            to_patch.append(('real_datetime', real_datetime, FakeDatetime))
+            copyreg.dispatch_table[real_datetime] = pickle_fake_datetime
+        if Target.DATE in self.targets:
+            datetime.date = FakeDate
+            to_patch.append(('real_date', real_date, FakeDate))
+            copyreg.dispatch_table[real_date] = pickle_fake_date
+
+        if Target.TIME in self.targets:
+            time.time = fake_time
+            to_patch.append(('real_time', real_time, fake_time))
+        if Target.MONOTONIC in self.targets:
+            time.monotonic = fake_monotonic
+            to_patch.append(('real_monotonic', real_monotonic, fake_monotonic))
+        if Target.LOCALTIME in self.targets:
+            time.localtime = fake_localtime
+            to_patch.append(('real_localtime', real_localtime, fake_localtime))
+        if Target.GMTIME in self.targets:
+            time.gmtime = fake_gmtime
+            to_patch.append(('real_gmtime', real_gmtime, fake_gmtime))
+        if Target.STRFTIME in self.targets:
+            time.strftime = fake_strftime
+            to_patch.append(('real_strftime', real_strftime, fake_strftime))
+
+        if _TIME_NS_PRESENT and Target.TIME_NS in self.targets:
+            time.time_ns = fake_time_ns
+            to_patch.append(('real_time_ns', real_time_ns, fake_time_ns))
+        if _MONOTONIC_NS_PRESENT and Target.MONOTONIC_NS in self.targets:
+            time.monotonic_ns = fake_monotonic_ns
+            to_patch.append(('real_monotonic_ns', real_monotonic_ns, fake_monotonic_ns))
+        if real_clock is not None and Target.CLOCK in self.targets:
+            # time.clock is deprecated and was removed in Python 3.8
+            time.clock = fake_clock
+            to_patch.append(('real_clock', real_clock, fake_clock))
+
         if uuid_generate_time_attr:
             setattr(uuid, uuid_generate_time_attr, None)
         uuid._UuidCreate = None
         uuid._last_timestamp = None
 
-        copyreg.dispatch_table[real_datetime] = pickle_fake_datetime
-        copyreg.dispatch_table[real_date] = pickle_fake_date
-
         # Change any place where the module had already been imported
-        to_patch = [
-            ('real_date', real_date, FakeDate),
-            ('real_datetime', real_datetime, FakeDatetime),
-            ('real_gmtime', real_gmtime, fake_gmtime),
-            ('real_localtime', real_localtime, fake_localtime),
-            ('real_monotonic', real_monotonic, fake_monotonic),
-            ('real_strftime', real_strftime, fake_strftime),
-            ('real_time', real_time, fake_time),
-        ]
-
-        if _TIME_NS_PRESENT:
-            time.time_ns = fake_time_ns
-            to_patch.append(('real_time_ns', real_time_ns, fake_time_ns))
-
-        if _MONOTONIC_NS_PRESENT:
-            time.monotonic_ns = fake_monotonic_ns
-            to_patch.append(('real_monotonic_ns', real_monotonic_ns, fake_monotonic_ns))
-
-        if real_clock is not None:
-            # time.clock is deprecated and was removed in Python 3.8
-            time.clock = fake_clock
-            to_patch.append(('real_clock', real_clock, fake_clock))
 
         self.fake_names = tuple(fake.__name__ for real_name, real, fake in to_patch)
         self.reals = {id(fake): real for real_name, real, fake in to_patch}
@@ -710,8 +739,8 @@ class _freeze_time(object):
         if not freeze_factories:
             datetime.datetime = real_datetime
             datetime.date = real_date
-            copyreg.dispatch_table.pop(real_datetime)
-            copyreg.dispatch_table.pop(real_date)
+            copyreg.dispatch_table.pop(real_datetime, None)
+            copyreg.dispatch_table.pop(real_date, None)
             for module, module_attribute, original_value in self.undo_changes:
                 setattr(module, module_attribute, original_value)
             self.undo_changes = []
@@ -787,7 +816,7 @@ class _freeze_time(object):
 
 
 def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, as_kwarg='',
-                auto_tick_seconds=0):
+                auto_tick_seconds=0, targets=TargetsDefault):
     acceptable_times = (type(None), _string_type, datetime.date, datetime.timedelta,
              types.FunctionType, types.GeneratorType)
 
@@ -802,14 +831,14 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
 
     if isinstance(time_to_freeze, types.FunctionType):
-        return freeze_time(time_to_freeze(), tz_offset, ignore, tick, auto_tick_seconds)
+        return freeze_time(time_to_freeze(), tz_offset, ignore, tick, auto_tick_seconds, targets)
 
     if isinstance(time_to_freeze, types.GeneratorType):
-        return freeze_time(next(time_to_freeze), tz_offset, ignore, tick, auto_tick_seconds)
+        return freeze_time(next(time_to_freeze), tz_offset, ignore, tick, auto_tick_seconds, targets)
 
     if MayaDT is not None and isinstance(time_to_freeze, MayaDT):
         return freeze_time(time_to_freeze.datetime(), tz_offset, ignore,
-                           tick, as_arg)
+                           tick, as_arg, targets)
 
     if ignore is None:
         ignore = []
@@ -825,7 +854,11 @@ def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_ar
         as_arg=as_arg,
         as_kwarg=as_kwarg,
         auto_tick_seconds=auto_tick_seconds,
+        targets=targets,
     )
+
+
+freeze_time_with_monotonic = functools.partial(freeze_time, targets=TargetsAll)
 
 
 # Setup adapters for sqlite

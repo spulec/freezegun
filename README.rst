@@ -13,7 +13,7 @@ FreezeGun is a library that allows your Python tests to travel through time by m
 Usage
 -----
 
-Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), datetime.date.today(), time.time(), time.localtime(), time.gmtime(), and time.strftime() will return the time that has been frozen. time.monotonic() will also be frozen, but as usual it makes no guarantees about its absolute value, only its changes over time.
+Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), datetime.date.today(), time.time(), time.localtime(), time.gmtime(), and time.strftime() will return the time that has been frozen. time.monotonic() (and time.monotonic_ns()) are not frozen by default and it makes no guarantees about its absolute value, only its changes over time.
 
 Decorator
 ~~~~~~~~~
@@ -193,7 +193,7 @@ FreezeGun allows for the time to be manually forwarded as well.
     def test_monotonic_manual_tick():
         initial_datetime = datetime.datetime(year=1, month=7, day=12,
                                             hour=15, minute=6, second=3)
-        with freeze_time(initial_datetime) as frozen_datetime:
+        with freeze_time_with_monotonic(initial_datetime) as frozen_datetime:
             monotonic_t0 = time.monotonic()
             frozen_datetime.tick(1.0)
             monotonic_t1 = time.monotonic()
@@ -316,3 +316,25 @@ please use:
     import freezegun
 
     freezegun.configure(extend_ignore_list=['tensorflow'])
+
+
+Selective freezing
+------------------
+
+By default, `freeze_time` ignores monotonic time freezing to avoid possibly
+unexpected behaviour in asynchronous and other settings. To freeze it anyway, one
+can use `freeze_time_with_monotonic()` or provide a sequence-like `targets` argument
+to `freeze_time()` using the `Target` enum:
+
+.. code-block:: python
+
+    from freezegun import freeze_time, freeze_time_with_monotonic, Target, TargetsAll
+
+    with freeze_time_with_monotonic('2020-10-06'):
+        # ...
+
+    with freeze_time('2020-10-06', targets=TargetsAll):
+        # ...
+
+    with freeze_time('2020-10-06', targets=(Target.TIME, Target.DATETIME)):
+        # ...
