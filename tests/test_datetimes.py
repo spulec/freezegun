@@ -10,8 +10,8 @@ from dateutil.tz import UTC
 import pytest
 from tests import utils
 
-from freezegun import freeze_time
-from freezegun.api import FakeDatetime, FakeDate, TargetsAll
+from freezegun import freeze_time, freeze_time_with_monotonic
+from freezegun.api import FakeDatetime, FakeDate
 
 try:
     import maya
@@ -205,7 +205,7 @@ def test_bad_time_argument():
 def test_time_monotonic():
     initial_datetime = datetime.datetime(year=1, month=7, day=12,
                                         hour=15, minute=6, second=3)
-    with freeze_time(initial_datetime, targets=TargetsAll) as frozen_datetime:
+    with freeze_time_with_monotonic(initial_datetime) as frozen_datetime:
         monotonic_t0 = time.monotonic()
         if HAS_MONOTONIC_NS:
             monotonic_ns_t0 = time.monotonic_ns()
@@ -680,7 +680,7 @@ def test_time_with_nested():
 def test_monotonic_with_nested():
     from time import monotonic
 
-    with freeze_time('2015-01-01', targets=TargetsAll) as frozen_datetime_1:
+    with freeze_time_with_monotonic('2015-01-01') as frozen_datetime_1:
         initial_monotonic_1 = time.monotonic()
         with freeze_time('2015-12-25') as frozen_datetime_2:
             initial_monotonic_2 = time.monotonic()
