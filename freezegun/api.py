@@ -353,6 +353,8 @@ class FakeDate(with_metaclass(FakeDateMeta, real_date)):
 
     @classmethod
     def today(cls):
+        if _should_use_real_time():
+            return real_date.today()
         result = cls._date_to_freeze() + cls._tz_offset()
         return date_to_fakedate(result)
 
@@ -404,7 +406,7 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     @classmethod
     def fromtimestamp(cls, t, tz=None):
-        if tz is None:
+        if not _should_use_real_time() and tz is None:
             return real_datetime.fromtimestamp(
                     t, tz=dateutil.tz.tzoffset("freezegun", cls._tz_offset())
                 ).replace(tzinfo=None)
@@ -412,12 +414,20 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     def timestamp(self):
         if self.tzinfo is None:
-            return (self - _EPOCH - self._tz_offset()).total_seconds()
+            if _should_use_real_time():
+                # access naive datetime out of freeze_time, thus fallback to local timezone
+                tz_offset = tzlocal.utcoffset(self)
+            else:
+                tz_offset = self._tz_offset()
+            return (self - _EPOCH - tz_offset).total_seconds()
         return (self - _EPOCHTZ).total_seconds()
 
     @classmethod
     def now(cls, tz=None):
-        now = cls._time_to_freeze() or real_datetime.now()
+        if _should_use_real_time():
+            return real_datetime.now(tz=tz)
+
+        now = cls._time_to_freeze()
         if tz:
             result = tz.fromutc(now.replace(tzinfo=tz)) + cls._tz_offset()
         else:
@@ -441,13 +451,15 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
 
     @classmethod
     def utcnow(cls):
-        result = cls._time_to_freeze() or real_datetime.utcnow()
+        if _should_use_real_time():
+            real_datetime.utcnow()
+
+        result = cls._time_to_freeze()
         return datetime_to_fakedatetime(result)
 
     @staticmethod
     def _time_to_freeze():
-        if freeze_factories:
-            return get_current_time()
+        return get_current_time()
 
     @classmethod
     def _tz_offset(cls):
