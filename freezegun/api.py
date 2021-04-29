@@ -490,6 +490,13 @@ class TickingDateTimeFactory(object):
     def __call__(self):
         return self.time_to_freeze + (real_datetime.now() - self.start)
 
+    def tick(self, delta=datetime.timedelta(seconds=1)):
+        if isinstance(delta, numbers.Real):
+            # noinspection PyTypeChecker
+            self.time_to_freeze += datetime.timedelta(seconds=delta)
+        else:
+            self.time_to_freeze += delta
+
 
 class FrozenDateTimeFactory(object):
 
