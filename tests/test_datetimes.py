@@ -22,6 +22,7 @@ except ImportError:
 HAS_CLOCK = hasattr(time, 'clock')
 HAS_TIME_NS = hasattr(time, 'time_ns')
 HAS_MONOTONIC_NS = hasattr(time, 'monotonic_ns')
+HAS_PERF_COUNTER_NS = hasattr(time, 'perf_counter_ns')
 
 class temp_locale(object):
     """Temporarily change the locale."""
@@ -59,6 +60,7 @@ def test_simple_api():
     freezer.start()
     assert time.time() == expected_timestamp
     assert time.monotonic() >= 0.0
+    assert time.perf_counter() >= 0.0
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
     assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14)
     assert datetime.date.today() == datetime.date(2012, 1, 14)
@@ -66,6 +68,7 @@ def test_simple_api():
     freezer.stop()
     assert time.time() != expected_timestamp
     assert time.monotonic() >= 0.0
+    assert time.perf_counter() >= 0.0
     assert datetime.datetime.now() != datetime.datetime(2012, 1, 14)
     assert datetime.datetime.utcnow() != datetime.datetime(2012, 1, 14)
     freezer = freeze_time("2012-01-10 13:52:01")
@@ -117,6 +120,7 @@ def test_zero_tz_offset_with_time():
     assert datetime.datetime.utcnow() == datetime.datetime(1970, 1, 1)
     assert time.time() == 0.0
     assert time.monotonic() >= 0.0
+    assert time.perf_counter() >= 0.0
     freezer.stop()
 
 
@@ -130,6 +134,7 @@ def test_tz_offset_with_time():
     assert datetime.datetime.utcnow() == datetime.datetime(1970, 1, 1)
     assert time.time() == 0.0
     assert time.monotonic() >= 0
+    assert time.perf_counter() >= 0
     freezer.stop()
 
 
@@ -202,27 +207,32 @@ def test_bad_time_argument():
         assert False, "Bad values should raise a ValueError"
 
 
-def test_time_monotonic():
+@pytest.mark.parametrize("func_name, has_func, tick_size", (
+    ("monotonic", True, 1.0),
+    ("monotonic_ns", HAS_MONOTONIC_NS, int(1e9)),
+    ("perf_counter", True, 1.0),
+    ("perf_counter_ns", HAS_PERF_COUNTER_NS, int(1e9)),)
+)
+def test_time_monotonic(func_name, has_func, tick_size):
     initial_datetime = datetime.datetime(year=1, month=7, day=12,
                                         hour=15, minute=6, second=3)
+    if not has_func:
+        pytest.skip("%s does not exist in current version" % func_name)
+
     with freeze_time(initial_datetime) as frozen_datetime:
-        monotonic_t0 = time.monotonic()
-        if HAS_MONOTONIC_NS:
-            monotonic_ns_t0 = time.monotonic_ns()
+        func = getattr(time, func_name)
+        t0 = func()
 
         frozen_datetime.tick()
-        monotonic_t1 = time.monotonic()
-        assert monotonic_t1 == monotonic_t0 + 1.0
-        if HAS_MONOTONIC_NS:
-            monotonic_ns_t1 = time.monotonic_ns()
-            assert monotonic_ns_t1 == monotonic_ns_t0 + 1000000000
+
+        t1 = func()
+
+        assert t1 == t0 + tick_size
 
         frozen_datetime.tick(10)
-        monotonic_t11 = time.monotonic()
-        assert monotonic_t11 == monotonic_t1 + 10.0
-        if HAS_MONOTONIC_NS:
-            monotonic_ns_t11 = time.monotonic_ns()
-            assert monotonic_ns_t11 == monotonic_ns_t1 + 10000000000
+
+        t11 = func()
+        assert t11 == t1 + 10 * tick_size
 
 
 def test_time_gmtime():
@@ -677,18 +687,22 @@ def test_time_with_nested():
         assert time() == second
 
 
-def test_monotonic_with_nested():
-    from time import monotonic
+@pytest.mark.parametrize("func_name",
+    ("monotonic", "perf_counter")
+)
+def test_monotonic_with_nested(func_name):
+    __import__("time", fromlist=[func_name])
+    invoke_time_func = lambda: getattr(time, func_name)()
 
     with freeze_time('2015-01-01') as frozen_datetime_1:
-        initial_monotonic_1 = time.monotonic()
+        initial_t1 = invoke_time_func()
         with freeze_time('2015-12-25') as frozen_datetime_2:
-            initial_monotonic_2 = time.monotonic()
+            initial_t2 = invoke_time_func()
             frozen_datetime_2.tick()
-            assert time.monotonic() == initial_monotonic_2 + 1
-        assert time.monotonic() == initial_monotonic_1
+            assert invoke_time_func() == initial_t2 + 1
+        assert invoke_time_func() == initial_t1
         frozen_datetime_1.tick()
-        assert time.monotonic() == initial_monotonic_1 + 1
+        assert invoke_time_func() == initial_t1 + 1
 
 
 def test_should_use_real_time():
