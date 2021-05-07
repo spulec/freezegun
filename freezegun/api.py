@@ -598,7 +598,10 @@ class _freeze_time(object):
                         continue
                     seen.add(attr)
 
-                    if not callable(attr_value) or inspect.isclass(attr_value):
+                    # staticmethods are callable from Python 3.10 . Hence skip them from decoration
+                    if (not callable(attr_value)
+                        or inspect.isclass(attr_value)
+                        or isinstance(attr_value, staticmethod)):
                         continue
 
                     try:
