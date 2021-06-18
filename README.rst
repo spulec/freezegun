@@ -13,7 +13,7 @@ FreezeGun is a library that allows your Python tests to travel through time by m
 Usage
 -----
 
-Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), datetime.date.today(), time.time(), time.localtime(), time.gmtime(), and time.strftime() will return the time that has been frozen. time.monotonic() will also be frozen, but as usual it makes no guarantees about its absolute value, only its changes over time.
+Once the decorator or context manager have been invoked, all calls to datetime.datetime.now(), datetime.datetime.utcnow(), datetime.date.today(), time.time(), time.localtime(), time.gmtime(), and time.strftime() will return the time that has been frozen. time.monotonic() and time.perf_counter() will also be frozen, but as usual it makes no guarantees about their absolute value, only their changes over time.
 
 Decorator
 ~~~~~~~~~

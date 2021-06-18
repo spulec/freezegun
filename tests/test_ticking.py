@@ -1,4 +1,5 @@
 import datetime
+import sys
 import time
 
 from unittest import mock
@@ -62,12 +63,26 @@ def test_ticking_time():
         assert time.time() > 1326585599.0
 
 
-@utils.cpython_only
-def test_ticking_monotonic():
+@utils.cpython_only_mark
+@pytest.mark.parametrize("func_name",
+    ("monotonic", "monotonic_ns", "perf_counter", "perf_counter_ns"),
+)
+def test_ticking_monotonic(func_name):
+    if sys.version_info[0:2] >= (3, 7):
+        # All of these functions should exist in Python 3.7+, so this test helps
+        # avoid inappropriate skipping when we've accidentally typo-ed the name
+        # of one of these functions 😅
+        assert hasattr(time, func_name)
+    else:
+        if not hasattr(time, func_name):
+            pytest.skip(
+                "time.%s does not exist in the current Python version" % func_name)
+
+    func = getattr(time, func_name)
     with freeze_time("Jan 14th, 2012, 23:59:59", tick=True):
-        initial_monotonic = time.monotonic()
+        initial = func()
         time.sleep(0.001)  # Deal with potential clock resolution problems
-        assert time.monotonic() > initial_monotonic
+        assert func() > initial
 
 
 @mock.patch('freezegun.api._is_cpython', False)

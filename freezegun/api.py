@@ -24,6 +24,7 @@ except ImportError:
 
 _TIME_NS_PRESENT = hasattr(time, 'time_ns')
 _MONOTONIC_NS_PRESENT = hasattr(time, 'monotonic_ns')
+_PERF_COUNTER_NS_PRESENT = hasattr(time, 'perf_counter_ns')
 _EPOCH = datetime.datetime(1970, 1, 1)
 _EPOCHTZ = datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.UTC)
 
@@ -31,10 +32,11 @@ real_time = time.time
 real_localtime = time.localtime
 real_gmtime = time.gmtime
 real_monotonic = time.monotonic
+real_perf_counter = time.perf_counter
 real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
-real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_strftime, real_date, real_datetime]
+real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_perf_counter, real_strftime, real_date, real_datetime]
 
 if _TIME_NS_PRESENT:
     real_time_ns = time.time_ns
@@ -43,6 +45,10 @@ if _TIME_NS_PRESENT:
 if _MONOTONIC_NS_PRESENT:
     real_monotonic_ns = time.monotonic_ns
     real_date_objects.append(real_monotonic_ns)
+
+if _PERF_COUNTER_NS_PRESENT:
+    real_perf_counter_ns = time.perf_counter_ns
+    real_date_objects.append(real_perf_counter_ns)
 
 _real_time_object_ids = {id(obj) for obj in real_date_objects}
 
@@ -222,21 +228,51 @@ def fake_gmtime(t=None):
     return get_current_time().timetuple()
 
 
+def _get_fake_monotonic():
+    # For monotonic timers like .monotonic(), .perf_counter(), etc
+    current_time = get_current_time()
+    return (
+        calendar.timegm(current_time.timetuple()) +
+        current_time.microsecond / 1e6
+    )
+
+
+def _get_fake_monotonic_ns():
+    # For monotonic timers like .monotonic(), .perf_counter(), etc
+    current_time = get_current_time()
+    return (
+        calendar.timegm(current_time.timetuple()) * 1000000 +
+        current_time.microsecond
+    ) * 1000
+
+
 def fake_monotonic():
     if _should_use_real_time():
         return real_monotonic()
-    current_time = get_current_time()
-    return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
+
+    return _get_fake_monotonic()
+
+
+def fake_perf_counter():
+    if _should_use_real_time():
+        return real_perf_counter()
+
+    return _get_fake_monotonic()
+
 
 if _MONOTONIC_NS_PRESENT:
     def fake_monotonic_ns():
         if _should_use_real_time():
             return real_monotonic_ns()
-        current_time = get_current_time()
-        return (
-            calendar.timegm(current_time.timetuple()) * 1000000 +
-            current_time.microsecond
-        ) * 1000
+
+        return _get_fake_monotonic_ns()
+
+
+if _PERF_COUNTER_NS_PRESENT:
+    def fake_perf_counter_ns():
+        if _should_use_real_time():
+            return real_perf_counter_ns()
+        return _get_fake_monotonic_ns()
 
 
 def fake_strftime(format, time_to_format=None):
@@ -638,6 +674,7 @@ class _freeze_time(object):
 
         time.time = fake_time
         time.monotonic = fake_monotonic
+        time.perf_counter = fake_perf_counter
         time.localtime = fake_localtime
         time.gmtime = fake_gmtime
         time.strftime = fake_strftime
@@ -656,6 +693,7 @@ class _freeze_time(object):
             ('real_gmtime', real_gmtime, fake_gmtime),
             ('real_localtime', real_localtime, fake_localtime),
             ('real_monotonic', real_monotonic, fake_monotonic),
+            ('real_perf_counter', real_perf_counter, fake_perf_counter),
             ('real_strftime', real_strftime, fake_strftime),
             ('real_time', real_time, fake_time),
         ]
@@ -667,6 +705,10 @@ class _freeze_time(object):
         if _MONOTONIC_NS_PRESENT:
             time.monotonic_ns = fake_monotonic_ns
             to_patch.append(('real_monotonic_ns', real_monotonic_ns, fake_monotonic_ns))
+
+        if _PERF_COUNTER_NS_PRESENT:
+            time.perf_counter_ns = fake_perf_counter_ns
+            to_patch.append(('real_perf_counter_ns', real_perf_counter_ns, fake_perf_counter_ns))
 
         if real_clock is not None:
             # time.clock is deprecated and was removed in Python 3.8
@@ -745,6 +787,7 @@ class _freeze_time(object):
 
             time.time = real_time
             time.monotonic = real_monotonic
+            time.perf_counter = real_perf_counter
             time.gmtime = real_gmtime
             time.localtime = real_localtime
             time.strftime = real_strftime
@@ -755,6 +798,9 @@ class _freeze_time(object):
 
             if _MONOTONIC_NS_PRESENT:
                 time.monotonic_ns = real_monotonic_ns
+
+            if _PERF_COUNTER_NS_PRESENT:
+                time.perf_counter_ns = real_perf_counter_ns
 
             if uuid_generate_time_attr:
                 setattr(uuid, uuid_generate_time_attr, real_uuid_generate_time)
