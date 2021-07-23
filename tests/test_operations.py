@@ -66,7 +66,7 @@ def test_datetime_timezone_real():
 @freeze_time("2012-01-14 2:00:00", tz_offset=-4)
 def test_datetime_timezone_real_with_offset():
     now = datetime.datetime.now(tz=GMT5())
-    assert now == datetime.datetime(2012, 1, 14, 3, tzinfo=GMT5())
+    assert now == datetime.datetime(2012, 1, 14, 7, tzinfo=GMT5())
     assert now.utcoffset() == timedelta(0, 60 * 60 * 5)
 
 
