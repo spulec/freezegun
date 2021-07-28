@@ -452,7 +452,7 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
     @classmethod
     def utcnow(cls):
         if _should_use_real_time():
-            real_datetime.utcnow()
+            return real_datetime.utcnow()
 
         result = cls._time_to_freeze()
         return datetime_to_fakedatetime(result)
