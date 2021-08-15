@@ -178,7 +178,7 @@ def test_import_after_start():
     assert another_module.get_fake_localtime() is fake_localtime
     assert another_module.get_fake_gmtime() is fake_gmtime
     assert another_module.get_fake_strftime() is fake_strftime
-
+    del sys.modules['tests.another_module']
 
 def test_none_as_initial():
     with freeze_time() as ft:
