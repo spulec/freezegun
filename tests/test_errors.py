@@ -6,7 +6,7 @@ import pytest
 from freezegun import freeze_time
 
 
-class ModuleWithError(object):
+class ModuleWithError:
     """
     A module that triggers an error on __dir__ access.
 

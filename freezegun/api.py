@@ -1,4 +1,6 @@
 from . import config
+from ._async import wrap_coroutine
+import copyreg
 import dateutil
 import datetime
 import functools
@@ -15,7 +17,6 @@ import inspect
 
 from dateutil import parser
 from dateutil.tz import tzlocal
-
 
 try:
     from maya import MayaDT
@@ -60,13 +61,6 @@ tz_offsets = []
 ignore_lists = []
 tick_flags = []
 
-# Python3 doesn't have basestring, but it does have str.
-try:
-    # noinspection PyUnresolvedReferences
-    _string_type = basestring
-except NameError:
-    _string_type = str
-
 try:
     # noinspection PyUnresolvedReferences
     real_uuid_generate_time = uuid._uuid_generate_time
@@ -86,23 +80,6 @@ try:
     real_uuid_create = uuid._UuidCreate
 except (AttributeError, ImportError):
     real_uuid_create = None
-
-try:
-    import copy_reg as copyreg
-except ImportError:
-    import copyreg
-
-try:
-    iscoroutinefunction = inspect.iscoroutinefunction
-    if sys.version_info < (3, 5):
-        from freezegun._async_coroutine import wrap_coroutine
-    else:
-        from freezegun._async import wrap_coroutine
-except AttributeError:
-    iscoroutinefunction = lambda x: False
-
-    def wrap_coroutine(*args):
-        raise NotImplementedError()
 
 
 # keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
@@ -517,7 +494,7 @@ def _parse_tz_offset(tz_offset):
         return datetime.timedelta(hours=tz_offset)
 
 
-class TickingDateTimeFactory(object):
+class TickingDateTimeFactory:
 
     def __init__(self, time_to_freeze, start):
         self.time_to_freeze = time_to_freeze
@@ -527,7 +504,7 @@ class TickingDateTimeFactory(object):
         return self.time_to_freeze + (real_datetime.now() - self.start)
 
 
-class FrozenDateTimeFactory(object):
+class FrozenDateTimeFactory:
 
     def __init__(self, time_to_freeze):
         self.time_to_freeze = time_to_freeze
@@ -549,7 +526,7 @@ class FrozenDateTimeFactory(object):
         self.tick(delta=delta)
 
 
-class StepTickTimeFactory(object):
+class StepTickTimeFactory:
 
     def __init__(self, time_to_freeze, step_width):
         self.time_to_freeze = time_to_freeze
@@ -575,7 +552,7 @@ class StepTickTimeFactory(object):
         self.tick(delta=delta)
 
 
-class _freeze_time(object):
+class _freeze_time:
 
     def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, as_kwarg, auto_tick_seconds):
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
@@ -591,7 +568,7 @@ class _freeze_time(object):
     def __call__(self, func):
         if inspect.isclass(func):
             return self.decorate_class(func)
-        elif iscoroutinefunction(func):
+        elif inspect.iscoroutinefunction(func):
             return self.decorate_coroutine(func)
         return self.decorate_callable(func)
 
@@ -600,9 +577,8 @@ class _freeze_time(object):
             # If it's a TestCase, we assume you want to freeze the time for the
             # tests, from setUpClass to tearDownClass
 
-            # Use getattr as in Python 2.6 they are optional
-            orig_setUpClass = getattr(klass, 'setUpClass', None)
-            orig_tearDownClass = getattr(klass, 'tearDownClass', None)
+            orig_setUpClass = klass.setUpClass
+            orig_tearDownClass = klass.tearDownClass
 
             # noinspection PyDecorator
             @classmethod
@@ -825,16 +801,12 @@ class _freeze_time(object):
             return result
         functools.update_wrapper(wrapper, func)
 
-        # update_wrapper already sets __wrapped__ in Python 3.2+, this is only
-        # needed for Python 2.x support
-        wrapper.__wrapped__ = func
-
         return wrapper
 
 
 def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, as_kwarg='',
                 auto_tick_seconds=0):
-    acceptable_times = (type(None), _string_type, datetime.date, datetime.timedelta,
+    acceptable_times = (type(None), str, datetime.date, datetime.timedelta,
              types.FunctionType, types.GeneratorType)
 
     if MayaDT is not None:
