@@ -7,7 +7,7 @@ import warnings
 from freezegun import freeze_time
 
 
-class ModuleWithWarning(object):
+class ModuleWithWarning:
     """
     A module that triggers warnings on attribute access.
 

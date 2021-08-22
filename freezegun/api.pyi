@@ -30,6 +30,7 @@ class _freeze_time:
         ignore: Sequence[str],
         tick: bool,
         as_arg: bool,
+        as_kwarg: bool,
         auto_tick_seconds: float,
     ) -> None: ...
     @overload

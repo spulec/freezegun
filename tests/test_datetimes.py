@@ -24,7 +24,7 @@ HAS_TIME_NS = hasattr(time, 'time_ns')
 HAS_MONOTONIC_NS = hasattr(time, 'monotonic_ns')
 HAS_PERF_COUNTER_NS = hasattr(time, 'perf_counter_ns')
 
-class temp_locale(object):
+class temp_locale:
     """Temporarily change the locale."""
 
     def __init__(self, *targets):
@@ -262,7 +262,7 @@ def test_time_clock():
             assert time.clock() == 2
 
 
-class modify_timezone(object):
+class modify_timezone:
 
     def __init__(self, new_timezone):
         self.new_timezone = new_timezone
@@ -412,14 +412,14 @@ def test_decorator_wrapped_attribute():
     assert wrapped.__wrapped__ is to_decorate
 
 
-class Callable(object):
+class Callable:
 
     def __call__(self, *args, **kws):
         return (args, kws)
 
 
 @freeze_time("2012-01-14")
-class Tester(object):
+class Tester:
 
     def test_the_class(self):
         assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
@@ -430,7 +430,7 @@ class Tester(object):
     def test_class_name_preserved_by_decorator(self):
         assert self.__class__.__name__ == "Tester"
 
-    class NotATestClass(object):
+    class NotATestClass:
 
         def perform_operation(self):
             return datetime.date.today()
@@ -442,14 +442,7 @@ class Tester(object):
 
     a_mock = Callable()
 
-    def test_class_decorator_skips_callable_object_py2(self):
-        if sys.version_info[0] != 2:
-            raise SkipTest("test target is Python2")
-        assert self.a_mock.__class__ == Callable
-
     def test_class_decorator_wraps_callable_object_py3(self):
-        if sys.version_info[0] == 2:
-            raise SkipTest("test target is Python3+")
         assert self.a_mock.__wrapped__.__class__ == Callable
 
     @staticmethod
@@ -572,12 +565,12 @@ class TestUnitTestClassDecoratorSubclass(TestUnitTestClassDecorator):
     @classmethod
     def setUpClass(cls):
         # the super() call can fail if the class decoration was done wrong
-        super(TestUnitTestClassDecoratorSubclass, cls).setUpClass()
+        super().setUpClass()
 
     @classmethod
     def tearDownClass(cls):
         # the super() call can fail if the class decoration was done wrong
-        super(TestUnitTestClassDecoratorSubclass, cls).tearDownClass()
+        super().tearDownClass()
 
     def test_class_name_preserved_by_decorator(self):
         self.assertEqual(self.__class__.__name__,

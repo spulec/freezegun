@@ -14,7 +14,7 @@ def test_time_alias():
 
 
 @freeze_time('2013-04-09')
-class TestCallOtherFuncInTestClassDecoratorWithAlias(object):
+class TestCallOtherFuncInTestClassDecoratorWithAlias:
 
     def test_calls_other_method(self):
         assert datetime_aliased(2013, 4, 9) == datetime_aliased.today()

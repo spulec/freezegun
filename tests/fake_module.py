@@ -26,7 +26,7 @@ def fake_strftime_function():
     return strftime("%Y")
 
 
-class EqualToAnything(object):
+class EqualToAnything:
     description = 'This is the equal_to_anything object'
 
     def __eq__(self, other):
