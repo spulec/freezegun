@@ -11,9 +11,6 @@ test:
 travis:
 	pytest --cov
 
-tdaemon:
-	tdaemon -t nose ./tests/ --custom-args="--with-growl"
-
 tag:
 	python create_tag.py
 
