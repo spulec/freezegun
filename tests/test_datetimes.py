@@ -724,7 +724,7 @@ def test_should_use_real_time():
         assert calendar.timegm(time.gmtime()) == expected_frozen
         assert calendar.timegm(time_tuple) == timestamp_to_convert
 
-    with freeze_time(frozen, ignore=['_pytest', 'nose']):
+    with freeze_time(frozen, ignore=['_pytest']):
         assert time.time() != expected_frozen
         # assert time.localtime() != expected_frozen_local
         assert time.gmtime() != expected_frozen_gmt
