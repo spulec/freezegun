@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 
 init:
-	python setup.py develop
+	python -m pip install -e develop
 	pip install -r requirements.txt
 
 test:
