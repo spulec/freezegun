@@ -305,20 +305,21 @@ def date_to_fakedate(date):
 
 
 class FakeDate(real_date, metaclass=FakeDateMeta):
-    def __add__(self, other):
-        result = real_date.__add__(self, other)
-        if result is NotImplemented:
-            return result
-        return date_to_fakedate(result)
-
-    def __sub__(self, other):
-        result = real_date.__sub__(self, other)
-        if result is NotImplemented:
-            return result
-        if isinstance(result, real_date):
+    if sys.version_info < (3, 8):
+        def __add__(self, other):
+            result = real_date.__add__(self, other)
+            if result is NotImplemented:
+                return result
             return date_to_fakedate(result)
-        else:
-            return result
+
+        def __sub__(self, other):
+            result = real_date.__sub__(self, other)
+            if result is NotImplemented:
+                return result
+            if isinstance(result, real_date):
+                return date_to_fakedate(result)
+            else:
+                return result
 
     @classmethod
     def today(cls):
@@ -348,20 +349,21 @@ class FakeDatetimeMeta(FakeDateMeta):
 
 
 class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
-    def __add__(self, other):
-        result = real_datetime.__add__(self, other)
-        if result is NotImplemented:
-            return result
-        return datetime_to_fakedatetime(result)
-
-    def __sub__(self, other):
-        result = real_datetime.__sub__(self, other)
-        if result is NotImplemented:
-            return result
-        if isinstance(result, real_datetime):
+    if sys.version_info < (3, 8):
+        def __add__(self, other):
+            result = real_datetime.__add__(self, other)
+            if result is NotImplemented:
+                return result
             return datetime_to_fakedatetime(result)
-        else:
-            return result
+
+        def __sub__(self, other):
+            result = real_datetime.__sub__(self, other)
+            if result is NotImplemented:
+                return result
+            if isinstance(result, real_datetime):
+                return datetime_to_fakedatetime(result)
+            else:
+                return result
 
     def astimezone(self, tz=None):
         if tz is None:
