@@ -1,6 +1,7 @@
 import datetime
-from freezegun import freeze_time
 import sqlite3
+
+from freezegun import freeze_time
 
 
 @freeze_time("2013-01-01")

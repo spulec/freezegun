@@ -1,17 +1,17 @@
 from datetime import date, datetime
-from time import time, localtime, gmtime, strftime
+from time import gmtime, localtime, strftime, time
 
 from freezegun.api import (
-    FakeDatetime,
     FakeDate,
-    fake_time,
-    fake_localtime,
+    FakeDatetime,
     fake_gmtime,
+    fake_localtime,
     fake_strftime,
+    fake_time,
 )
 
-
 # Reals
+
 
 def get_datetime():
     return datetime
@@ -38,6 +38,7 @@ def get_strftime():
 
 
 # Fakes
+
 
 def get_fake_datetime():
     return FakeDatetime

@@ -1,12 +1,13 @@
 import datetime
 import sys
 import time
-
 from unittest import mock
+
 import pytest
 
 from freezegun import freeze_time
 from tests import utils
+
 
 @utils.cpython_only
 def test_ticking_datetime():
@@ -15,23 +16,24 @@ def test_ticking_datetime():
         assert datetime.datetime.now() > datetime.datetime(2012, 1, 14)
 
 
-@pytest.mark.skipif(not hasattr(time, "clock"),
-                    reason="time.clock was removed in Python 3.8")
+@pytest.mark.skipif(
+    not hasattr(time, "clock"), reason="time.clock was removed in Python 3.8"
+)
 @utils.cpython_only
 def test_ticking_time_clock():
-    with freeze_time('2012-01-14 03:21:34', tick=True):
+    with freeze_time("2012-01-14 03:21:34", tick=True):
         first = time.clock()
         time.sleep(0.001)  # Deal with potential clock resolution problems
-        with freeze_time('2012-01-14 03:21:35', tick=True):
+        with freeze_time("2012-01-14 03:21:35", tick=True):
             second = time.clock()
             time.sleep(0.001)  # Deal with potential clock resolution problems
 
-        with freeze_time('2012-01-14 03:21:36', tick=True):
+        with freeze_time("2012-01-14 03:21:36", tick=True):
             third = time.clock()
             time.sleep(0.001)
 
         # Rewind time backwards
-        with freeze_time('2012-01-14 03:20:00', tick=True):
+        with freeze_time("2012-01-14 03:20:00", tick=True):
             fourth = time.clock()
             time.sleep(0.001)
             fifth = time.clock()
@@ -64,7 +66,8 @@ def test_ticking_time():
 
 
 @utils.cpython_only_mark
-@pytest.mark.parametrize("func_name",
+@pytest.mark.parametrize(
+    "func_name",
     ("monotonic", "monotonic_ns", "perf_counter", "perf_counter_ns"),
 )
 def test_ticking_monotonic(func_name):
@@ -76,7 +79,8 @@ def test_ticking_monotonic(func_name):
     else:
         if not hasattr(time, func_name):
             pytest.skip(
-                "time.%s does not exist in the current Python version" % func_name)
+                "time.%s does not exist in the current Python version" % func_name
+            )
 
     func = getattr(time, func_name)
     with freeze_time("Jan 14th, 2012, 23:59:59", tick=True):
@@ -85,7 +89,7 @@ def test_ticking_monotonic(func_name):
         assert func() > initial
 
 
-@mock.patch('freezegun.api._is_cpython', False)
+@mock.patch("freezegun.api._is_cpython", False)
 def test_pypy_compat():
     try:
         freeze_time("Jan 14th, 2012, 23:59:59", tick=True)
@@ -95,7 +99,7 @@ def test_pypy_compat():
         raise AssertionError("tick=True should error on non-CPython")
 
 
-@mock.patch('freezegun.api._is_cpython', True)
+@mock.patch("freezegun.api._is_cpython", True)
 def test_non_pypy_compat():
     try:
         freeze_time("Jan 14th, 2012, 23:59:59", tick=True)

@@ -10,8 +10,9 @@ def time_from_uuid(value):
     """
     uvalue = value if isinstance(value, uuid.UUID) else uuid.UUID(value)
     assert uvalue.version == 1
-    return (datetime.datetime(1582, 10, 15) +
-            datetime.timedelta(microseconds=uvalue.time // 10))
+    return datetime.datetime(1582, 10, 15) + datetime.timedelta(
+        microseconds=uvalue.time // 10
+    )
 
 
 def test_uuid1_future():

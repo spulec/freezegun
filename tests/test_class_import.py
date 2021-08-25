@@ -1,5 +1,18 @@
-import time
+import datetime
 import sys
+import time
+
+from freezegun import freeze_time
+from freezegun.api import (
+    FakeDate,
+    FakeDatetime,
+    fake_gmtime,
+    fake_localtime,
+    fake_strftime,
+    fake_time,
+)
+
+from . import fake_module
 from .fake_module import (
     fake_date_function,
     fake_datetime_function,
@@ -8,17 +21,6 @@ from .fake_module import (
     fake_strftime_function,
     fake_time_function,
 )
-from . import fake_module
-from freezegun import freeze_time
-from freezegun.api import (
-    FakeDatetime,
-    FakeDate,
-    fake_time,
-    fake_localtime,
-    fake_gmtime,
-    fake_strftime,
-)
-import datetime
 
 
 @freeze_time("2012-01-14")
@@ -61,7 +63,7 @@ def test_isinstance_works():
     date = datetime.date.today()
     now = datetime.datetime.now()
 
-    freezer = freeze_time('2011-01-01')
+    freezer = freeze_time("2011-01-01")
     freezer.start()
     assert isinstance(date, datetime.date)
     assert not isinstance(date, datetime.datetime)
@@ -74,7 +76,7 @@ def test_issubclass_works():
     real_date = datetime.date
     real_datetime = datetime.datetime
 
-    freezer = freeze_time('2011-01-01')
+    freezer = freeze_time("2011-01-01")
     freezer.start()
     assert issubclass(real_date, datetime.date)
     assert issubclass(real_datetime, datetime.datetime)
@@ -83,7 +85,7 @@ def test_issubclass_works():
 
 def test_fake_uses_real_when_ignored():
     real_time_before = time.time()
-    with freeze_time('2012-01-14', ignore=['tests.fake_module']):
+    with freeze_time("2012-01-14", ignore=["tests.fake_module"]):
         real_time = fake_time_function()
     real_time_after = time.time()
     assert real_time_before <= real_time <= real_time_after
@@ -91,11 +93,12 @@ def test_fake_uses_real_when_ignored():
 
 def test_can_ignore_email_module():
     from email.utils import formatdate
-    with freeze_time('2012-01-14'):
+
+    with freeze_time("2012-01-14"):
         faked_date_str = formatdate()
 
     before_date_str = formatdate()
-    with freeze_time('2012-01-14', ignore=['email']):
+    with freeze_time("2012-01-14", ignore=["email"]):
         date_str = formatdate()
 
     after_date_str = formatdate()
@@ -103,9 +106,12 @@ def test_can_ignore_email_module():
     assert before_date_str <= date_str <= after_date_str
 
 
-@freeze_time('2011-01-01')
+@freeze_time("2011-01-01")
 def test_avoid_replacing_equal_to_anything():
-    assert fake_module.equal_to_anything.description == 'This is the equal_to_anything object'
+    assert (
+        fake_module.equal_to_anything.description
+        == "This is the equal_to_anything object"
+    )
 
 
 @freeze_time("2012-01-14 12:00:00")
@@ -127,12 +133,12 @@ def test_fake_gmtime_function():
 
 @freeze_time("2012-01-14")
 def test_fake_strftime_function():
-    assert fake_strftime_function() == '2012'
+    assert fake_strftime_function() == "2012"
 
 
 def test_import_after_start():
-    with freeze_time('2012-01-14'):
-        assert 'tests.another_module' not in sys.modules.keys()
+    with freeze_time("2012-01-14"):
+        assert "tests.another_module" not in sys.modules.keys()
         from tests import another_module
 
         # Reals
@@ -178,9 +184,10 @@ def test_import_after_start():
     assert another_module.get_fake_localtime() is fake_localtime
     assert another_module.get_fake_gmtime() is fake_gmtime
     assert another_module.get_fake_strftime() is fake_strftime
-    del sys.modules['tests.another_module']
+    del sys.modules["tests.another_module"]
+
 
 def test_none_as_initial():
     with freeze_time() as ft:
-        ft.move_to('2012-01-14')
-        assert fake_strftime_function() == '2012'
+        ft.move_to("2012-01-14")
+        assert fake_strftime_function() == "2012"

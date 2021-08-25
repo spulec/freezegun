@@ -1,6 +1,7 @@
-from freezegun import freeze_time
 from datetime import datetime as datetime_aliased
 from time import time as time_aliased
+
+from freezegun import freeze_time
 
 
 @freeze_time("1980-01-01")
@@ -13,9 +14,8 @@ def test_time_alias():
     assert time_aliased() == 0.0
 
 
-@freeze_time('2013-04-09')
+@freeze_time("2013-04-09")
 class TestCallOtherFuncInTestClassDecoratorWithAlias:
-
     def test_calls_other_method(self):
         assert datetime_aliased(2013, 4, 9) == datetime_aliased.today()
         self.some_other_func()

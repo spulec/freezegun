@@ -1,10 +1,16 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+target-version = ["py36"]
+
+[tool.isort]
+profile = "black"
+
 [tool.mypy]
 strict = true
 pretty = true
 show_column_numbers = true
 show_error_codes = true
 show_error_context = true
-
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"

@@ -5,9 +5,14 @@ on:
   - push
 
 jobs:
-  mypy:
-    name: mypy
+  lint:
+    name: ${{ matrix.tox-target }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tox-target:
+          - lint
+          - mypy
 
     steps:
       - uses: actions/checkout@master
@@ -19,7 +24,7 @@ jobs:
         run: pip install tox
 
       - name: Run tests
-        run: tox -e mypy
+        run: tox -e ${{ matrix.tox-target }}
 
   tests:
     name: Python ${{ matrix.python-version }}

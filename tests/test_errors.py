@@ -3,6 +3,7 @@ import datetime
 import sys
 
 import pytest
+
 from freezegun import freeze_time
 
 
@@ -19,7 +20,8 @@ class ModuleWithError:
 
     See: https://github.com/ipython/ipython/blob/5.8.0/IPython/utils/shimmodule.py#L75
     """
-    __name__ = 'module_with_error'
+
+    __name__ = "module_with_error"
     __dict__ = {}
 
     def __init__(self, error_type):
@@ -37,17 +39,17 @@ class ModuleWithError:
 def assert_module_with_raised_error(error_type):
     """Install a module into sys.modules that raises an error upon invoking
     __dir__."""
-    module = sys.modules['module_with_error'] = ModuleWithError(error_type)
+    module = sys.modules["module_with_error"] = ModuleWithError(error_type)
 
     try:
         yield
     finally:
-        del sys.modules['module_with_error']
+        del sys.modules["module_with_error"]
 
     assert module.error_triggered
 
 
-@pytest.mark.parametrize('error_type', [ImportError, TypeError])
+@pytest.mark.parametrize("error_type", [ImportError, TypeError])
 def test_ignore_errors_in_start(error_type):
     with assert_module_with_raised_error(error_type):
         freezer = freeze_time(datetime.datetime(2019, 1, 11, 9, 34))
