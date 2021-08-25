@@ -8,9 +8,6 @@ test:
 	rm -f .coverage
 	pytest
 
-travis:
-	pytest --cov
-
 tag:
 	python create_tag.py
 

@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  - pull_request
+  - push
+
+jobs:
+  mypy:
+    name: mypy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: Install tox
+        run: pip install tox
+
+      - name: Run tests
+        run: tox -e mypy
+
+  tests:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - 3.6
+          - 3.7
+          - 3.8
+          - 3.9
+          - pypy3
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install tox
+        run: pip install tox
+
+      - name: Run tests
+        run: tox -e py
