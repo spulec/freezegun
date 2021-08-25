@@ -132,11 +132,6 @@ def _get_cached_module_attributes(module):
     return cached_attrs
 
 
-# Stolen from six
-def with_metaclass(meta, *bases):
-    """Create a base class with a metaclass."""
-    return meta("NewBase", bases, {})
-
 _is_cpython = (
     hasattr(platform, 'python_implementation') and
     platform.python_implementation().lower() == "cpython"
@@ -309,10 +304,7 @@ def date_to_fakedate(date):
                     date.day)
 
 
-class FakeDate(with_metaclass(FakeDateMeta, real_date)):
-    def __new__(cls, *args, **kwargs):
-        return real_date.__new__(cls, *args, **kwargs)
-
+class FakeDate(real_date, metaclass=FakeDateMeta):
     def __add__(self, other):
         result = real_date.__add__(self, other)
         if result is NotImplemented:
@@ -355,10 +347,7 @@ class FakeDatetimeMeta(FakeDateMeta):
         return issubclass(subclass, real_datetime)
 
 
-class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
-    def __new__(cls, *args, **kwargs):
-        return real_datetime.__new__(cls, *args, **kwargs)
-
+class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
     def __add__(self, other):
         result = real_datetime.__add__(self, other)
         if result is NotImplemented:
