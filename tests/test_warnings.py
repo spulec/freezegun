@@ -33,7 +33,7 @@ class ModuleWithWarning:
     def attribute_that_emits_a_warning(self):
         # Use unique warning messages to avoid messages being only reported once
         self.__class__.counter += 1
-        warnings.warn('this is test warning #{counter}'.format(counter=self.__class__.counter))
+        warnings.warn(f'this is test warning #{self.__class__.counter}')
         self.warning_triggered = True
 
 

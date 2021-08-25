@@ -117,7 +117,7 @@ def _get_module_attributes_hash(module):
         module_dir = dir(module)
     except (ImportError, TypeError):
         module_dir = []
-    return '{}-{}'.format(id(module), hash(frozenset(module_dir)))
+    return f'{id(module)}-{hash(frozenset(module_dir))}'
 
 
 def _get_cached_module_attributes(module):
