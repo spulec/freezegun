@@ -592,7 +592,7 @@ class _freeze_time:
 
             seen = set()
 
-            klasses = klass.mro() if hasattr(klass, 'mro') else [klass] + list(klass.__bases__)
+            klasses = klass.mro()
             for base_klass in klasses:
                 for (attr, attr_value) in base_klass.__dict__.items():
                     if attr.startswith('_') or attr in seen:
