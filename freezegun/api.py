@@ -1,31 +1,32 @@
-from . import config
-from ._async import wrap_coroutine
+import calendar
 import copyreg
-import dateutil
 import datetime
 import functools
+import inspect
+import numbers
+import platform
 import sys
 import time
-import uuid
-import calendar
-import unittest
-import platform
-import warnings
 import types
-import numbers
-import inspect
+import unittest
+import uuid
+import warnings
 
+import dateutil
 from dateutil import parser
 from dateutil.tz import tzlocal
+
+from . import config
+from ._async import wrap_coroutine
 
 try:
     from maya import MayaDT
 except ImportError:
     MayaDT = None
 
-_TIME_NS_PRESENT = hasattr(time, 'time_ns')
-_MONOTONIC_NS_PRESENT = hasattr(time, 'monotonic_ns')
-_PERF_COUNTER_NS_PRESENT = hasattr(time, 'perf_counter_ns')
+_TIME_NS_PRESENT = hasattr(time, "time_ns")
+_MONOTONIC_NS_PRESENT = hasattr(time, "monotonic_ns")
+_PERF_COUNTER_NS_PRESENT = hasattr(time, "perf_counter_ns")
 _EPOCH = datetime.datetime(1970, 1, 1)
 _EPOCHTZ = datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.UTC)
 
@@ -37,7 +38,16 @@ real_perf_counter = time.perf_counter
 real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
-real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_perf_counter, real_strftime, real_date, real_datetime]
+real_date_objects = [
+    real_time,
+    real_localtime,
+    real_gmtime,
+    real_monotonic,
+    real_perf_counter,
+    real_strftime,
+    real_date,
+    real_datetime,
+]
 
 if _TIME_NS_PRESENT:
     real_time_ns = time.time_ns
@@ -54,7 +64,7 @@ if _PERF_COUNTER_NS_PRESENT:
 _real_time_object_ids = {id(obj) for obj in real_date_objects}
 
 # time.clock is deprecated and was removed in Python 3.8
-real_clock = getattr(time, 'clock', None)
+real_clock = getattr(time, "clock", None)
 
 freeze_factories = []
 tz_offsets = []
@@ -64,13 +74,13 @@ tick_flags = []
 try:
     # noinspection PyUnresolvedReferences
     real_uuid_generate_time = uuid._uuid_generate_time
-    uuid_generate_time_attr = '_uuid_generate_time'
+    uuid_generate_time_attr = "_uuid_generate_time"
 except AttributeError:
     # noinspection PyUnresolvedReferences
     uuid._load_system_functions()
     # noinspection PyUnresolvedReferences
     real_uuid_generate_time = uuid._generate_time_safe
-    uuid_generate_time_attr = '_generate_time_safe'
+    uuid_generate_time_attr = "_generate_time_safe"
 except ImportError:
     real_uuid_generate_time = None
     uuid_generate_time_attr = None
@@ -82,7 +92,8 @@ except (AttributeError, ImportError):
     real_uuid_create = None
 
 
-# keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
+# Keep a cache of module attributes otherwise freezegun will need to analyze
+# too many modules all the time.
 _GLOBAL_MODULES_CACHE = {}
 
 
@@ -96,7 +107,8 @@ def _get_module_attributes(module):
         try:
             attribute_value = getattr(module, attribute_name)
         except (ImportError, AttributeError, TypeError):
-            # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+            # For certain libraries, this can result in ImportError(_winreg) or
+            # AttributeError (celery).
             continue
         else:
             result.append((attribute_name, attribute_value))
@@ -109,7 +121,10 @@ def _setup_module_cache(module):
     for attribute_name, attribute_value in all_module_attributes:
         if id(attribute_value) in _real_time_object_ids:
             date_attrs.append((attribute_name, attribute_value))
-    _GLOBAL_MODULES_CACHE[module.__name__] = (_get_module_attributes_hash(module), date_attrs)
+    _GLOBAL_MODULES_CACHE[module.__name__] = (
+        _get_module_attributes_hash(module),
+        date_attrs,
+    )
 
 
 def _get_module_attributes_hash(module):
@@ -117,11 +132,11 @@ def _get_module_attributes_hash(module):
         module_dir = dir(module)
     except (ImportError, TypeError):
         module_dir = []
-    return f'{id(module)}-{hash(frozenset(module_dir))}'
+    return f"{id(module)}-{hash(frozenset(module_dir))}"
 
 
 def _get_cached_module_attributes(module):
-    module_hash, cached_attrs = _GLOBAL_MODULES_CACHE.get(module.__name__, ('0', []))
+    module_hash, cached_attrs = _GLOBAL_MODULES_CACHE.get(module.__name__, ("0", []))
     if _get_module_attributes_hash(module) == module_hash:
         return cached_attrs
 
@@ -133,8 +148,8 @@ def _get_cached_module_attributes(module):
 
 
 _is_cpython = (
-    hasattr(platform, 'python_implementation') and
-    platform.python_implementation().lower() == "cpython"
+    hasattr(platform, "python_implementation")
+    and platform.python_implementation().lower() == "cpython"
 )
 
 
@@ -155,7 +170,7 @@ def _should_use_real_time():
     frame = inspect.currentframe().f_back.f_back
 
     for _ in range(call_stack_inspection_limit):
-        module_name = frame.f_globals.get('__name__')
+        module_name = frame.f_globals.get("__name__")
         if module_name and module_name.startswith(ignore_lists[-1]):
             return True
 
@@ -174,9 +189,13 @@ def fake_time():
     if _should_use_real_time():
         return real_time()
     current_time = get_current_time()
-    return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
+    return (
+        calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
+    )
+
 
 if _TIME_NS_PRESENT:
+
     def fake_time_ns():
         if _should_use_real_time():
             return real_time_ns()
@@ -203,18 +222,14 @@ def fake_gmtime(t=None):
 def _get_fake_monotonic():
     # For monotonic timers like .monotonic(), .perf_counter(), etc
     current_time = get_current_time()
-    return (
-        calendar.timegm(current_time.timetuple()) +
-        current_time.microsecond / 1e6
-    )
+    return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1e6
 
 
 def _get_fake_monotonic_ns():
     # For monotonic timers like .monotonic(), .perf_counter(), etc
     current_time = get_current_time()
     return (
-        calendar.timegm(current_time.timetuple()) * 1000000 +
-        current_time.microsecond
+        calendar.timegm(current_time.timetuple()) * 1000000 + current_time.microsecond
     ) * 1000
 
 
@@ -233,6 +248,7 @@ def fake_perf_counter():
 
 
 if _MONOTONIC_NS_PRESENT:
+
     def fake_monotonic_ns():
         if _should_use_real_time():
             return real_monotonic_ns()
@@ -241,6 +257,7 @@ if _MONOTONIC_NS_PRESENT:
 
 
 if _PERF_COUNTER_NS_PRESENT:
+
     def fake_perf_counter_ns():
         if _should_use_real_time():
             return real_perf_counter_ns()
@@ -257,7 +274,9 @@ def fake_strftime(format, time_to_format=None):
     else:
         return real_strftime(format, time_to_format)
 
+
 if real_clock is not None:
+
     def fake_clock():
         if _should_use_real_time():
             return real_clock()
@@ -268,7 +287,7 @@ if real_clock is not None:
         first_frozen_time = freeze_factories[0]()
         last_frozen_time = get_current_time()
 
-        timedelta = (last_frozen_time - first_frozen_time)
+        timedelta = last_frozen_time - first_frozen_time
         total_seconds = timedelta.total_seconds()
 
         if tick_flags[-1]:
@@ -288,20 +307,20 @@ class FakeDateMeta(type):
 
 
 def datetime_to_fakedatetime(datetime):
-    return FakeDatetime(datetime.year,
-                        datetime.month,
-                        datetime.day,
-                        datetime.hour,
-                        datetime.minute,
-                        datetime.second,
-                        datetime.microsecond,
-                        datetime.tzinfo)
+    return FakeDatetime(
+        datetime.year,
+        datetime.month,
+        datetime.day,
+        datetime.hour,
+        datetime.minute,
+        datetime.second,
+        datetime.microsecond,
+        datetime.tzinfo,
+    )
 
 
 def date_to_fakedate(date):
-    return FakeDate(date.year,
-                    date.month,
-                    date.day)
+    return FakeDate(date.year, date.month, date.day)
 
 
 class FakeDate(real_date, metaclass=FakeDateMeta):
@@ -332,6 +351,7 @@ class FakeDate(real_date, metaclass=FakeDateMeta):
     @classmethod
     def _tz_offset(cls):
         return tz_offsets[-1]
+
 
 FakeDate.min = date_to_fakedate(real_date.min)
 FakeDate.max = date_to_fakedate(real_date.max)
@@ -372,8 +392,8 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
     def fromtimestamp(cls, t, tz=None):
         if tz is None:
             return real_datetime.fromtimestamp(
-                    t, tz=dateutil.tz.tzoffset("freezegun", cls._tz_offset())
-                ).replace(tzinfo=None)
+                t, tz=dateutil.tz.tzoffset("freezegun", cls._tz_offset())
+            ).replace(tzinfo=None)
         return datetime_to_fakedatetime(real_datetime.fromtimestamp(t, tz))
 
     def timestamp(self):
@@ -484,7 +504,6 @@ def _parse_tz_offset(tz_offset):
 
 
 class TickingDateTimeFactory:
-
     def __init__(self, time_to_freeze, start):
         self.time_to_freeze = time_to_freeze
         self.start = start
@@ -494,7 +513,6 @@ class TickingDateTimeFactory:
 
 
 class FrozenDateTimeFactory:
-
     def __init__(self, time_to_freeze):
         self.time_to_freeze = time_to_freeze
 
@@ -516,7 +534,6 @@ class FrozenDateTimeFactory:
 
 
 class StepTickTimeFactory:
-
     def __init__(self, time_to_freeze, step_width):
         self.time_to_freeze = time_to_freeze
         self.step_width = step_width
@@ -542,8 +559,16 @@ class StepTickTimeFactory:
 
 
 class _freeze_time:
-
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, as_kwarg, auto_tick_seconds):
+    def __init__(
+        self,
+        time_to_freeze_str,
+        tz_offset,
+        ignore,
+        tick,
+        as_arg,
+        as_kwarg,
+        auto_tick_seconds,
+    ):
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = _parse_tz_offset(tz_offset)
         self.ignore = tuple(ignore)
@@ -595,7 +620,7 @@ class _freeze_time:
             klasses = klass.mro()
             for base_klass in klasses:
                 for (attr, attr_value) in base_klass.__dict__.items():
-                    if attr.startswith('_') or attr in seen:
+                    if attr.startswith("_") or attr in seen:
                         continue
                     seen.add(attr)
 
@@ -605,7 +630,8 @@ class _freeze_time:
                     try:
                         setattr(klass, attr, self(attr_value))
                     except (AttributeError, TypeError):
-                        # Sometimes we can't set this for built-in types and custom callables
+                        # Sometimes we can't set this for built-in types and
+                        # custom callables.
                         continue
             return klass
 
@@ -618,9 +644,13 @@ class _freeze_time:
     def start(self):
 
         if self.auto_tick_seconds:
-            freeze_factory = StepTickTimeFactory(self.time_to_freeze, self.auto_tick_seconds)
+            freeze_factory = StepTickTimeFactory(
+                self.time_to_freeze, self.auto_tick_seconds
+            )
         elif self.tick:
-            freeze_factory = TickingDateTimeFactory(self.time_to_freeze, real_datetime.now())
+            freeze_factory = TickingDateTimeFactory(
+                self.time_to_freeze, real_datetime.now()
+            )
         else:
             freeze_factory = FrozenDateTimeFactory(self.time_to_freeze)
 
@@ -653,32 +683,34 @@ class _freeze_time:
 
         # Change any place where the module had already been imported
         to_patch = [
-            ('real_date', real_date, FakeDate),
-            ('real_datetime', real_datetime, FakeDatetime),
-            ('real_gmtime', real_gmtime, fake_gmtime),
-            ('real_localtime', real_localtime, fake_localtime),
-            ('real_monotonic', real_monotonic, fake_monotonic),
-            ('real_perf_counter', real_perf_counter, fake_perf_counter),
-            ('real_strftime', real_strftime, fake_strftime),
-            ('real_time', real_time, fake_time),
+            ("real_date", real_date, FakeDate),
+            ("real_datetime", real_datetime, FakeDatetime),
+            ("real_gmtime", real_gmtime, fake_gmtime),
+            ("real_localtime", real_localtime, fake_localtime),
+            ("real_monotonic", real_monotonic, fake_monotonic),
+            ("real_perf_counter", real_perf_counter, fake_perf_counter),
+            ("real_strftime", real_strftime, fake_strftime),
+            ("real_time", real_time, fake_time),
         ]
 
         if _TIME_NS_PRESENT:
             time.time_ns = fake_time_ns
-            to_patch.append(('real_time_ns', real_time_ns, fake_time_ns))
+            to_patch.append(("real_time_ns", real_time_ns, fake_time_ns))
 
         if _MONOTONIC_NS_PRESENT:
             time.monotonic_ns = fake_monotonic_ns
-            to_patch.append(('real_monotonic_ns', real_monotonic_ns, fake_monotonic_ns))
+            to_patch.append(("real_monotonic_ns", real_monotonic_ns, fake_monotonic_ns))
 
         if _PERF_COUNTER_NS_PRESENT:
             time.perf_counter_ns = fake_perf_counter_ns
-            to_patch.append(('real_perf_counter_ns', real_perf_counter_ns, fake_perf_counter_ns))
+            to_patch.append(
+                ("real_perf_counter_ns", real_perf_counter_ns, fake_perf_counter_ns)
+            )
 
         if real_clock is not None:
             # time.clock is deprecated and was removed in Python 3.8
             time.clock = fake_clock
-            to_patch.append(('real_clock', real_clock, fake_clock))
+            to_patch.append(("real_clock", real_clock, fake_clock))
 
         self.fake_names = tuple(fake.__name__ for real_name, real, fake in to_patch)
         self.reals = {id(fake): real for real_name, real, fake in to_patch}
@@ -689,14 +721,19 @@ class _freeze_time:
         self.modules_at_start = set(sys.modules.keys())
 
         with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
+            warnings.filterwarnings("ignore")
 
             for mod_name, module in list(sys.modules.items()):
                 if mod_name is None or module is None or mod_name == __name__:
                     continue
-                elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
+                elif mod_name.startswith(self.ignore) or mod_name.endswith(
+                    ".six.moves"
+                ):
                     continue
-                elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                elif not hasattr(module, "__name__") or module.__name__ in (
+                    "datetime",
+                    "time",
+                ):
                     continue
 
                 module_attrs = _get_cached_module_attributes(module)
@@ -727,14 +764,19 @@ class _freeze_time:
             modules_to_restore = set(sys.modules.keys()) - self.modules_at_start
             self.modules_at_start = set()
             with warnings.catch_warnings():
-                warnings.simplefilter('ignore')
+                warnings.simplefilter("ignore")
                 for mod_name in modules_to_restore:
                     module = sys.modules.get(mod_name, None)
                     if mod_name is None or module is None:
                         continue
-                    elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
+                    elif mod_name.startswith(self.ignore) or mod_name.endswith(
+                        ".six.moves"
+                    ):
                         continue
-                    elif not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time'):
+                    elif not hasattr(module, "__name__") or module.__name__ in (
+                        "datetime",
+                        "time",
+                    ):
                         continue
                     for module_attribute in dir(module):
 
@@ -743,7 +785,8 @@ class _freeze_time:
                         try:
                             attribute_value = getattr(module, module_attribute)
                         except (ImportError, AttributeError, TypeError):
-                            # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
+                            # For certain libraries, this can result in
+                            # ImportError(_winreg) or AttributeError (celery).
                             continue
 
                         real = self.reals.get(id(attribute_value))
@@ -779,7 +822,10 @@ class _freeze_time:
         def wrapper(*args, **kwargs):
             with self as time_factory:
                 if self.as_arg and self.as_kwarg:
-                    assert False, "You can't specify both as_arg and as_kwarg at the same time. Pick one."
+                    assert False, (
+                        "You can't specify both as_arg and as_kwarg at the same time. "
+                        "Pick one."
+                    )
                 elif self.as_arg:
                     result = func(time_factory, *args, **kwargs)
                 elif self.as_kwarg:
@@ -788,35 +834,56 @@ class _freeze_time:
                 else:
                     result = func(*args, **kwargs)
             return result
+
         functools.update_wrapper(wrapper, func)
 
         return wrapper
 
 
-def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, as_kwarg='',
-                auto_tick_seconds=0):
-    acceptable_times = (type(None), str, datetime.date, datetime.timedelta,
-             types.FunctionType, types.GeneratorType)
+def freeze_time(
+    time_to_freeze=None,
+    tz_offset=0,
+    ignore=None,
+    tick=False,
+    as_arg=False,
+    as_kwarg="",
+    auto_tick_seconds=0,
+):
+    acceptable_times = (
+        type(None),
+        str,
+        datetime.date,
+        datetime.timedelta,
+        types.FunctionType,
+        types.GeneratorType,
+    )
 
     if MayaDT is not None:
-        acceptable_times += MayaDT,
+        acceptable_times += (MayaDT,)
 
     if not isinstance(time_to_freeze, acceptable_times):
-        raise TypeError(('freeze_time() expected None, a string, date instance, datetime '
-                         'instance, MayaDT, timedelta instance, function or a generator, but got '
-                         'type {}.').format(type(time_to_freeze)))
+        raise TypeError(
+            (
+                "freeze_time() expected None, a string, date instance, datetime "
+                "instance, MayaDT, timedelta instance, function or a generator, but "
+                "got type {}."
+            ).format(type(time_to_freeze))
+        )
     if tick and not _is_cpython:
-        raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
+        raise SystemError(
+            "Calling freeze_time with tick=True is only compatible with CPython"
+        )
 
     if isinstance(time_to_freeze, types.FunctionType):
         return freeze_time(time_to_freeze(), tz_offset, ignore, tick, auto_tick_seconds)
 
     if isinstance(time_to_freeze, types.GeneratorType):
-        return freeze_time(next(time_to_freeze), tz_offset, ignore, tick, auto_tick_seconds)
+        return freeze_time(
+            next(time_to_freeze), tz_offset, ignore, tick, auto_tick_seconds
+        )
 
     if MayaDT is not None and isinstance(time_to_freeze, MayaDT):
-        return freeze_time(time_to_freeze.datetime(), tz_offset, ignore,
-                           tick, as_arg)
+        return freeze_time(time_to_freeze.datetime(), tz_offset, ignore, tick, as_arg)
 
     if ignore is None:
         ignore = []
@@ -862,5 +929,9 @@ except ImportError:
 else:
     pymysql.converters.encoders[FakeDate] = pymysql.converters.encoders[real_date]
     pymysql.converters.conversions[FakeDate] = pymysql.converters.encoders[real_date]
-    pymysql.converters.encoders[FakeDatetime] = pymysql.converters.encoders[real_datetime]
-    pymysql.converters.conversions[FakeDatetime] = pymysql.converters.encoders[real_datetime]
+    pymysql.converters.encoders[FakeDatetime] = pymysql.converters.encoders[
+        real_datetime
+    ]
+    pymysql.converters.conversions[FakeDatetime] = pymysql.converters.encoders[
+        real_datetime
+    ]

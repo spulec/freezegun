@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from time import time, localtime, gmtime, strftime
+from time import gmtime, localtime, strftime, time
 
 
 def fake_datetime_function():
@@ -27,7 +27,7 @@ def fake_strftime_function():
 
 
 class EqualToAnything:
-    description = 'This is the equal_to_anything object'
+    description = "This is the equal_to_anything object"
 
     def __eq__(self, other):
         return True

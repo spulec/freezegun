@@ -1,7 +1,9 @@
 import datetime
-from freezegun import freeze_time
-from dateutil.relativedelta import relativedelta
 from datetime import timedelta, tzinfo
+
+from dateutil.relativedelta import relativedelta
+
+from freezegun import freeze_time
 from tests import utils
 
 
@@ -100,4 +102,3 @@ def test_auto_tick():
     first_time = datetime.datetime.now()
     auto_incremented_time = datetime.datetime.now()
     assert first_time + datetime.timedelta(seconds=15) == auto_incremented_time
-

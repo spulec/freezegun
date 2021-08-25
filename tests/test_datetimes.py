@@ -1,17 +1,16 @@
-import time
 import calendar
 import datetime
-import unittest
 import locale
-import sys
+import time
+import unittest
 from unittest import SkipTest
-from dateutil.tz import UTC
 
 import pytest
-from tests import utils
+from dateutil.tz import UTC
 
 from freezegun import freeze_time
-from freezegun.api import FakeDatetime, FakeDate
+from freezegun.api import FakeDate, FakeDatetime
+from tests import utils
 
 try:
     import maya
@@ -19,10 +18,11 @@ except ImportError:
     maya = None
 
 # time.clock was removed in Python 3.8
-HAS_CLOCK = hasattr(time, 'clock')
-HAS_TIME_NS = hasattr(time, 'time_ns')
-HAS_MONOTONIC_NS = hasattr(time, 'monotonic_ns')
-HAS_PERF_COUNTER_NS = hasattr(time, 'perf_counter_ns')
+HAS_CLOCK = hasattr(time, "clock")
+HAS_TIME_NS = hasattr(time, "time_ns")
+HAS_MONOTONIC_NS = hasattr(time, "monotonic_ns")
+HAS_PERF_COUNTER_NS = hasattr(time, "perf_counter_ns")
+
 
 class temp_locale:
     """Temporarily change the locale."""
@@ -38,15 +38,16 @@ class temp_locale:
                 return
             except locale.Error:
                 pass
-        msg = 'could not set locale to any of: %s' % ', '.join(self.targets)
+        msg = "could not set locale to any of: %s" % ", ".join(self.targets)
         raise SkipTest(msg)
 
     def __exit__(self, *args):
         locale.setlocale(locale.LC_ALL, self.old)
 
+
 # Small sample of locales where '%x' expands to a dd/mm/yyyy string,
 # which can cause trouble when parsed with dateutil.
-_dd_mm_yyyy_locales = ['da_DK.UTF-8', 'de_DE.UTF-8', 'fr_FR.UTF-8']
+_dd_mm_yyyy_locales = ["da_DK.UTF-8", "de_DE.UTF-8", "fr_FR.UTF-8"]
 
 
 def test_simple_api():
@@ -94,8 +95,9 @@ def test_tz_offset():
 
 
 def test_timedelta_tz_offset():
-    freezer = freeze_time("2012-01-14 03:21:34",
-                          tz_offset=-datetime.timedelta(hours=3, minutes=30))
+    freezer = freeze_time(
+        "2012-01-14 03:21:34", tz_offset=-datetime.timedelta(hours=3, minutes=30)
+    )
     freezer.start()
     assert datetime.datetime.now() == datetime.datetime(2012, 1, 13, 23, 51, 34)
     assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14, 3, 21, 34)
@@ -113,7 +115,7 @@ def test_tz_offset_with_today():
 def test_zero_tz_offset_with_time():
     # we expect the system to behave like a system with UTC timezone
     # at the beginning of the Epoch
-    freezer = freeze_time('1970-01-01')
+    freezer = freeze_time("1970-01-01")
     freezer.start()
     assert datetime.date.today() == datetime.date(1970, 1, 1)
     assert datetime.datetime.now() == datetime.datetime(1970, 1, 1)
@@ -127,7 +129,7 @@ def test_zero_tz_offset_with_time():
 def test_tz_offset_with_time():
     # we expect the system to behave like a system with UTC-4 timezone
     # at the beginning of the Epoch (wall clock should be 4 hrs late)
-    freezer = freeze_time('1970-01-01', tz_offset=-4)
+    freezer = freeze_time("1970-01-01", tz_offset=-4)
     freezer.start()
     assert datetime.date.today() == datetime.date(1969, 12, 31)
     assert datetime.datetime.now() == datetime.datetime(1969, 12, 31, 20)
@@ -153,8 +155,9 @@ def test_time_with_dst():
 
 
 def test_manual_increment():
-    initial_datetime = datetime.datetime(year=1, month=7, day=12,
-                                        hour=15, minute=6, second=3)
+    initial_datetime = datetime.datetime(
+        year=1, month=7, day=12, hour=15, minute=6, second=3
+    )
     with freeze_time(initial_datetime) as frozen_datetime:
         assert frozen_datetime() == initial_datetime
 
@@ -168,8 +171,9 @@ def test_manual_increment():
 
 
 def test_manual_increment_seconds():
-    initial_datetime = datetime.datetime(year=1, month=7, day=12,
-                                         hour=15, minute=6, second=3)
+    initial_datetime = datetime.datetime(
+        year=1, month=7, day=12, hour=15, minute=6, second=3
+    )
     with freeze_time(initial_datetime) as frozen_datetime:
         assert frozen_datetime() == initial_datetime
 
@@ -183,11 +187,13 @@ def test_manual_increment_seconds():
 
 
 def test_move_to():
-    initial_datetime = datetime.datetime(year=1, month=7, day=12,
-                                        hour=15, minute=6, second=3)
+    initial_datetime = datetime.datetime(
+        year=1, month=7, day=12, hour=15, minute=6, second=3
+    )
 
-    other_datetime = datetime.datetime(year=2, month=8, day=13,
-                                        hour=14, minute=5, second=0)
+    other_datetime = datetime.datetime(
+        year=2, month=8, day=13, hour=14, minute=5, second=0
+    )
     with freeze_time(initial_datetime) as frozen_datetime:
         assert frozen_datetime() == initial_datetime
 
@@ -207,15 +213,19 @@ def test_bad_time_argument():
         assert False, "Bad values should raise a ValueError"
 
 
-@pytest.mark.parametrize("func_name, has_func, tick_size", (
-    ("monotonic", True, 1.0),
-    ("monotonic_ns", HAS_MONOTONIC_NS, int(1e9)),
-    ("perf_counter", True, 1.0),
-    ("perf_counter_ns", HAS_PERF_COUNTER_NS, int(1e9)),)
+@pytest.mark.parametrize(
+    "func_name, has_func, tick_size",
+    (
+        ("monotonic", True, 1.0),
+        ("monotonic_ns", HAS_MONOTONIC_NS, int(1e9)),
+        ("perf_counter", True, 1.0),
+        ("perf_counter_ns", HAS_PERF_COUNTER_NS, int(1e9)),
+    ),
 )
 def test_time_monotonic(func_name, has_func, tick_size):
-    initial_datetime = datetime.datetime(year=1, month=7, day=12,
-                                        hour=15, minute=6, second=3)
+    initial_datetime = datetime.datetime(
+        year=1, month=7, day=12, hour=15, minute=6, second=3
+    )
     if not has_func:
         pytest.skip("%s does not exist in current version" % func_name)
 
@@ -236,7 +246,7 @@ def test_time_monotonic(func_name, has_func, tick_size):
 
 
 def test_time_gmtime():
-    with freeze_time('2012-01-14 03:21:34'):
+    with freeze_time("2012-01-14 03:21:34"):
         time_struct = time.gmtime()
         assert time_struct.tm_year == 2012
         assert time_struct.tm_mon == 1
@@ -249,21 +259,19 @@ def test_time_gmtime():
         assert time_struct.tm_isdst == -1
 
 
-@pytest.mark.skipif(not HAS_CLOCK,
-                    reason="time.clock was removed in Python 3.8")
+@pytest.mark.skipif(not HAS_CLOCK, reason="time.clock was removed in Python 3.8")
 def test_time_clock():
-    with freeze_time('2012-01-14 03:21:34'):
+    with freeze_time("2012-01-14 03:21:34"):
         assert time.clock() == 0
 
-        with freeze_time('2012-01-14 03:21:35'):
+        with freeze_time("2012-01-14 03:21:35"):
             assert time.clock() == 1
 
-        with freeze_time('2012-01-14 03:21:36'):
+        with freeze_time("2012-01-14 03:21:36"):
             assert time.clock() == 2
 
 
 class modify_timezone:
-
     def __init__(self, new_timezone):
         self.new_timezone = new_timezone
         self.original_timezone = time.timezone
@@ -277,7 +285,7 @@ class modify_timezone:
 
 def test_time_localtime():
     with modify_timezone(-3600):  # Set this for UTC-1
-        with freeze_time('2012-01-14 03:21:34'):
+        with freeze_time("2012-01-14 03:21:34"):
             time_struct = time.localtime()
             assert time_struct.tm_year == 2012
             assert time_struct.tm_mon == 1
@@ -293,21 +301,21 @@ def test_time_localtime():
 
 def test_strftime():
     with modify_timezone(0):
-        with freeze_time('1970-01-01'):
+        with freeze_time("1970-01-01"):
             assert time.strftime("%Y") == "1970"
 
 
 def test_real_strftime_fall_through():
     this_real_year = datetime.datetime.now().year
     with freeze_time():
-        assert time.strftime('%Y') == str(this_real_year)
-        assert time.strftime('%Y', (2001, 1, 1, 1, 1, 1, 1, 1, 1)) == '2001'
+        assert time.strftime("%Y") == str(this_real_year)
+        assert time.strftime("%Y", (2001, 1, 1, 1, 1, 1, 1, 1, 1)) == "2001"
 
 
 def test_date_object():
     frozen_date = datetime.date(year=2012, month=11, day=10)
     date_freezer = freeze_time(frozen_date)
-    regular_freezer = freeze_time('2012-11-10')
+    regular_freezer = freeze_time("2012-11-10")
     assert date_freezer.time_to_freeze == regular_freezer.time_to_freeze
 
 
@@ -334,32 +342,38 @@ def test_invalid_type():
 
 
 def test_datetime_object():
-    frozen_datetime = datetime.datetime(year=2012, month=11, day=10,
-                                        hour=4, minute=15, second=30)
+    frozen_datetime = datetime.datetime(
+        year=2012, month=11, day=10, hour=4, minute=15, second=30
+    )
     datetime_freezer = freeze_time(frozen_datetime)
-    regular_freezer = freeze_time('2012-11-10 04:15:30')
+    regular_freezer = freeze_time("2012-11-10 04:15:30")
     assert datetime_freezer.time_to_freeze == regular_freezer.time_to_freeze
 
 
 def test_function_object():
-    frozen_datetime = datetime.datetime(year=2012, month=11, day=10,
-                                        hour=4, minute=15, second=30)
-    def function(): return frozen_datetime
+    frozen_datetime = datetime.datetime(
+        year=2012, month=11, day=10, hour=4, minute=15, second=30
+    )
+
+    def function():
+        return frozen_datetime
 
     with freeze_time(function):
         assert frozen_datetime == datetime.datetime.now()
 
 
 def test_lambda_object():
-    frozen_datetime = datetime.datetime(year=2012, month=11, day=10,
-                                        hour=4, minute=15, second=30)
+    frozen_datetime = datetime.datetime(
+        year=2012, month=11, day=10, hour=4, minute=15, second=30
+    )
     with freeze_time(lambda: frozen_datetime):
         assert frozen_datetime == datetime.datetime.now()
 
 
 def test_generator_object():
-    frozen_datetimes = (datetime.datetime(year=y, month=1, day=1)
-        for y in range(2010, 2012))
+    frozen_datetimes = (
+        datetime.datetime(year=y, month=1, day=1) for y in range(2010, 2012)
+    )
 
     with freeze_time(frozen_datetimes):
         assert datetime.datetime(2010, 1, 1) == datetime.datetime.now()
@@ -373,20 +387,18 @@ def test_generator_object():
 
 def test_maya_datetimes():
     if not maya:
-        raise SkipTest("maya is optional since it's not supported for "
-                            "enough python versions")
+        raise SkipTest(
+            "maya is optional since it's not supported for " "enough python versions"
+        )
 
     with freeze_time(maya.when("October 2nd, 1997")):
-        assert datetime.datetime.now() == datetime.datetime(
-            year=1997,
-            month=10,
-            day=2
-        )
+        assert datetime.datetime.now() == datetime.datetime(year=1997, month=10, day=2)
 
 
 def test_old_datetime_object():
-    frozen_datetime = datetime.datetime(year=1, month=7, day=12,
-                                        hour=15, minute=6, second=3)
+    frozen_datetime = datetime.datetime(
+        year=1, month=7, day=12, hour=15, minute=6, second=3
+    )
     with freeze_time(frozen_datetime):
         assert datetime.datetime.now() == frozen_datetime
 
@@ -413,14 +425,12 @@ def test_decorator_wrapped_attribute():
 
 
 class Callable:
-
     def __call__(self, *args, **kws):
         return (args, kws)
 
 
 @freeze_time("2012-01-14")
 class Tester:
-
     def test_the_class(self):
         assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
@@ -431,11 +441,10 @@ class Tester:
         assert self.__class__.__name__ == "Tester"
 
     class NotATestClass:
-
         def perform_operation(self):
             return datetime.date.today()
 
-    @freeze_time('2001-01-01')
+    @freeze_time("2001-01-01")
     def test_class_decorator_ignores_nested_class(self):
         not_a_test = self.NotATestClass()
         assert not_a_test.perform_operation() == datetime.date(2001, 1, 1)
@@ -473,7 +482,9 @@ def test_context_manager():
 def test_nested_context_manager():
     with freeze_time("2012-01-14"):
         with freeze_time("2012-12-25"):
-            _assert_datetime_date_and_time_are_all_equal(datetime.datetime(2012, 12, 25))
+            _assert_datetime_date_and_time_are_all_equal(
+                datetime.datetime(2012, 12, 25)
+            )
         _assert_datetime_date_and_time_are_all_equal(datetime.datetime(2012, 1, 14))
     assert datetime.datetime.now() > datetime.datetime(2013, 1, 1)
 
@@ -516,24 +527,25 @@ def test_isinstance_without_active():
 
 
 class TestUnitTestMethodDecorator(unittest.TestCase):
-    @freeze_time('2013-04-09')
+    @freeze_time("2013-04-09")
     def test_method_decorator_works_on_unittest(self):
         self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
 
-    @freeze_time('2013-04-09', as_kwarg='frozen_time')
+    @freeze_time("2013-04-09", as_kwarg="frozen_time")
     def test_method_decorator_works_on_unittest_kwarg_frozen_time(self, frozen_time):
         self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
         self.assertEqual(datetime.date(2013, 4, 9), frozen_time.time_to_freeze.today())
 
-    @freeze_time('2013-04-09', as_kwarg='hello')
+    @freeze_time("2013-04-09", as_kwarg="hello")
     def test_method_decorator_works_on_unittest_kwarg_hello(self, **kwargs):
         self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
-        self.assertEqual(datetime.date(2013, 4, 9), kwargs.get('hello').time_to_freeze.today())
+        self.assertEqual(
+            datetime.date(2013, 4, 9), kwargs.get("hello").time_to_freeze.today()
+        )
 
 
-@freeze_time('2013-04-09')
+@freeze_time("2013-04-09")
 class TestUnitTestClassDecorator(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         assert datetime.date(2013, 4, 9) == datetime.date.today()
@@ -555,7 +567,7 @@ class TestUnitTestClassDecorator(unittest.TestCase):
         self.assertEqual(self.__class__.__name__, "TestUnitTestClassDecorator")
 
 
-@freeze_time('2013-04-09')
+@freeze_time("2013-04-09")
 class TestUnitTestClassDecoratorWithNoSetUpOrTearDown(unittest.TestCase):
     def test_class_decorator_works_on_unittest(self):
         self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
@@ -573,8 +585,7 @@ class TestUnitTestClassDecoratorSubclass(TestUnitTestClassDecorator):
         super().tearDownClass()
 
     def test_class_name_preserved_by_decorator(self):
-        self.assertEqual(self.__class__.__name__,
-                         "TestUnitTestClassDecoratorSubclass")
+        self.assertEqual(self.__class__.__name__, "TestUnitTestClassDecoratorSubclass")
 
 
 class BaseInheritanceFreezableTests(unittest.TestCase):
@@ -594,7 +605,7 @@ class UnfrozenInheritedTests(BaseInheritanceFreezableTests):
         self.assertNotEqual(datetime.date(2013, 4, 9), datetime.date.today())
 
 
-@freeze_time('2013-04-09')
+@freeze_time("2013-04-09")
 class FrozenInheritedTests(BaseInheritanceFreezableTests):
     def test_time_is_frozen(self):
         # In this class, time should be frozen
@@ -604,7 +615,7 @@ class FrozenInheritedTests(BaseInheritanceFreezableTests):
 class TestOldStyleClasses:
     def test_direct_method(self):
         # Make sure old style classes (not inheriting from object) is supported
-        @freeze_time('2013-04-09')
+        @freeze_time("2013-04-09")
         class OldStyleClass:
             def method(self):
                 return datetime.date.today()
@@ -616,7 +627,7 @@ class TestOldStyleClasses:
             def inherited_method(self):
                 return datetime.date.today()
 
-        @freeze_time('2013-04-09')
+        @freeze_time("2013-04-09")
         class OldStyleClass(OldStyleBaseClass):
             pass
 
@@ -669,27 +680,28 @@ def test_freeze_with_timezone_aware_datetime_in_non_utc():
     assert utc_now == datetime.datetime(1970, 1, 1, 4)
 
 
-@freeze_time('2015-01-01')
+@freeze_time("2015-01-01")
 def test_time_with_nested():
     from time import time
+
     first = 1420070400.0
     second = 1420070760.0
 
     assert time() == first
-    with freeze_time('2015-01-01T00:06:00'):
+    with freeze_time("2015-01-01T00:06:00"):
         assert time() == second
 
 
-@pytest.mark.parametrize("func_name",
-    ("monotonic", "perf_counter")
-)
+@pytest.mark.parametrize("func_name", ("monotonic", "perf_counter"))
 def test_monotonic_with_nested(func_name):
     __import__("time", fromlist=[func_name])
-    invoke_time_func = lambda: getattr(time, func_name)()
 
-    with freeze_time('2015-01-01') as frozen_datetime_1:
+    def invoke_time_func():
+        return getattr(time, func_name)()
+
+    with freeze_time("2015-01-01") as frozen_datetime_1:
         initial_t1 = invoke_time_func()
-        with freeze_time('2015-12-25') as frozen_datetime_2:
+        with freeze_time("2015-12-25") as frozen_datetime_2:
             initial_t2 = invoke_time_func()
             frozen_datetime_2.tick()
             assert invoke_time_func() == initial_t2 + 1
@@ -707,6 +719,7 @@ def test_should_use_real_time():
     expected_clock = 0
 
     from freezegun import api
+
     api.call_stack_inspection_limit = 100  # just to increase coverage
 
     timestamp_to_convert = 1579602312
@@ -724,7 +737,7 @@ def test_should_use_real_time():
         assert calendar.timegm(time.gmtime()) == expected_frozen
         assert calendar.timegm(time_tuple) == timestamp_to_convert
 
-    with freeze_time(frozen, ignore=['_pytest']):
+    with freeze_time(frozen, ignore=["_pytest"]):
         assert time.time() != expected_frozen
         # assert time.localtime() != expected_frozen_local
         assert time.gmtime() != expected_frozen_gmt
@@ -737,8 +750,9 @@ def test_should_use_real_time():
         assert calendar.timegm(time_tuple) == timestamp_to_convert
 
 
-@pytest.mark.skipif(not HAS_TIME_NS,
-                    reason="time.time_ns is present only on 3.7 and above")
+@pytest.mark.skipif(
+    not HAS_TIME_NS, reason="time.time_ns is present only on 3.7 and above"
+)
 def test_time_ns():
     freezer = freeze_time("2012-01-14")
     local_time = datetime.datetime(2012, 1, 14)
@@ -755,8 +769,8 @@ def test_time_ns():
 
 def test_compare_datetime_and_time_with_timezone(monkeypatch):
     """
-    Compare the result of datetime.datetime.now() and time.time() in a non-UTC timezone. These
-    should be consistent.
+    Compare the result of datetime.datetime.now() and time.time() in a non-UTC
+    timezone. These should be consistent.
     """
     try:
         with monkeypatch.context() as m, freeze_time("1970-01-01 00:00:00"):
@@ -785,11 +799,13 @@ def test_timestamp_with_tzoffset():
         assert utcnow == datetime.datetime.utcfromtimestamp(time.time())
         assert utcnow == datetime.datetime.utcnow()
 
+
 @pytest.mark.skip("timezone handling is currently incorrect")
 def test_datetime_in_timezone(monkeypatch):
     """
-    It is assumed that the argument passed to freeze_time is in UTC, unless explicitly indicated
-    otherwise. Therefore datetime.now() should return the frozen time with an offset.
+    It is assumed that the argument passed to freeze_time is in UTC, unless
+    explicitly indicated otherwise. Therefore datetime.now() should return the
+    frozen time with an offset.
     """
     try:
         with monkeypatch.context() as m, freeze_time("1970-01-01 00:00:00"):
