@@ -416,7 +416,7 @@ class FakeDatetime(with_metaclass(FakeDatetimeMeta, real_datetime, FakeDate)):
         if self.tzinfo is None:
             if _should_use_real_time():
                 # access naive datetime out of freeze_time, thus fallback to local timezone
-                tz_offset = tzlocal.utcoffset(self)
+                tz_offset = tzlocal().utcoffset(self)
             else:
                 tz_offset = self._tz_offset()
             return (self - _EPOCH - tz_offset).total_seconds()
