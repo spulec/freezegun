@@ -81,6 +81,15 @@ try:
 except (AttributeError, ImportError):
     real_uuid_create = None
 
+try:
+    import pandas as pd
+    _PANDAS_PRESENT = True
+    real_pandas_now = pd.Timestamp.now
+    real_pandas_utcnow = pd.Timestamp.utcnow
+    real_pandas_today = pd.Timestamp.today
+except ImportError:
+    _PANDAS_PRESENT = False
+    real_pandas_now = None
 
 # keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
 _GLOBAL_MODULES_CACHE = {}
@@ -645,6 +654,10 @@ class _freeze_time:
         time.strftime = fake_strftime
         if uuid_generate_time_attr:
             setattr(uuid, uuid_generate_time_attr, None)
+        if _PANDAS_PRESENT:
+            pd.Timestamp.now = FakeDatetime.now
+            pd.Timestamp.utcnow = FakeDatetime.utcnow
+            pd.Timestamp.today = FakeDatetime.today
         uuid._UuidCreate = None
         uuid._last_timestamp = None
 
@@ -771,6 +784,11 @@ class _freeze_time:
                 setattr(uuid, uuid_generate_time_attr, real_uuid_generate_time)
             uuid._UuidCreate = real_uuid_create
             uuid._last_timestamp = None
+
+            if _PANDAS_PRESENT:
+                pd.Timestamp.now = real_pandas_now
+                pd.Timestamp.utcnow = real_pandas_utcnow
+                pd.Timestamp.today = real_pandas_today
 
     def decorate_coroutine(self, coroutine):
         return wrap_coroutine(self, coroutine)

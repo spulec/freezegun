@@ -18,6 +18,13 @@ try:
 except ImportError:
     maya = None
 
+try:
+    import pandas as pd
+    HAS_PANDAS = True
+except ImportError:
+    HAS_PANDAS = False
+
+
 # time.clock was removed in Python 3.8
 HAS_CLOCK = hasattr(time, 'clock')
 HAS_TIME_NS = hasattr(time, 'time_ns')
@@ -58,23 +65,36 @@ def test_simple_api():
     expected_timestamp = time.mktime(utc_time.timetuple())
 
     freezer.start()
-    assert time.time() == expected_timestamp
-    assert time.monotonic() >= 0.0
-    assert time.perf_counter() >= 0.0
-    assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
-    assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14)
-    assert datetime.date.today() == datetime.date(2012, 1, 14)
-    assert datetime.datetime.now().today() == datetime.datetime(2012, 1, 14)
-    freezer.stop()
+    try:
+        assert time.time() == expected_timestamp
+        assert time.monotonic() >= 0.0
+        assert time.perf_counter() >= 0.0
+        assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
+        assert datetime.datetime.utcnow() == datetime.datetime(2012, 1, 14)
+        assert datetime.date.today() == datetime.date(2012, 1, 14)
+        assert datetime.datetime.now().today() == datetime.datetime(2012, 1, 14)
+        if HAS_PANDAS:
+            assert pd.Timestamp.now() == datetime.datetime(2012, 1, 14)
+            assert pd.Timestamp.utcnow() == datetime.datetime(2012, 1, 14)
+            assert pd.Timestamp.today() == datetime.datetime(2012, 1, 14)
+    finally:
+        freezer.stop()
     assert time.time() != expected_timestamp
     assert time.monotonic() >= 0.0
     assert time.perf_counter() >= 0.0
     assert datetime.datetime.now() != datetime.datetime(2012, 1, 14)
     assert datetime.datetime.utcnow() != datetime.datetime(2012, 1, 14)
+    if HAS_PANDAS:
+        assert pd.Timestamp.now() != datetime.datetime(2012, 1, 14)
+        assert pd.Timestamp.utcnow() != datetime.datetime(2012, 1, 14)
     freezer = freeze_time("2012-01-10 13:52:01")
-    freezer.start()
-    assert datetime.datetime.now() == datetime.datetime(2012, 1, 10, 13, 52, 1)
-    freezer.stop()
+    try:
+        freezer.start()
+        assert datetime.datetime.now() == datetime.datetime(2012, 1, 10, 13, 52, 1)
+        if HAS_PANDAS:
+            assert pd.Timestamp.now() == datetime.datetime(2012, 1, 10, 13, 52, 1)
+    finally:
+        freezer.stop()
 
 
 def test_tz_offset():
