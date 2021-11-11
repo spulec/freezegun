@@ -656,13 +656,13 @@ class _freeze_time:
             setattr(uuid, uuid_generate_time_attr, None)
         if _PANDAS_PRESENT:
             def _pd_timestamp_now(*args, **kwargs):
-                return pd.to_datetime(FakeDatetime.now(*args, **kwargs))
+                return pd.Timestamp(FakeDatetime.now(*args, **kwargs))
             
             def _pd_timestamp_utcnow(*args, **kwargs):
-                return pd.to_datetime(FakeDatetime.now(*args, **kwargs))
+                return pd.Timestamp(FakeDatetime.now(*args, **kwargs))
             
             def _pd_timestamp_today(*args, **kwargs):
-                return pd.to_datetime(FakeDatetime.today(*args, **kwargs))
+                return pd.Timestamp(FakeDatetime.today(*args, **kwargs))
 
             pd.Timestamp.now = _pd_timestamp_now
             pd.Timestamp.utcnow = _pd_timestamp_utcnow
