@@ -659,7 +659,7 @@ class _freeze_time:
                 return pd.Timestamp(FakeDatetime.now(*args, **kwargs))
             
             def _pd_timestamp_utcnow(*args, **kwargs):
-                return pd.Timestamp(FakeDatetime.now(*args, **kwargs))
+                return pd.Timestamp(FakeDatetime.utcnow(*args, **kwargs))
             
             def _pd_timestamp_today(*args, **kwargs):
                 return pd.Timestamp(FakeDatetime.today(*args, **kwargs))
