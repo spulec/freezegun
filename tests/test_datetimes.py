@@ -77,6 +77,9 @@ def test_simple_api():
             assert pd.Timestamp.now() == datetime.datetime(2012, 1, 14)
             assert pd.Timestamp.utcnow() == datetime.datetime(2012, 1, 14)
             assert pd.Timestamp.today() == datetime.datetime(2012, 1, 14)
+            assert isinstance(pd.Timestamp.now(), pd.Timestamp)
+            assert isinstance(pd.Timestamp.utcnow(), pd.Timestamp)
+            assert isinstance(pd.Timestamp.today(), pd.Timestamp)
     finally:
         freezer.stop()
     assert time.time() != expected_timestamp
