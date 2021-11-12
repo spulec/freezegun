@@ -677,7 +677,7 @@ class _freeze_time:
 
         if real_clock is not None:
             # time.clock is deprecated and was removed in Python 3.8
-            time.clock = fake_clock
+            time.perf_counter = fake_clock
             to_patch.append(('real_clock', real_clock, fake_clock))
 
         self.fake_names = tuple(fake.__name__ for real_name, real, fake in to_patch)
@@ -756,7 +756,7 @@ class _freeze_time:
             time.gmtime = real_gmtime
             time.localtime = real_localtime
             time.strftime = real_strftime
-            time.clock = real_clock
+            time.perf_counter = real_clock
 
             if _TIME_NS_PRESENT:
                 time.time_ns = real_time_ns
