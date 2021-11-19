@@ -530,6 +530,11 @@ class TestUnitTestMethodDecorator(unittest.TestCase):
         self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
         self.assertEqual(datetime.date(2013, 4, 9), kwargs.get('hello').time_to_freeze.today())
 
+    @freeze_time(lambda: datetime.date(year=2013, month=4, day=9), as_kwarg='frozen_time')
+    def test_method_decorator_works_on_unittest_kwarg_frozen_time_with_func(self, frozen_time):
+        self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
+        self.assertEqual(datetime.date(2013, 4, 9), frozen_time.time_to_freeze.today())
+
 
 @freeze_time('2013-04-09')
 class TestUnitTestClassDecorator(unittest.TestCase):
