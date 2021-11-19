@@ -178,7 +178,28 @@ def test_import_after_start():
     assert another_module.get_fake_localtime() is fake_localtime
     assert another_module.get_fake_gmtime() is fake_gmtime
     assert another_module.get_fake_strftime() is fake_strftime
-    del sys.modules['tests.another_module']
+
+    if "tests.another_module" in sys.modules:
+        del sys.modules["tests.another_module"]
+
+
+def test_ignore_import_after_start():
+    with freeze_time("2012-01-14", ignore=["tests.another_module"]):
+        assert "tests.another_module" not in sys.modules.keys()
+        from tests import another_module
+
+        utcnow = another_module.get_datetime_utcnow()
+        assert utcnow != FakeDatetime(2012, 1, 14)
+
+        now = another_module.get_datetime_now()
+        assert now != FakeDatetime(2012, 1, 14)
+
+        today = another_module.get_date_today()
+        assert today != FakeDate(2012, 1, 14)
+
+    if "tests.another_module" in sys.modules:
+        del sys.modules["tests.another_module"]
+
 
 def test_none_as_initial():
     with freeze_time() as ft:

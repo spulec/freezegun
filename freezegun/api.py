@@ -322,7 +322,11 @@ class FakeDate(real_date, metaclass=FakeDateMeta):
 
     @classmethod
     def today(cls):
-        result = cls._date_to_freeze() + cls._tz_offset()
+        if _should_use_real_time():
+            result = real_date.today() + cls._tz_offset()
+        else:
+            result = cls._date_to_freeze() + cls._tz_offset()
+
         return date_to_fakedate(result)
 
     @staticmethod
@@ -383,7 +387,11 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
 
     @classmethod
     def now(cls, tz=None):
-        now = cls._time_to_freeze() or real_datetime.now()
+        if _should_use_real_time():
+            now = real_datetime.now()
+        else:
+            now = cls._time_to_freeze() or real_datetime.now()
+
         if tz:
             result = tz.fromutc(now.replace(tzinfo=tz)) + cls._tz_offset()
         else:
@@ -407,7 +415,10 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
 
     @classmethod
     def utcnow(cls):
-        result = cls._time_to_freeze() or real_datetime.utcnow()
+        if _should_use_real_time():
+            result = real_datetime.utcnow()
+        else:
+            result = cls._time_to_freeze() or real_datetime.utcnow()
         return datetime_to_fakedatetime(result)
 
     @staticmethod
