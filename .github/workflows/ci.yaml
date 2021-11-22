@@ -46,3 +46,35 @@ jobs:
 
       - name: Run tests
         run: tox -e py
+
+  import-mode-importlib:
+    name: import-mode=importlib
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: Install tox
+        run: pip install tox
+
+      - name: Run tests
+        run: tox -e import-mode-importlib
+
+  import-mode-prepend:
+    name: import-mode=prepend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+
+      - name: Install tox
+        run: pip install tox
+
+      - name: Run tests
+        run: tox -e import-mode-prepend
