@@ -13,7 +13,7 @@ tag:
 
 publish:
 	rm -rf dist
-	python -m pep517.build --source --binary .
+	python -m build
 	twine upload dist/*
 
 venv:
