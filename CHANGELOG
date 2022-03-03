@@ -6,6 +6,10 @@ Freezegun Changelog
 
 * Add support for `time.perf_counter` (and `…_ns`)
 
+* Added typeshed types
+
+* Dropped support for python 3.5
+
 1.1.0
 -----
 
