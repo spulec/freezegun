@@ -19,7 +19,7 @@ jobs:
         run: pip install tox
 
       - name: Run tests
-        run: tox -e mypy
+        run: pip install python-dateutil && tox -e mypy
 
   tests:
     name: Python ${{ matrix.python-version }}
@@ -45,4 +45,4 @@ jobs:
         run: pip install tox
 
       - name: Run tests
-        run: tox -e py
+        run: pip install python-dateutil && tox -e py
