@@ -18,3 +18,4 @@ Patches and Suggestions
 - `Bastien Vallet <github.com/djailla>`_
 - `Julian Mehnle <github.com/jmehnle>`_
 - `Lukasz Balcerzak <https://github.com/lukaszb>`_
+- `Hannes Ljungberg <hannes@5monkeys.se>`_
