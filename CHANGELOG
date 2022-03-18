@@ -1,6 +1,12 @@
 Freezegun Changelog
 ===================
 
+1.2.1
+-----
+
+* Added missing typeshed types from distribution
+
+
 1.2.0
 -----
 
