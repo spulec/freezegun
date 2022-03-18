@@ -7,3 +7,4 @@ dist
 venv/
 .idea
 htmlcov/
+.DS_Store

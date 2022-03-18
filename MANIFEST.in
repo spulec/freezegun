@@ -1,4 +1,6 @@
 include README.rst LICENSE AUTHORS.rst CHANGELOG pyproject.toml
 recursive-include tests *
+include freezegun/py.typed
+recursive-include freezegun *.pyi
 global-exclude __pycache__
 global-exclude *.py[co]
