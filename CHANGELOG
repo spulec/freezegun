@@ -6,6 +6,8 @@ Freezegun Changelog
 
 * Added missing typeshed types from distribution
 
+* Pass all arguments on recursive freeze_time calls
+
 
 1.2.0
 -----
