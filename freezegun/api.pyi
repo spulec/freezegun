@@ -26,7 +26,7 @@ class _freeze_time:
     def __init__(
         self,
         time_to_freeze_str: Optional[_Freezable],
-        tz_offset: float,
+        tz_offset: Union[int, timedelta],
         ignore: Sequence[str],
         tick: bool,
         as_arg: bool,
@@ -49,7 +49,7 @@ class _freeze_time:
 
 def freeze_time(
     time_to_freeze: Optional[Union[_Freezable, Callable[..., _Freezable], Iterator[_Freezable]]] = ...,
-    tz_offset: Optional[float] = ...,
+    tz_offset: Optional[Union[timedelta, int]] = ...,
     ignore: Optional[Sequence[str]] = ...,
     tick: Optional[bool] = ...,
     as_arg: Optional[bool] = ...,
