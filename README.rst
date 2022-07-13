@@ -142,7 +142,7 @@ FreezeGun is able to handle function and generator objects.
 ~~~~~~~~~~~~~~~~~
 
 FreezeGun has an additional ``tick`` argument which will restart time at the given
-value, but then time will keep ticking. This is alternative to the default
+value, but then time will keep ticking. This is an alternative to the default
 parameters which will keep time stopped.
 
 .. code-block:: python
@@ -155,7 +155,7 @@ parameters which will keep time stopped.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 FreezeGun has an additional ``auto_tick_seconds`` argument which will autoincrement the
-value every time by the given amount from the start value. This is alternative to the default
+value every time by the given amount from the start value. This is an alternative to the default
 parameters which will keep time stopped. Note that given ``auto_tick_seconds`` the ``tick`` parameter will be ignored.
 
 .. code-block:: python
