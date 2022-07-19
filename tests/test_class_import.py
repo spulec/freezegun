@@ -1,5 +1,8 @@
 import time
 import sys
+
+import pytest
+
 from .fake_module import (
     fake_date_function,
     fake_datetime_function,
@@ -9,6 +12,7 @@ from .fake_module import (
     fake_time_function,
 )
 from . import fake_module
+from . import fake_module_lazy
 from freezegun import freeze_time
 from freezegun.api import (
     FakeDatetime,
@@ -128,6 +132,14 @@ def test_fake_gmtime_function():
 @freeze_time("2012-01-14")
 def test_fake_strftime_function():
     assert fake_strftime_function() == '2012'
+
+
+@freeze_time("2022-01-01 12:00:00")
+def test_fake_time_function_as_class_attribute():
+    fake_module_lazy.load()
+
+    with pytest.raises(TypeError, match='fake_time\(\) takes 0 positional arguments but 1 was given'):
+        assert fake_module_lazy.TimeAsClassAttribute().call_time()
 
 
 def test_import_after_start():
