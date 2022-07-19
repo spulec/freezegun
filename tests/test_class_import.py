@@ -134,12 +134,15 @@ def test_fake_strftime_function():
     assert fake_strftime_function() == '2012'
 
 
-@freeze_time("2022-01-01 12:00:00")
+@freeze_time("2022-01-01")
 def test_fake_time_function_as_class_attribute():
+    local_time = datetime.datetime(2022, 1, 1)
+    utc_time = local_time - datetime.timedelta(seconds=time.timezone)
+    expected_timestamp = time.mktime(utc_time.timetuple())
+
     fake_module_lazy.load()
 
-    with pytest.raises(TypeError, match='fake_time\(\) takes 0 positional arguments but 1 was given'):
-        assert fake_module_lazy.TimeAsClassAttribute().call_time()
+    assert fake_module_lazy.TimeAsClassAttribute().call_time() == expected_timestamp
 
 
 def test_import_after_start():
