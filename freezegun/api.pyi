@@ -28,7 +28,7 @@ class _freeze_time:
     def __init__(
         self,
         time_to_freeze_str: _Freezable | None,
-        tz_offset: float,
+        tz_offset: int | timedelta,
         ignore: Sequence[str],
         tick: bool,
         as_arg: bool,
@@ -51,7 +51,7 @@ class _freeze_time:
 
 def freeze_time(
     time_to_freeze: _Freezable | Callable[..., _Freezable] | Iterator[_Freezable] | None = ...,
-    tz_offset: float | None = ...,
+    tz_offset: int | timedelta | None = ...,
     ignore: Sequence[str] | None = ...,
     tick: bool | None = ...,
     as_arg: bool | None = ...,
