@@ -37,10 +37,7 @@ def test_import_date_works():
 
 @freeze_time("2012-01-14")
 def test_import_time():
-    local_time = datetime.datetime(2012, 1, 14)
-    utc_time = local_time - datetime.timedelta(seconds=time.timezone)
-    expected_timestamp = time.mktime(utc_time.timetuple())
-    assert fake_time_function() == expected_timestamp
+    assert fake_time_function() == _date_to_time(2012, 1, 14)
 
 
 def test_start_and_stop_works():
@@ -136,13 +133,10 @@ def test_fake_strftime_function():
 
 @freeze_time("2022-01-01")
 def test_fake_time_function_as_class_attribute():
-    local_time = datetime.datetime(2022, 1, 1)
-    utc_time = local_time - datetime.timedelta(seconds=time.timezone)
-    expected_timestamp = time.mktime(utc_time.timetuple())
 
     fake_module_lazy.load()
 
-    assert fake_module_lazy.TimeAsClassAttribute().call_time() == expected_timestamp
+    assert fake_module_lazy.TimeAsClassAttribute().call_time() == _date_to_time(2022, 1, 1)
 
 
 def test_import_after_start():
@@ -199,3 +193,9 @@ def test_none_as_initial():
     with freeze_time() as ft:
         ft.move_to('2012-01-14')
         assert fake_strftime_function() == '2012'
+
+
+def _date_to_time(year, month, day):
+    local_time = datetime.datetime(year, month, day)
+    utc_time = local_time - datetime.timedelta(seconds=time.timezone)
+    return time.mktime(utc_time.timetuple())
