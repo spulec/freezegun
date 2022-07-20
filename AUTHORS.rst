@@ -19,3 +19,4 @@ Patches and Suggestions
 - `Julian Mehnle <github.com/jmehnle>`_
 - `Lukasz Balcerzak <https://github.com/lukaszb>`_
 - `Hannes Ljungberg <hannes@5monkeys.se>`_
+- `staticdev <staticdev-support@proton.me>`_
