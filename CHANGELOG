@@ -4,7 +4,7 @@ Freezegun Changelog
 1.3.0
 -----
 
-* Removes support to Python 3.6, that reached its EOL.
+* Removes Python 3.6 support, which reached its EOL on 2021-12-23 (https://devguide.python.org/versions/?highlight=End-of-life#unsupported-versions).
 
 1.2.1
 -----
