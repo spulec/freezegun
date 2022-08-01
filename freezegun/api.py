@@ -563,8 +563,10 @@ class _freeze_time:
 
     def decorate_class(self, klass):
         if issubclass(klass, unittest.TestCase):
-            # If it's a TestCase, we assume you want to freeze the time for the
-            # tests, from setUpClass to tearDownClass
+            # If it's a TestCase, we freeze time around setup and teardown, as well
+            # as for every test case. This requires some care to avoid freezing
+            # the time pytest sees, as otherwise this would distort the reported
+            # timings.
 
             orig_setUpClass = klass.setUpClass
             orig_tearDownClass = klass.tearDownClass
@@ -575,16 +577,34 @@ class _freeze_time:
                 self.start()
                 if orig_setUpClass is not None:
                     orig_setUpClass()
+                self.stop()
 
             # noinspection PyDecorator
             @classmethod
             def tearDownClass(cls):
+                self.start()
                 if orig_tearDownClass is not None:
                     orig_tearDownClass()
                 self.stop()
 
             klass.setUpClass = setUpClass
             klass.tearDownClass = tearDownClass
+
+            orig_setUp = klass.setUp
+            orig_tearDown = klass.tearDown
+
+            def setUp(true_self):
+                self.start()
+                if orig_setUp is not None:
+                    orig_setUp(true_self)
+
+            def tearDown(true_self):
+                if orig_tearDown is not None:
+                    orig_tearDown(true_self)
+                self.stop()
+
+            klass.setUp = setUp
+            klass.tearDown = tearDown
 
             return klass
 
