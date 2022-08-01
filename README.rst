@@ -30,7 +30,7 @@ Decorator
     def test():
         assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
 
-    # Or a unittest TestCase - freezes for every test, from the start of setUpClass to the end of tearDownClass
+    # Or a unittest TestCase - freezes for every test, and set up and tear down code
 
     @freeze_time("1955-11-12")
     class MyTests(unittest.TestCase):
