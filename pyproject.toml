@@ -1,3 +1,53 @@
+[tool.poetry]
+name = "freezegun"
+version = "1.2.3"
+description = "Let your Python tests travel through time"
+authors = ["Steve Pulec <spulec@gmail.com>"]
+license = "Apache-2.0"
+readme = "README.rst"
+homepage = "https://github.com/spulec/freezegun"
+repository = "https://github.com/spulec/freezegun"
+documentation = "https://github.com/spulec/freezegun/blob/master/README.rst"
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+packages=[
+    {include = "freezegun"},
+    {include = "tests"},
+    {include = "AUTHORS.rst"},
+    {include = "CHANGELOG"}
+]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/spulec/freezegun/issues"
+"Changes" = "https://github.com/spulec/freezegun/blob/master/CHANGELOG"
+
+[tool.poetry.dependencies]
+python = ">=3.7,<4.0"
+python-dateutil = ">=2.7"
+maya = {version=">=0.6.1", python = ">=3.7"}
+
+[tool.poetry.dev-dependencies]
+coverage = {extras = ["toml"], version = ">=6.2"}
+pytest = "^7.1.2"
+
+[tool.coverage.paths]
+source = ["src", "*/site-packages"]
+tests = ["tests", "*/tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["freezegun", "tests"]
+
+[tool.coverage.report]
+show_missing = true
+
 [tool.mypy]
 strict = true
 pretty = true
