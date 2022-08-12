@@ -1,10 +1,17 @@
 Freezegun Changelog
 ===================
 
-1.3.0
+1.2.2
 -----
 
 * Removes Python 3.6 support, which reached its EOL on 2021-12-23 (https://devguide.python.org/versions/?highlight=End-of-life#unsupported-versions).
+
+* Improved static typing definitions
+
+* Don't freeze pytest timings. This avoids class-level decorator usage messing with pytest timings.
+
+* Pass through all setUp and tearDown arguments
+
 
 1.2.1
 -----
