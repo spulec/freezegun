@@ -1,5 +1,6 @@
 from . import config
 from ._async import wrap_coroutine
+import asyncio
 import copyreg
 import dateutil
 import datetime
@@ -726,6 +727,21 @@ class _freeze_time:
                         setattr(module, attribute_name, fake)
                         add_change((module, attribute_name, attribute_value))
 
+        # To avoid breaking `asyncio.sleep()`, let asyncio event loops see real
+        # monotonic time even though we've just frozen `time.monotonic()` which
+        # is normally used there. If we didn't do this, `await asyncio.sleep()`
+        # would be hanging forever breaking many tests that use `freeze_time`.
+        #
+        # Note that we cannot statically tell the class of asyncio event loops
+        # because it is not officially documented and can actually be changed
+        # at run time using `asyncio.set_event_loop_policy`. That's why we check
+        # the type by creating a loop here and destroying it immediately.
+        event_loop = asyncio.new_event_loop()
+        event_loop.close()
+        EventLoopClass = type(event_loop)
+        add_change((EventLoopClass, "time", EventLoopClass.time))
+        EventLoopClass.time = lambda self: real_monotonic()
+
         return freeze_factory
 
     def stop(self):
@@ -739,8 +755,8 @@ class _freeze_time:
             datetime.date = real_date
             copyreg.dispatch_table.pop(real_datetime)
             copyreg.dispatch_table.pop(real_date)
-            for module, module_attribute, original_value in self.undo_changes:
-                setattr(module, module_attribute, original_value)
+            for module_or_object, attribute, original_value in self.undo_changes:
+                setattr(module_or_object, attribute, original_value)
             self.undo_changes = []
 
             # Restore modules loaded after start()
