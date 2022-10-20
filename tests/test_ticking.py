@@ -63,6 +63,15 @@ def test_ticking_time():
         assert time.time() > 1326585599.0
 
 
+@utils.cpython_only
+def test_ticking_time_ns():
+    with freeze_time("Jan 14th, 2012, 23:59:59", tick=True):
+        first_value = time.time_ns()
+        second_value = time.time_ns()
+
+        assert first_value != second_value
+
+
 @utils.cpython_only_mark
 @pytest.mark.parametrize("func_name",
     ("monotonic", "monotonic_ns", "perf_counter", "perf_counter_ns"),
