@@ -93,6 +93,15 @@ def test_tz_offset():
     freezer.stop()
 
 
+def test_timestamp_tz_offset():
+    freezer = freeze_time(datetime.datetime.fromtimestamp(1), tz_offset=-1)
+    freezer.start()
+    t = datetime.datetime.now().timestamp()
+
+    assert datetime.datetime.fromtimestamp(t).timestamp() == t
+    freezer.stop()
+
+
 def test_timedelta_tz_offset():
     freezer = freeze_time("2012-01-14 03:21:34",
                           tz_offset=-datetime.timedelta(hours=3, minutes=30))
