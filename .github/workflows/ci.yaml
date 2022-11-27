@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@master
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
 
       - name: Install tox
         run: pip install tox
@@ -22,7 +22,7 @@ jobs:
         run: pip install python-dateutil && tox -e mypy
 
   tests:
-    name: Python ${{ matrix.python-version }}
+    name: Python ${{ matrix.implementation }}${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -30,15 +30,17 @@ jobs:
           - 3.7
           - 3.8
           - 3.9
-          - pypy3
+        implementation:
+          - ''      # CPython
+          - 'pypy'  # PyPy
 
     steps:
       - uses: actions/checkout@master
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - name: Set up Python ${{ matrix.implementation }}${{ matrix.python-version }}
+        uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.implementation }}${{ matrix.python-version }}
 
       - name: Install tox
         run: pip install tox
