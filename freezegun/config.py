@@ -7,6 +7,7 @@ DEFAULT_IGNORE_LIST = [
     'django.utils.six.moves',
     'google.gax',
     'threading',
+    'multiprocessing',
     'Queue',
     'selenium',
     '_pytest.terminal.',
