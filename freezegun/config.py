@@ -13,6 +13,7 @@ DEFAULT_IGNORE_LIST = [
     '_pytest.terminal.',
     '_pytest.runner.',
     'gi',
+    'prompt_toolkit',
 ]
 
 
