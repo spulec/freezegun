@@ -46,6 +46,7 @@ def test_extend_default_ignore_list():
             'django.utils.six.moves',
             'google.gax',
             'threading',
+            'multiprocessing',
             'Queue',
             'selenium',
             '_pytest.terminal.',
