@@ -619,7 +619,7 @@ class _freeze_time:
                         continue
                     seen.add(attr)
 
-                    if not callable(attr_value) or inspect.isclass(attr_value):
+                    if not callable(attr_value) or inspect.isclass(attr_value) or isinstance(attr_value, staticmethod):
                         continue
 
                     try:
