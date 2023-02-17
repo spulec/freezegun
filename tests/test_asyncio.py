@@ -14,4 +14,4 @@ def test_time_freeze_coroutine():
     async def frozen_coroutine():
         assert datetime.date.today() == datetime.date(1970, 1, 1)
 
-    asyncio.new_event_loop().run_until_complete(frozen_coroutine())
+    asyncio.run(frozen_coroutine())
