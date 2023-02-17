@@ -35,6 +35,11 @@ jobs:
         implementation:
           - ''      # CPython
           - 'pypy'  # PyPy
+        exclude:    # unreleased;
+          - implementation: 'pypy'
+            python-version: '3.10'
+          - implementation: 'pypy'
+            python-version: '3.11'
 
     steps:
       - uses: actions/checkout@master
