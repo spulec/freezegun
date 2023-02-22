@@ -61,3 +61,18 @@ def get_fake_gmtime():
 
 def get_fake_strftime():
     return fake_strftime
+
+
+# Getters
+
+
+def get_datetime_now():
+    return datetime.now()
+
+
+def get_datetime_utcnow():
+    return datetime.utcnow()
+
+
+def get_date_today():
+    return date.today()
