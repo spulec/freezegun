@@ -470,7 +470,7 @@ def _parse_time_to_freeze(time_to_freeze_str):
     elif isinstance(time_to_freeze_str, datetime.date):
         time_to_freeze = datetime.datetime.combine(time_to_freeze_str, datetime.time())
     elif isinstance(time_to_freeze_str, datetime.timedelta):
-        time_to_freeze = datetime.datetime.utcnow() + time_to_freeze_str
+        time_to_freeze = datetime.datetime.now(datetime.UTC) + time_to_freeze_str
     else:
         time_to_freeze = parser.parse(time_to_freeze_str)
 
