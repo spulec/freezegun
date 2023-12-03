@@ -6,6 +6,9 @@ Freezegun Changelog
 
 * Fixed `asyncio` support to avoid `await asyncio.sleep(1)` hanging forever.
 
+* Added support for Python 3.12
+
+
 1.2.2
 -----
 
