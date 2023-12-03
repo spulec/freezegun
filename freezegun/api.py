@@ -408,7 +408,7 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
 
     @classmethod
     def utcnow(cls):
-        result = cls._time_to_freeze() or real_datetime.utcnow()
+        result = cls._time_to_freeze() or real_datetime.now(datetime.timezone.utc)
         return datetime_to_fakedatetime(result)
 
     @staticmethod
@@ -463,14 +463,14 @@ def _parse_time_to_freeze(time_to_freeze_str):
     :returns: a naive ``datetime.datetime`` object
     """
     if time_to_freeze_str is None:
-        time_to_freeze_str = datetime.datetime.utcnow()
+        time_to_freeze_str = datetime.datetime.now(datetime.timezone.utc)
 
     if isinstance(time_to_freeze_str, datetime.datetime):
         time_to_freeze = time_to_freeze_str
     elif isinstance(time_to_freeze_str, datetime.date):
         time_to_freeze = datetime.datetime.combine(time_to_freeze_str, datetime.time())
     elif isinstance(time_to_freeze_str, datetime.timedelta):
-        time_to_freeze = datetime.datetime.utcnow() + time_to_freeze_str
+        time_to_freeze = datetime.datetime.now(datetime.timezone.utc) + time_to_freeze_str
     else:
         time_to_freeze = parser.parse(time_to_freeze_str)
 
