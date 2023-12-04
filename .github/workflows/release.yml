@@ -36,6 +36,13 @@ jobs:
         ! git rev-parse ${{ env.VERSION }} || { echo "Ensure that no tag exists for ${{ env.VERSION }}" ; exit 1; }
     - name: Set version number
       run: sed -i "s/__version__ =.*/__version__ = '${{ env.VERSION }}'/g" freezegun/__init__.py
+    - name: Increase patch version number
+      run: |
+        git config --local user.email "6058517+bblommers@users.noreply.github.com"
+        git config --local user.name "FreezeGun Admin"
+        git add freezegun/__init__.py
+        git commit -m "Increase version number"
+        git push
     - name: Build Python
       run: python -m build
     - name: Publish to PyPI
@@ -50,11 +57,3 @@ jobs:
         name: ${{ env.VERSION }}
         tag_name: ${{ env.VERSION }}
         files: dist/*
-    - name: Increase patch version number
-      if: ${{ inputs.current_release }}
-      run: |
-        git config --local user.email "6058517+bblommers@users.noreply.github.com"
-        git config --local user.name "FreezeGun Admin"
-        git add freezegun/__init__.py
-        git commit -m "Increase version number"
-        git push
