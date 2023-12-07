@@ -5,8 +5,8 @@ freezegun
 :copyright: (c) 2012 by Steve Pulec.
 
 """
-from .api import freeze_time
-from .config import configure
+from .api import freeze_time as freeze_time
+from .config import configure as configure
 
 __title__ = 'freezegun'
 __version__ = '1.3.1'

@@ -15,14 +15,27 @@ import warnings
 import types
 import numbers
 import inspect
+from typing import Any, Callable, Concatenate, Dict, Literal, List, Tuple, Optional, Union
+from typing import TYPE_CHECKING, Type, TypeVar, overload
 
 from dateutil import parser
 from dateutil.tz import tzlocal
+
+if TYPE_CHECKING:
+    from typing_extensions import ParamSpec, Protocol
+
+    P = ParamSpec("P")
+else:
+    Protocol = object
+
+T = TypeVar("T")
 
 try:
     from maya import MayaDT
 except ImportError:
     MayaDT = None
+
+STRUCT_TIME = Tuple[int, int, int, int, int, int, int, Optional[datetime.tzinfo]]
 
 _TIME_NS_PRESENT = hasattr(time, 'time_ns')
 _MONOTONIC_NS_PRESENT = hasattr(time, 'monotonic_ns')
@@ -57,38 +70,34 @@ _real_time_object_ids = {id(obj) for obj in real_date_objects}
 # time.clock is deprecated and was removed in Python 3.8
 real_clock = getattr(time, 'clock', None)
 
-freeze_factories = []
-tz_offsets = []
-ignore_lists = []
-tick_flags = []
+freeze_factories: List["FakeDateTimeFactory"] = []
+tz_offsets: List[datetime.timedelta] = []
+ignore_lists: List[Tuple[str]] = []
+tick_flags: List[bool] = []
 
 try:
-    # noinspection PyUnresolvedReferences
-    real_uuid_generate_time = uuid._uuid_generate_time
+    real_uuid_generate_time = uuid._uuid_generate_time  # type: ignore[attr-defined]
     uuid_generate_time_attr = '_uuid_generate_time'
 except AttributeError:
-    # noinspection PyUnresolvedReferences
-    uuid._load_system_functions()
-    # noinspection PyUnresolvedReferences
-    real_uuid_generate_time = uuid._generate_time_safe
+    uuid._load_system_functions()  # type: ignore[attr-defined]
+    real_uuid_generate_time = uuid._generate_time_safe  # type: ignore[attr-defined]
     uuid_generate_time_attr = '_generate_time_safe'
 except ImportError:
     real_uuid_generate_time = None
     uuid_generate_time_attr = None
 
 try:
-    # noinspection PyUnresolvedReferences
-    real_uuid_create = uuid._UuidCreate
+    real_uuid_create = uuid._UuidCreate  # type: ignore[attr-defined]
 except (AttributeError, ImportError):
     real_uuid_create = None
 
 
 # keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
-_GLOBAL_MODULES_CACHE = {}
+_GLOBAL_MODULES_CACHE: Dict[str, Tuple[str, List[Tuple[str, object]]]] = {}
 
 
-def _get_module_attributes(module):
-    result = []
+def _get_module_attributes(module: types.ModuleType) -> List[Tuple[str, object]]:
+    result: List[Tuple[str, object]] = []
     try:
         module_attributes = dir(module)
     except (ImportError, TypeError):
@@ -104,7 +113,7 @@ def _get_module_attributes(module):
     return result
 
 
-def _setup_module_cache(module):
+def _setup_module_cache(module: types.ModuleType) -> None:
     date_attrs = []
     all_module_attributes = _get_module_attributes(module)
     for attribute_name, attribute_value in all_module_attributes:
@@ -113,7 +122,7 @@ def _setup_module_cache(module):
     _GLOBAL_MODULES_CACHE[module.__name__] = (_get_module_attributes_hash(module), date_attrs)
 
 
-def _get_module_attributes_hash(module):
+def _get_module_attributes_hash(module: types.ModuleType) -> str:
     try:
         module_dir = dir(module)
     except (ImportError, TypeError):
@@ -121,7 +130,7 @@ def _get_module_attributes_hash(module):
     return f'{id(module)}-{hash(frozenset(module_dir))}'
 
 
-def _get_cached_module_attributes(module):
+def _get_cached_module_attributes(module: types.ModuleType) -> List[Tuple[str, object]]:
     module_hash, cached_attrs = _GLOBAL_MODULES_CACHE.get(module.__name__, ('0', []))
     if _get_module_attributes_hash(module) == module_hash:
         return cached_attrs
@@ -142,7 +151,7 @@ _is_cpython = (
 call_stack_inspection_limit = 5
 
 
-def _should_use_real_time():
+def _should_use_real_time() -> bool:
     if not call_stack_inspection_limit:
         return False
 
@@ -167,24 +176,24 @@ def _should_use_real_time():
     return False
 
 
-def get_current_time():
+def get_current_time() -> "FakeDatetime":
     return freeze_factories[-1]()
 
 
-def fake_time():
+def fake_time() -> float:
     if _should_use_real_time():
         return real_time()
     current_time = get_current_time()
     return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
 
 if _TIME_NS_PRESENT:
-    def fake_time_ns():
+    def fake_time_ns() -> int:
         if _should_use_real_time():
             return real_time_ns()
         return int(int(fake_time()) * 1e9)
 
 
-def fake_localtime(t=None):
+def fake_localtime(t: Optional[float]=None) -> time.struct_time:
     if t is not None:
         return real_localtime(t)
     if _should_use_real_time():
@@ -193,7 +202,7 @@ def fake_localtime(t=None):
     return shifted_time.timetuple()
 
 
-def fake_gmtime(t=None):
+def fake_gmtime(t: Optional[float]=None):
     if t is not None:
         return real_gmtime(t)
     if _should_use_real_time():
@@ -201,7 +210,7 @@ def fake_gmtime(t=None):
     return get_current_time().timetuple()
 
 
-def _get_fake_monotonic():
+def _get_fake_monotonic() -> float:
     # For monotonic timers like .monotonic(), .perf_counter(), etc
     current_time = get_current_time()
     return (
@@ -210,7 +219,7 @@ def _get_fake_monotonic():
     )
 
 
-def _get_fake_monotonic_ns():
+def _get_fake_monotonic_ns() -> int:
     # For monotonic timers like .monotonic(), .perf_counter(), etc
     current_time = get_current_time()
     return (
@@ -219,14 +228,14 @@ def _get_fake_monotonic_ns():
     ) * 1000
 
 
-def fake_monotonic():
+def fake_monotonic() -> float:
     if _should_use_real_time():
         return real_monotonic()
 
     return _get_fake_monotonic()
 
 
-def fake_perf_counter():
+def fake_perf_counter() -> float:
     if _should_use_real_time():
         return real_perf_counter()
 
@@ -234,7 +243,7 @@ def fake_perf_counter():
 
 
 if _MONOTONIC_NS_PRESENT:
-    def fake_monotonic_ns():
+    def fake_monotonic_ns() -> int:
         if _should_use_real_time():
             return real_monotonic_ns()
 
@@ -242,13 +251,13 @@ if _MONOTONIC_NS_PRESENT:
 
 
 if _PERF_COUNTER_NS_PRESENT:
-    def fake_perf_counter_ns():
+    def fake_perf_counter_ns() -> int:
         if _should_use_real_time():
             return real_perf_counter_ns()
         return _get_fake_monotonic_ns()
 
 
-def fake_strftime(format, time_to_format=None):
+def fake_strftime(format: Optional[str], time_to_format: Any=None) -> str:
     if time_to_format is None:
         if not _should_use_real_time():
             time_to_format = fake_localtime()
@@ -259,7 +268,7 @@ def fake_strftime(format, time_to_format=None):
         return real_strftime(format, time_to_format)
 
 if real_clock is not None:
-    def fake_clock():
+    def fake_clock() -> int:
         if _should_use_real_time():
             return real_clock()
 
@@ -280,15 +289,15 @@ if real_clock is not None:
 
 class FakeDateMeta(type):
     @classmethod
-    def __instancecheck__(self, obj):
+    def __instancecheck__(self, obj: Any) -> bool:
         return isinstance(obj, real_date)
 
     @classmethod
-    def __subclasscheck__(cls, subclass):
+    def __subclasscheck__(cls, subclass: Any) -> bool:
         return issubclass(subclass, real_date)
 
 
-def datetime_to_fakedatetime(datetime):
+def datetime_to_fakedatetime(datetime: datetime.datetime) -> "FakeDatetime":
     return FakeDatetime(datetime.year,
                         datetime.month,
                         datetime.day,
@@ -299,20 +308,20 @@ def datetime_to_fakedatetime(datetime):
                         datetime.tzinfo)
 
 
-def date_to_fakedate(date):
+def date_to_fakedate(date: datetime.date) -> "FakeDate":
     return FakeDate(date.year,
                     date.month,
                     date.day)
 
 
 class FakeDate(real_date, metaclass=FakeDateMeta):
-    def __add__(self, other):
+    def __add__(self, other: Any) -> "FakeDate":
         result = real_date.__add__(self, other)
         if result is NotImplemented:
             return result
         return date_to_fakedate(result)
 
-    def __sub__(self, other):
+    def __sub__(self, other: Any) -> "FakeDate":
         result = real_date.__sub__(self, other)
         if result is NotImplemented:
             return result
@@ -322,16 +331,16 @@ class FakeDate(real_date, metaclass=FakeDateMeta):
             return result
 
     @classmethod
-    def today(cls):
+    def today(cls) -> "FakeDate":
         result = cls._date_to_freeze() + cls._tz_offset()
         return date_to_fakedate(result)
 
     @staticmethod
-    def _date_to_freeze():
+    def _date_to_freeze() -> "FakeDatetime":
         return get_current_time()
 
     @classmethod
-    def _tz_offset(cls):
+    def _tz_offset(cls) -> datetime.timedelta:
         return tz_offsets[-1]
 
 FakeDate.min = date_to_fakedate(real_date.min)
@@ -340,22 +349,22 @@ FakeDate.max = date_to_fakedate(real_date.max)
 
 class FakeDatetimeMeta(FakeDateMeta):
     @classmethod
-    def __instancecheck__(self, obj):
+    def __instancecheck__(self, obj: Any) -> bool:
         return isinstance(obj, real_datetime)
 
     @classmethod
-    def __subclasscheck__(cls, subclass):
+    def __subclasscheck__(cls, subclass: Any) -> bool:
         return issubclass(subclass, real_datetime)
 
 
 class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
-    def __add__(self, other):
+    def __add__(self, other: Any) -> Union[types.NotImplementedType, "FakeDatetime"]:
         result = real_datetime.__add__(self, other)
         if result is NotImplemented:
             return result
         return datetime_to_fakedatetime(result)
 
-    def __sub__(self, other):
+    def __sub__(self, other: Any) -> Union[types.NotImplementedType, "FakeDatetime"]:
         result = real_datetime.__sub__(self, other)
         if result is NotImplemented:
             return result
@@ -364,20 +373,20 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
         else:
             return result
 
-    def astimezone(self, tz=None):
+    def astimezone(self, tz: Optional[datetime.timezone]=None) -> "FakeDatetime":
         if tz is None:
             tz = tzlocal()
         return datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
 
     @classmethod
-    def fromtimestamp(cls, t, tz=None):
+    def fromtimestamp(cls, t: datetime.datetime, tz: Optional[datetime.timezone]=None) -> "FakeDatetime":
         if tz is None:
             return real_datetime.fromtimestamp(
                     t, tz=dateutil.tz.tzoffset("freezegun", cls._tz_offset())
                 ).replace(tzinfo=None)
         return datetime_to_fakedatetime(real_datetime.fromtimestamp(t, tz))
 
-    def timestamp(self):
+    def timestamp(self) -> float:
         if self.tzinfo is None:
             return (self - _EPOCH - self._tz_offset()).total_seconds()
         return (self - _EPOCHTZ).total_seconds()
@@ -391,11 +400,11 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
             result = now + cls._tz_offset()
         return datetime_to_fakedatetime(result)
 
-    def date(self):
+    def date(self) -> FakeDate:
         return date_to_fakedate(self)
 
     @property
-    def nanosecond(self):
+    def nanosecond(self) -> int:
         try:
             # noinspection PyUnresolvedReferences
             return real_datetime.nanosecond
@@ -403,21 +412,21 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
             return 0
 
     @classmethod
-    def today(cls):
+    def today(cls) -> "FakeDatetime":
         return cls.now(tz=None)
 
     @classmethod
-    def utcnow(cls):
+    def utcnow(cls) -> "FakeDatetime":
         result = cls._time_to_freeze() or real_datetime.now(datetime.timezone.utc)
         return datetime_to_fakedatetime(result)
 
     @staticmethod
-    def _time_to_freeze():
+    def _time_to_freeze() -> Optional["FakeDatetime"]:
         if freeze_factories:
             return get_current_time()
 
     @classmethod
-    def _tz_offset(cls):
+    def _tz_offset(cls) -> List[datetime.timedelta]:
         return tz_offsets[-1]
 
 
@@ -425,7 +434,7 @@ FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
 FakeDatetime.max = datetime_to_fakedatetime(real_datetime.max)
 
 
-def convert_to_timezone_naive(time_to_freeze):
+def convert_to_timezone_naive(time_to_freeze: datetime.datetime) -> datetime.datetime:
     """
     Converts a potentially timezone-aware datetime to be a naive UTC datetime
     """
@@ -435,7 +444,7 @@ def convert_to_timezone_naive(time_to_freeze):
     return time_to_freeze
 
 
-def pickle_fake_date(datetime_):
+def pickle_fake_date(datetime_: datetime.date) -> Tuple[Type[FakeDate], Tuple[int, int, int]]:
     # A pickle function for FakeDate
     return FakeDate, (
         datetime_.year,
@@ -444,7 +453,7 @@ def pickle_fake_date(datetime_):
     )
 
 
-def pickle_fake_datetime(datetime_):
+def pickle_fake_datetime(datetime_: datetime.datetime) -> Tuple[Type[FakeDatetime], STRUCT_TIME]:
     # A pickle function for FakeDatetime
     return FakeDatetime, (
         datetime_.year,
@@ -458,7 +467,7 @@ def pickle_fake_datetime(datetime_):
     )
 
 
-def _parse_time_to_freeze(time_to_freeze_str):
+def _parse_time_to_freeze(time_to_freeze_str: Optional[str]) -> datetime.datetime:
     """Parses all the possible inputs for freeze_time
     :returns: a naive ``datetime.datetime`` object
     """
@@ -477,65 +486,68 @@ def _parse_time_to_freeze(time_to_freeze_str):
     return convert_to_timezone_naive(time_to_freeze)
 
 
-def _parse_tz_offset(tz_offset):
+def _parse_tz_offset(tz_offset: Union[datetime.timedelta, int]) -> datetime.timedelta:
     if isinstance(tz_offset, datetime.timedelta):
         return tz_offset
     else:
         return datetime.timedelta(hours=tz_offset)
 
 
-class TickingDateTimeFactory:
+class FakeDateTimeFactory(Protocol):
+    def __call__(self) -> datetime.datetime: ...
 
-    def __init__(self, time_to_freeze, start):
+
+class TickingDateTimeFactory(FakeDateTimeFactory):
+
+    def __init__(self, time_to_freeze: datetime.datetime, start: datetime.datetime):
         self.time_to_freeze = time_to_freeze
         self.start = start
 
-    def __call__(self):
+    def __call__(self) -> datetime.datetime:
         return self.time_to_freeze + (real_datetime.now() - self.start)
 
 
-class FrozenDateTimeFactory:
+class FrozenDateTimeFactory(FakeDateTimeFactory):
 
-    def __init__(self, time_to_freeze):
+    def __init__(self, time_to_freeze: datetime.datetime):
         self.time_to_freeze = time_to_freeze
 
-    def __call__(self):
+    def __call__(self) -> datetime.datetime:
         return self.time_to_freeze
 
-    def tick(self, delta=datetime.timedelta(seconds=1)):
+    def tick(self, delta: Union[int, datetime.timedelta] = datetime.timedelta(seconds=1)) -> None:
         if isinstance(delta, numbers.Real):
-            # noinspection PyTypeChecker
             self.time_to_freeze += datetime.timedelta(seconds=delta)
         else:
             self.time_to_freeze += delta
 
-    def move_to(self, target_datetime):
+    def move_to(self, target_datetime: str) -> None:
         """Moves frozen date to the given ``target_datetime``"""
         target_datetime = _parse_time_to_freeze(target_datetime)
         delta = target_datetime - self.time_to_freeze
         self.tick(delta=delta)
 
 
-class StepTickTimeFactory:
+class StepTickTimeFactory(FakeDateTimeFactory):
 
-    def __init__(self, time_to_freeze, step_width):
+    def __init__(self, time_to_freeze: datetime.datetime, step_width: int):
         self.time_to_freeze = time_to_freeze
         self.step_width = step_width
 
-    def __call__(self):
+    def __call__(self) -> datetime.datetime:
         return_time = self.time_to_freeze
         self.tick()
         return return_time
 
-    def tick(self, delta=None):
+    def tick(self, delta: Optional[int]=None) -> None:
         if not delta:
             delta = datetime.timedelta(seconds=self.step_width)
         self.time_to_freeze += delta
 
-    def update_step_width(self, step_width):
+    def update_step_width(self, step_width: int) -> None:
         self.step_width = step_width
 
-    def move_to(self, target_datetime):
+    def move_to(self, target_datetime: str) -> None:
         """Moves frozen date to the given ``target_datetime``"""
         target_datetime = _parse_time_to_freeze(target_datetime)
         delta = target_datetime - self.time_to_freeze
@@ -544,7 +556,16 @@ class StepTickTimeFactory:
 
 class _freeze_time:
 
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, as_kwarg, auto_tick_seconds):
+    def __init__(
+        self,
+        time_to_freeze_str: Any,
+        tz_offset: Union[datetime.timedelta, int],
+        ignore: Optional[List[str]],
+        tick: bool,
+        as_arg: bool,
+        as_kwarg: str,
+        auto_tick_seconds: int
+    ):
         self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = _parse_tz_offset(tz_offset)
         self.ignore = tuple(ignore)
@@ -555,12 +576,12 @@ class _freeze_time:
         self.as_arg = as_arg
         self.as_kwarg = as_kwarg
 
-    def __call__(self, func):
+    def __call__(self, func: "Callable[P, T]") -> "Callable[P, T]":
         if inspect.isclass(func):
             return self.decorate_class(func)
         elif inspect.iscoroutinefunction(func):
             return self.decorate_coroutine(func)
-        return self.decorate_callable(func)
+        return self.decorate_callable(func, self.as_arg)
 
     def decorate_class(self, klass):
         if issubclass(klass, unittest.TestCase):
@@ -630,16 +651,16 @@ class _freeze_time:
                         continue
             return klass
 
-    def __enter__(self):
+    def __enter__(self) -> Callable[[], datetime.datetime]:
         return self.start()
 
-    def __exit__(self, *args):
+    def __exit__(self, *args) -> None:
         self.stop()
 
-    def start(self):
+    def start(self) -> FakeDateTimeFactory:
 
         if self.auto_tick_seconds:
-            freeze_factory = StepTickTimeFactory(self.time_to_freeze, self.auto_tick_seconds)
+            freeze_factory: FakeDateTimeFactory = StepTickTimeFactory(self.time_to_freeze, self.auto_tick_seconds)
         elif self.tick:
             freeze_factory = TickingDateTimeFactory(self.time_to_freeze, real_datetime.now())
         else:
@@ -721,6 +742,8 @@ class _freeze_time:
                     continue
 
                 module_attrs = _get_cached_module_attributes(module)
+                if module_attrs:
+                    print(module_attrs)
                 for attribute_name, attribute_value in module_attrs:
                     fake = fakes.get(id(attribute_value))
                     if fake:
@@ -744,7 +767,7 @@ class _freeze_time:
 
         return freeze_factory
 
-    def stop(self):
+    def stop(self) -> None:
         freeze_factories.pop()
         ignore_lists.pop()
         tick_flags.pop()
@@ -805,18 +828,30 @@ class _freeze_time:
 
             if uuid_generate_time_attr:
                 setattr(uuid, uuid_generate_time_attr, real_uuid_generate_time)
-            uuid._UuidCreate = real_uuid_create
-            uuid._last_timestamp = None
+            uuid._UuidCreate = real_uuid_create  # type: ignore[attr-defined]
+            uuid._last_timestamp = None  # type: ignore[attr-defined]
 
-    def decorate_coroutine(self, coroutine):
+    def decorate_coroutine(self, coroutine: "Callable[P, T]") -> "Callable[P, T]":
         return wrap_coroutine(self, coroutine)
 
-    def decorate_callable(self, func):
-        def wrapper(*args, **kwargs):
+    @overload
+    def decorate_callable(self, func: "Callable[P, T]", as_arg: Literal[False]) -> "Callable[P, T]":
+        ...
+
+    @overload
+    def decorate_callable(self, func: "Callable[Concatenate[_freeze_time, P], T]", as_arg: Literal[True]) -> "Callable[P, Callable[Concatenate[_freeze_time, P], T]]":
+        ...
+
+    @overload
+    def decorate_callable(self, func: "Union[Callable[P, T], Callable[Concatenate[_freeze_time, P], T]]", as_arg: bool) -> "Callable[P, Union[Callable[P, T], Callable[Concatenate[_freeze_time, P], T]]]":
+        ...
+
+    def decorate_callable(self, func: "Union[Callable[P, T], Callable[Concatenate[_freeze_time, P], T]]", as_arg: bool) -> "Callable[P, Union[Callable[P, T], Callable[Concatenate[_freeze_time, P], T]]]":
+        def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> T:
             with self as time_factory:
-                if self.as_arg and self.as_kwarg:
+                if as_arg and self.as_kwarg:
                     assert False, "You can't specify both as_arg and as_kwarg at the same time. Pick one."
-                elif self.as_arg:
+                elif as_arg:
                     result = func(time_factory, *args, **kwargs)
                 elif self.as_kwarg:
                     kwargs[self.as_kwarg] = time_factory
@@ -829,13 +864,20 @@ class _freeze_time:
         return wrapper
 
 
-def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, as_kwarg='',
-                auto_tick_seconds=0):
+def freeze_time(
+    time_to_freeze: Any=None,
+    tz_offset: int=0,
+    ignore: Optional[List[str]]=None,
+    tick: bool=False,
+    as_arg: bool=False,
+    as_kwarg: str='',
+    auto_tick_seconds: int=0
+) -> Callable[["Callable[P, T]"], "Callable[P, T]"]:
     acceptable_times = (type(None), str, datetime.date, datetime.timedelta,
              types.FunctionType, types.GeneratorType)
 
     if MayaDT is not None:
-        acceptable_times += MayaDT,
+        pass #acceptable_times += (MayaDT)
 
     if not isinstance(time_to_freeze, acceptable_times):
         raise TypeError(('freeze_time() expected None, a string, date instance, datetime '
@@ -880,10 +922,10 @@ except ImportError:
     pass
 else:
     # These are copied from Python sqlite3.dbapi2
-    def adapt_date(val):
+    def adapt_date(val: FakeDate) -> str:
         return val.isoformat()
 
-    def adapt_datetime(val):
+    def adapt_datetime(val: FakeDatetime) -> str:
         return val.isoformat(" ")
 
     sqlite3.register_adapter(FakeDate, adapt_date)
