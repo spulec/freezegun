@@ -34,6 +34,7 @@ class _freeze_time:
         as_arg: bool,
         as_kwarg: str,
         auto_tick_seconds: float,
+        real_asyncio: bool,
     ) -> None: ...
     @overload
     def __call__(self, func: type[_T]) -> type[_T]: ...
@@ -57,4 +58,5 @@ def freeze_time(
     as_arg: bool | None = ...,
     as_kwarg: str | None = ...,
     auto_tick_seconds: float | None = ...,
+    real_asyncio: bool | None = ...
 ) -> _freeze_time: ...

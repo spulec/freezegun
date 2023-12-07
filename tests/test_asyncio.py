@@ -43,7 +43,7 @@ def test_asyncio_sleeping_not_affected_by_freeze_time():
     async def coroutine():
         # Sleeping with time frozen should sleep the expected duration.
         before_sleep = time.time()
-        with freeze_time('1970-01-02'):
+        with freeze_time('1970-01-02', real_asyncio=True):
             await asyncio.sleep(0.05)
         assert 0.02 <= time.time() - before_sleep < 0.3
 
@@ -76,5 +76,5 @@ def test_asyncio_to_call_later_with_frozen_time():
         await asyncio.sleep(0.15)
         assert timestamps == [86400]
 
-    with freeze_time('1970-01-02'):
+    with freeze_time('1970-01-02', real_asyncio=True):
         asyncio.run(coroutine())

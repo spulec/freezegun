@@ -31,6 +31,7 @@ def test_default_ignore_list_is_overridden():
             as_arg=False,
             as_kwarg='',
             auto_tick_seconds=0,
+            real_asyncio=False,
         )
 
 def test_extend_default_ignore_list():
@@ -64,4 +65,5 @@ def test_extend_default_ignore_list():
             as_arg=False,
             as_kwarg='',
             auto_tick_seconds=0,
+            real_asyncio=False,
         )
