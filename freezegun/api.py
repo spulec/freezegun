@@ -17,7 +17,6 @@ import numbers
 import inspect
 
 from dateutil import parser
-from dateutil.tz import tzlocal
 
 try:
     from maya import MayaDT
@@ -86,6 +85,8 @@ except (AttributeError, ImportError):
 # keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
 _GLOBAL_MODULES_CACHE = {}
 
+
+_tzlocal = real_datetime.now(datetime.UTC).astimezone().tzinfo
 
 def _get_module_attributes(module):
     result = []
@@ -366,8 +367,9 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
 
     def astimezone(self, tz=None):
         if tz is None:
-            tz = tzlocal()
-        return datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
+            tz = _tzlocal
+
+        return self.replace(tzinfo=tz) if self.tzinfo is None else datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
 
     @classmethod
     def fromtimestamp(cls, t, tz=None):
@@ -385,10 +387,11 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
     @classmethod
     def now(cls, tz=None):
         now = cls._time_to_freeze() or real_datetime.now()
-        if tz:
+        if tz is not None:
             result = tz.fromutc(now.replace(tzinfo=tz))
         else:
             result = now + cls._tz_offset()
+
         return datetime_to_fakedatetime(result)
 
     def date(self):
@@ -647,7 +650,7 @@ class _freeze_time:
 
         is_already_started = len(freeze_factories) > 0
         freeze_factories.append(freeze_factory)
-        tz_offsets.append(self.tz_offset)
+        tz_offsets.append(self.tz_offset or _tzlocal)
         ignore_lists.append(self.ignore)
         tick_flags.append(self.tick)
 
