@@ -650,7 +650,7 @@ class _freeze_time:
 
         is_already_started = len(freeze_factories) > 0
         freeze_factories.append(freeze_factory)
-        tz_offsets.append(self.tz_offset or _tzlocal)
+        tz_offsets.append(self.tz_offset or _tzlocal.utcoffset(real_datetime.now(datetime.UTC)))
         ignore_lists.append(self.ignore)
         tick_flags.append(self.tick)
 
