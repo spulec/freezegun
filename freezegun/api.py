@@ -87,6 +87,7 @@ _GLOBAL_MODULES_CACHE = {}
 
 
 _tzlocal = real_datetime.now(datetime.UTC).astimezone().tzinfo
+_tzlocal_offset = _tzlocal.utcoffset(real_datetime.now(datetime.UTC))
 
 def _get_module_attributes(module):
     result = []
@@ -190,8 +191,8 @@ def fake_localtime(t=None):
         return real_localtime(t)
     if _should_use_real_time():
         return real_localtime()
-    shifted_time = get_current_time() - datetime.timedelta(seconds=time.timezone)
-    return shifted_time.timetuple()
+
+    return get_current_time().timetuple()
 
 
 def fake_gmtime(t=None):
@@ -199,7 +200,9 @@ def fake_gmtime(t=None):
         return real_gmtime(t)
     if _should_use_real_time():
         return real_gmtime()
-    return get_current_time().timetuple()
+    shifted_time = get_current_time() - datetime.timedelta(seconds=tz_offsets[-1].total_seconds())
+
+    return shifted_time.timetuple()
 
 
 def _get_fake_monotonic():
@@ -324,8 +327,11 @@ class FakeDate(real_date, metaclass=FakeDateMeta):
 
     @classmethod
     def today(cls):
-        result = cls._date_to_freeze() + cls._tz_offset()
+        result = cls._date_to_freeze()
+
         return date_to_fakedate(result)
+
+
 
     @staticmethod
     def _date_to_freeze():
@@ -367,16 +373,17 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
 
     def astimezone(self, tz=None):
         if tz is None:
-            tz = _tzlocal
+            tz = self._tz()
 
-        return self.replace(tzinfo=tz) if self.tzinfo is None else datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
+        if self.tzinfo is None:
+            return self.replace(tzinfo=tz)
+        else:
+            return datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
 
     @classmethod
     def fromtimestamp(cls, t, tz=None):
         if tz is None:
-            return real_datetime.fromtimestamp(
-                    t, tz=dateutil.tz.tzoffset("freezegun", cls._tz_offset())
-                ).replace(tzinfo=None)
+            return real_datetime.fromtimestamp(t, tz=cls._tz()).replace(tzinfo=None)
         return datetime_to_fakedatetime(real_datetime.fromtimestamp(t, tz))
 
     def timestamp(self):
@@ -388,9 +395,9 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
     def now(cls, tz=None):
         now = cls._time_to_freeze() or real_datetime.now()
         if tz is not None:
-            result = tz.fromutc(now.replace(tzinfo=tz))
+            result = tz.fromutc(now.replace(tzinfo=tz)) - cls._tz_offset()
         else:
-            result = now + cls._tz_offset()
+            result = now
 
         return datetime_to_fakedatetime(result)
 
@@ -422,6 +429,10 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
     @classmethod
     def _tz_offset(cls):
         return tz_offsets[-1]
+
+    @classmethod
+    def _tz(cls):
+        return dateutil.tz.tzoffset("freezegun", tz_offsets[-1])
 
 
 FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
@@ -461,7 +472,7 @@ def pickle_fake_datetime(datetime_):
     )
 
 
-def _parse_time_to_freeze(time_to_freeze_str):
+def _parse_time_to_freeze(time_to_freeze_str, tz_offset):
     """Parses all the possible inputs for freeze_time
     :returns: a naive ``datetime.datetime`` object
     """
@@ -477,14 +488,16 @@ def _parse_time_to_freeze(time_to_freeze_str):
     else:
         time_to_freeze = parser.parse(time_to_freeze_str)
 
-    return convert_to_timezone_naive(time_to_freeze)
+    return convert_to_timezone_naive(time_to_freeze) + tz_offset
 
 
 def _parse_tz_offset(tz_offset):
     if isinstance(tz_offset, datetime.timedelta):
         return tz_offset
-    else:
+    elif isinstance(tz_offset, numbers.Real):
         return datetime.timedelta(hours=tz_offset)
+    else:
+        return _tzlocal_offset
 
 
 class TickingDateTimeFactory:
@@ -514,7 +527,7 @@ class FrozenDateTimeFactory:
 
     def move_to(self, target_datetime):
         """Moves frozen date to the given ``target_datetime``"""
-        target_datetime = _parse_time_to_freeze(target_datetime)
+        target_datetime = _parse_time_to_freeze(target_datetime, self.tz_offset)
         delta = target_datetime - self.time_to_freeze
         self.tick(delta=delta)
 
@@ -540,7 +553,7 @@ class StepTickTimeFactory:
 
     def move_to(self, target_datetime):
         """Moves frozen date to the given ``target_datetime``"""
-        target_datetime = _parse_time_to_freeze(target_datetime)
+        target_datetime = _parse_time_to_freeze(target_datetime, self.tz_offset)
         delta = target_datetime - self.time_to_freeze
         self.tick(delta=delta)
 
@@ -548,8 +561,8 @@ class StepTickTimeFactory:
 class _freeze_time:
 
     def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, as_kwarg, auto_tick_seconds):
-        self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str)
         self.tz_offset = _parse_tz_offset(tz_offset)
+        self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str, self.tz_offset)
         self.ignore = tuple(ignore)
         self.tick = tick
         self.auto_tick_seconds = auto_tick_seconds
@@ -640,7 +653,6 @@ class _freeze_time:
         self.stop()
 
     def start(self):
-
         if self.auto_tick_seconds:
             freeze_factory = StepTickTimeFactory(self.time_to_freeze, self.auto_tick_seconds)
         elif self.tick:
@@ -650,7 +662,7 @@ class _freeze_time:
 
         is_already_started = len(freeze_factories) > 0
         freeze_factories.append(freeze_factory)
-        tz_offsets.append(self.tz_offset or _tzlocal.utcoffset(real_datetime.now(datetime.UTC)))
+        tz_offsets.append(self.tz_offset)
         ignore_lists.append(self.ignore)
         tick_flags.append(self.tick)
 
@@ -832,7 +844,7 @@ class _freeze_time:
         return wrapper
 
 
-def freeze_time(time_to_freeze=None, tz_offset=0, ignore=None, tick=False, as_arg=False, as_kwarg='',
+def freeze_time(time_to_freeze=None, tz_offset=None, ignore=None, tick=False, as_arg=False, as_kwarg='',
                 auto_tick_seconds=0):
     acceptable_times = (type(None), str, datetime.date, datetime.timedelta,
              types.FunctionType, types.GeneratorType)
