@@ -41,7 +41,7 @@ real_date = datetime.date
 real_datetime = datetime.datetime
 real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_perf_counter, real_strftime, real_date, real_datetime]
 real_tzlocal = dateutil.tz.tzlocal
-real_tz_env = os.environ["TZ"]
+real_tz_env = os.environ["TZ"] if "TZ" in os.environ else ''
 
 if _TIME_NS_PRESENT:
     real_time_ns = time.time_ns
