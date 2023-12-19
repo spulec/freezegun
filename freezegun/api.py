@@ -3,6 +3,7 @@ from ._async import wrap_coroutine
 import asyncio
 import copyreg
 import dateutil
+import dateutil.tz
 import datetime
 import functools
 import sys
@@ -10,6 +11,7 @@ import time
 import uuid
 import calendar
 import unittest
+import os
 import platform
 import warnings
 import types
@@ -38,6 +40,8 @@ real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
 real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_perf_counter, real_strftime, real_date, real_datetime]
+real_tzlocal = dateutil.tz.tzlocal
+real_tz_env = os.environ["TZ"]
 
 if _TIME_NS_PRESENT:
     real_time_ns = time.time_ns
@@ -176,8 +180,16 @@ def get_current_time():
 def fake_time():
     if _should_use_real_time():
         return real_time()
-    current_time = get_current_time()
-    return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
+
+    current_time_utc = get_current_time() - datetime.timedelta(seconds=tz_offsets[-1].total_seconds())
+
+    return calendar.timegm(current_time_utc.timetuple()) + current_time_utc.microsecond / 1000000.0
+
+def fake_tzlocal():
+    if _should_use_real_time():
+        return real_tzlocal()
+
+    return tz_offsets[-1]
 
 if _TIME_NS_PRESENT:
     def fake_time_ns():
@@ -200,9 +212,10 @@ def fake_gmtime(t=None):
         return real_gmtime(t)
     if _should_use_real_time():
         return real_gmtime()
-    shifted_time = get_current_time() - datetime.timedelta(seconds=tz_offsets[-1].total_seconds())
 
-    return shifted_time.timetuple()
+    current_time_utc = get_current_time() - datetime.timedelta(seconds=tz_offsets[-1].total_seconds())
+
+    return current_time_utc.timetuple()
 
 
 def _get_fake_monotonic():
@@ -260,6 +273,8 @@ def fake_strftime(format, time_to_format=None):
     if time_to_format is None:
         return real_strftime(format)
     else:
+        # if time_to_format.tzinfo is None:
+        #     time_to_format = time.time(time_to_format).replace(tzinfo=fake_tzlocal())
         return real_strftime(format, time_to_format)
 
 if real_clock is not None:
@@ -418,8 +433,7 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
 
     @classmethod
     def utcnow(cls):
-        result = cls._time_to_freeze() or real_datetime.now(datetime.timezone.utc)
-        return datetime_to_fakedatetime(result)
+        return cls.now(datetime.UTC).replace(tzinfo=None)
 
     @staticmethod
     def _time_to_freeze():
@@ -432,7 +446,7 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
 
     @classmethod
     def _tz(cls):
-        return dateutil.tz.tzoffset("freezegun", tz_offsets[-1])
+        return dateutil.tz.tzoffset("", tz_offsets[-1])
 
 
 FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
@@ -443,7 +457,7 @@ def convert_to_timezone_naive(time_to_freeze):
     """
     Converts a potentially timezone-aware datetime to be a naive UTC datetime
     """
-    if time_to_freeze.tzinfo:
+    if time_to_freeze.tzinfo is not None:
         time_to_freeze -= time_to_freeze.utcoffset()
         time_to_freeze = time_to_freeze.replace(tzinfo=None)
     return time_to_freeze
@@ -472,23 +486,26 @@ def pickle_fake_datetime(datetime_):
     )
 
 
-def _parse_time_to_freeze(time_to_freeze_str, tz_offset):
+def _parse_time_to_freeze(time_to_freeze, tz_offset):
     """Parses all the possible inputs for freeze_time
     :returns: a naive ``datetime.datetime`` object
     """
-    if time_to_freeze_str is None:
-        time_to_freeze_str = datetime.datetime.now(datetime.timezone.utc)
+    if time_to_freeze is None:
+        time_to_freeze = datetime.datetime.now(datetime.timezone.utc)
 
-    if isinstance(time_to_freeze_str, datetime.datetime):
-        time_to_freeze = time_to_freeze_str
-    elif isinstance(time_to_freeze_str, datetime.date):
-        time_to_freeze = datetime.datetime.combine(time_to_freeze_str, datetime.time())
-    elif isinstance(time_to_freeze_str, datetime.timedelta):
-        time_to_freeze = datetime.datetime.now(datetime.timezone.utc) + time_to_freeze_str
+    if isinstance(time_to_freeze, datetime.datetime):
+        result = time_to_freeze
+    elif isinstance(time_to_freeze, datetime.date):
+        result = datetime.datetime.combine(time_to_freeze, datetime.time())
+    elif isinstance(time_to_freeze, datetime.timedelta):
+        result = datetime.datetime.now(datetime.timezone.utc) + time_to_freeze
     else:
-        time_to_freeze = parser.parse(time_to_freeze_str)
+        result = parser.parse(time_to_freeze)
 
-    return convert_to_timezone_naive(time_to_freeze) + tz_offset
+    if result.tzinfo is None:
+        return result
+    else:
+        return convert_to_timezone_naive(result) + tz_offset
 
 
 def _parse_tz_offset(tz_offset):
@@ -560,9 +577,9 @@ class StepTickTimeFactory:
 
 class _freeze_time:
 
-    def __init__(self, time_to_freeze_str, tz_offset, ignore, tick, as_arg, as_kwarg, auto_tick_seconds):
+    def __init__(self, time_to_freeze, tz_offset, ignore, tick, as_arg, as_kwarg, auto_tick_seconds):
         self.tz_offset = _parse_tz_offset(tz_offset)
-        self.time_to_freeze = _parse_time_to_freeze(time_to_freeze_str, self.tz_offset)
+        self.time_to_freeze = _parse_time_to_freeze(time_to_freeze, self.tz_offset)
         self.ignore = tuple(ignore)
         self.tick = tick
         self.auto_tick_seconds = auto_tick_seconds
@@ -672,6 +689,7 @@ class _freeze_time:
         # Change the modules
         datetime.datetime = FakeDatetime
         datetime.date = FakeDate
+        dateutil.tz.tzlocal = fake_tzlocal
 
         time.time = fake_time
         time.monotonic = fake_monotonic
@@ -687,6 +705,8 @@ class _freeze_time:
         copyreg.dispatch_table[real_datetime] = pickle_fake_datetime
         copyreg.dispatch_table[real_date] = pickle_fake_date
 
+        os.environ["TZ"] = "FRZ" + ("-" if self.tz_offset.seconds > 0 else "") + ':'.join(str(self.tz_offset).split(':')[:2])
+
         # Change any place where the module had already been imported
         to_patch = [
             ('real_date', real_date, FakeDate),
@@ -697,6 +717,7 @@ class _freeze_time:
             ('real_perf_counter', real_perf_counter, fake_perf_counter),
             ('real_strftime', real_strftime, fake_strftime),
             ('real_time', real_time, fake_time),
+            ('real_tzlocal', real_tzlocal, fake_tzlocal),
         ]
 
         if _TIME_NS_PRESENT:
@@ -801,6 +822,7 @@ class _freeze_time:
                         if real:
                             setattr(module, module_attribute, real)
 
+            dateutil.tz.tzlocal = real_tzlocal
             time.time = real_time
             time.monotonic = real_monotonic
             time.perf_counter = real_perf_counter
@@ -808,6 +830,7 @@ class _freeze_time:
             time.localtime = real_localtime
             time.strftime = real_strftime
             time.clock = real_clock
+            os.environ["TZ"] = real_tz_env
 
             if _TIME_NS_PRESENT:
                 time.time_ns = real_time_ns
@@ -876,7 +899,7 @@ def freeze_time(time_to_freeze=None, tz_offset=None, ignore=None, tick=False, as
         ignore.extend(config.settings.default_ignore_list)
 
     return _freeze_time(
-        time_to_freeze_str=time_to_freeze,
+        time_to_freeze=time_to_freeze,
         tz_offset=tz_offset,
         ignore=ignore,
         tick=tick,
