@@ -519,18 +519,25 @@ def _parse_tz_offset(tz_offset):
 
 class TickingDateTimeFactory:
 
-    def __init__(self, time_to_freeze, start):
+    def __init__(self, time_to_freeze, tz_offset):
         self.time_to_freeze = time_to_freeze
-        self.start = start
+        self.start = real_datetime.now()
+        self.tz_offset = tz_offset
 
     def __call__(self):
         return self.time_to_freeze + (real_datetime.now() - self.start)
 
+    def move_to(self, target_datetime):
+        """Moves frozen date to the given ``target_datetime``"""
+        self.time_to_freeze = _parse_time_to_freeze(target_datetime, self.tz_offset)
+        self.start = real_datetime.now()
+
 
 class FrozenDateTimeFactory:
 
-    def __init__(self, time_to_freeze):
+    def __init__(self, time_to_freeze, tz_offset):
         self.time_to_freeze = time_to_freeze
+        self.tz_offset = tz_offset
 
     def __call__(self):
         return self.time_to_freeze
@@ -551,9 +558,10 @@ class FrozenDateTimeFactory:
 
 class StepTickTimeFactory:
 
-    def __init__(self, time_to_freeze, step_width):
+    def __init__(self, time_to_freeze, step_width, tz_offset):
         self.time_to_freeze = time_to_freeze
         self.step_width = step_width
+        self.tz_offset = tz_offset
 
     def __call__(self):
         return_time = self.time_to_freeze
@@ -671,11 +679,11 @@ class _freeze_time:
 
     def start(self):
         if self.auto_tick_seconds:
-            freeze_factory = StepTickTimeFactory(self.time_to_freeze, self.auto_tick_seconds)
+            freeze_factory = StepTickTimeFactory(self.time_to_freeze, self.auto_tick_seconds, self.tz_offset)
         elif self.tick:
-            freeze_factory = TickingDateTimeFactory(self.time_to_freeze, real_datetime.now())
+            freeze_factory = TickingDateTimeFactory(self.time_to_freeze, self.tz_offset)
         else:
-            freeze_factory = FrozenDateTimeFactory(self.time_to_freeze)
+            freeze_factory = FrozenDateTimeFactory(self.time_to_freeze, self.tz_offset)
 
         is_already_started = len(freeze_factories) > 0
         freeze_factories.append(freeze_factory)
