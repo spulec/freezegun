@@ -48,7 +48,7 @@ def test_extend_default_ignore_list():
             'google.gax',
             'threading',
             'multiprocessing',
-            'Queue',
+            'queue',
             'selenium',
             '_pytest.terminal.',
             '_pytest.runner.',

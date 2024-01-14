@@ -8,7 +8,7 @@ DEFAULT_IGNORE_LIST = [
     'google.gax',
     'threading',
     'multiprocessing',
-    'Queue',
+    'queue',
     'selenium',
     '_pytest.terminal.',
     '_pytest.runner.',
