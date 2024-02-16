@@ -493,6 +493,11 @@ class TickingDateTimeFactory:
     def __call__(self):
         return self.time_to_freeze + (real_datetime.now() - self.start)
 
+    def move_to(self, target_datetime):
+        """Moves frozen date to the given ``target_datetime``"""
+        self.start = real_datetime.now()
+        self.time_to_freeze = _parse_time_to_freeze(target_datetime)
+
 
 class FrozenDateTimeFactory:
 
