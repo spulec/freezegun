@@ -63,6 +63,14 @@ def test_ticking_time():
         assert time.time() > 1326585599.0
 
 
+@utils.cpython_only
+def test_ticking_move_to():
+    with freeze_time("Jan 14th, 2012, 23:59:59", tick=True) as ft:
+        ft.move_to("Jan 15th, 2012, 00:59:59.999999")
+        time.sleep(0.001)  # Deal with potential clock resolution problems
+        assert datetime.datetime.now().replace(second=0, microsecond=0) == datetime.datetime(2012, 1, 15, 1, 0, 0)
+
+
 @utils.cpython_only_mark
 @pytest.mark.parametrize("func_name",
     ("monotonic", "monotonic_ns", "perf_counter", "perf_counter_ns"),
