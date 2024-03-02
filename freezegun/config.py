@@ -35,7 +35,7 @@ def configure(default_ignore_list: Optional[List[str]]=None, extend_ignore_list:
     if default_ignore_list:
         settings.default_ignore_list = default_ignore_list
     if extend_ignore_list:
-        settings.default_ignore_list = [*settings.default_ignore_list, *extend_ignore_list]
+        settings.default_ignore_list = list(dict.fromkeys([*settings.default_ignore_list, *extend_ignore_list]))
 
 
 def reset_config() -> None:
