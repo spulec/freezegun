@@ -68,7 +68,9 @@ try:
     uuid_generate_time_attr = '_uuid_generate_time'
 except AttributeError:
     # noinspection PyUnresolvedReferences
-    uuid._load_system_functions()
+    if hasattr(uuid, '_load_system_functions'):
+        # A no-op after Python ~3.9, being removed in 3.13.
+        uuid._load_system_functions()
     # noinspection PyUnresolvedReferences
     real_uuid_generate_time = uuid._generate_time_safe
     uuid_generate_time_attr = '_generate_time_safe'
