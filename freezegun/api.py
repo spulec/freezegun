@@ -374,10 +374,11 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
     @classmethod
     def fromtimestamp(cls, t, tz=None):
         if tz is None:
-            return real_datetime.fromtimestamp(
-                    t, tz=dateutil.tz.tzoffset("freezegun", cls._tz_offset())
-                ).replace(tzinfo=None)
-        return datetime_to_fakedatetime(real_datetime.fromtimestamp(t, tz))
+            tz = dateutil.tz.tzoffset("freezegun", cls._tz_offset())
+            result = real_datetime.fromtimestamp(t, tz=tz).replace(tzinfo=None)
+        else:
+            result = real_datetime.fromtimestamp(t, tz)
+        return datetime_to_fakedatetime(result)
 
     def timestamp(self):
         if self.tzinfo is None:
