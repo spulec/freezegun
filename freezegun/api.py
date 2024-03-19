@@ -173,7 +173,7 @@ def get_current_time():
     return freeze_factories[-1]()
 
 
-def fake_time():
+def fake_time(*args, **kwargs):
     if _should_use_real_time():
         return real_time()
     current_time = get_current_time()

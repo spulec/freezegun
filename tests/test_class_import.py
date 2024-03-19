@@ -1,5 +1,8 @@
 import time
 import sys
+
+import pytest
+
 from .fake_module import (
     fake_date_function,
     fake_datetime_function,
@@ -9,6 +12,7 @@ from .fake_module import (
     fake_time_function,
 )
 from . import fake_module
+from . import fake_module_lazy
 from freezegun import freeze_time
 from freezegun.api import (
     FakeDatetime,
@@ -33,10 +37,7 @@ def test_import_date_works():
 
 @freeze_time("2012-01-14")
 def test_import_time():
-    local_time = datetime.datetime(2012, 1, 14)
-    utc_time = local_time - datetime.timedelta(seconds=time.timezone)
-    expected_timestamp = time.mktime(utc_time.timetuple())
-    assert fake_time_function() == expected_timestamp
+    assert fake_time_function() == _date_to_time(2012, 1, 14)
 
 
 def test_start_and_stop_works():
@@ -130,6 +131,14 @@ def test_fake_strftime_function():
     assert fake_strftime_function() == '2012'
 
 
+@freeze_time("2022-01-01")
+def test_fake_time_function_as_class_attribute():
+
+    fake_module_lazy.load()
+
+    assert fake_module_lazy.TimeAsClassAttribute().call_time() == _date_to_time(2022, 1, 1)
+
+
 def test_import_after_start():
     with freeze_time('2012-01-14'):
         assert 'tests.another_module' not in sys.modules.keys()
@@ -184,3 +193,9 @@ def test_none_as_initial():
     with freeze_time() as ft:
         ft.move_to('2012-01-14')
         assert fake_strftime_function() == '2012'
+
+
+def _date_to_time(year, month, day):
+    local_time = datetime.datetime(year, month, day)
+    utc_time = local_time - datetime.timedelta(seconds=time.timezone)
+    return time.mktime(utc_time.timetuple())
