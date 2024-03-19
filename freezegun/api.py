@@ -177,13 +177,13 @@ def fake_time():
     if _should_use_real_time():
         return real_time()
     current_time = get_current_time()
-    return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
+    return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1_000_000
 
 if _TIME_NS_PRESENT:
     def fake_time_ns():
         if _should_use_real_time():
             return real_time_ns()
-        return int(int(fake_time()) * 1e9)
+        return int(fake_time()) * 1_000_000_000
 
 
 def fake_localtime(t=None):
@@ -208,7 +208,7 @@ def _get_fake_monotonic():
     current_time = get_current_time()
     return (
         calendar.timegm(current_time.timetuple()) +
-        current_time.microsecond / 1e6
+        current_time.microsecond / 1_000_000
     )
 
 
@@ -216,7 +216,7 @@ def _get_fake_monotonic_ns():
     # For monotonic timers like .monotonic(), .perf_counter(), etc
     current_time = get_current_time()
     return (
-        calendar.timegm(current_time.timetuple()) * 1000000 +
+        calendar.timegm(current_time.timetuple()) * 1_000_000 +
         current_time.microsecond
     ) * 1000
 

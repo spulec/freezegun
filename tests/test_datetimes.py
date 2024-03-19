@@ -217,10 +217,10 @@ def test_bad_time_argument():
 
 
 @pytest.mark.parametrize("func_name, has_func, tick_size", (
-    ("monotonic", True, 1.0),
-    ("monotonic_ns", HAS_MONOTONIC_NS, int(1e9)),
-    ("perf_counter", True, 1.0),
-    ("perf_counter_ns", HAS_PERF_COUNTER_NS, int(1e9)),)
+    ("monotonic", True, 1),
+    ("monotonic_ns", HAS_MONOTONIC_NS, 1_000_000_000),
+    ("perf_counter", True, 1),
+    ("perf_counter_ns", HAS_PERF_COUNTER_NS, 1_000_000_000),)
 )
 def test_time_monotonic(func_name, has_func, tick_size):
     initial_datetime = datetime.datetime(year=1, month=7, day=12,
@@ -733,7 +733,7 @@ def test_should_use_real_time():
         if HAS_CLOCK:
             assert time.clock() == expected_clock
         if HAS_TIME_NS:
-            assert time.time_ns() == expected_frozen * 1e9
+            assert time.time_ns() == expected_frozen * 1_000_000_000
 
         assert calendar.timegm(time.gmtime()) == expected_frozen
         assert calendar.timegm(time_tuple) == timestamp_to_convert
@@ -745,7 +745,7 @@ def test_should_use_real_time():
         if HAS_CLOCK:
             assert time.clock() != expected_clock
         if HAS_TIME_NS:
-            assert time.time_ns() != expected_frozen * 1e9
+            assert time.time_ns() != expected_frozen * 1_000_000_000
 
         assert calendar.timegm(time.gmtime()) != expected_frozen
         assert calendar.timegm(time_tuple) == timestamp_to_convert
@@ -761,10 +761,10 @@ def test_time_ns():
 
     freezer.start()
     assert time.time() == expected_timestamp
-    assert time.time_ns() == expected_timestamp * 1e9
+    assert time.time_ns() == expected_timestamp * 1_000_000_000
     freezer.stop()
     assert time.time() != expected_timestamp
-    assert time.time_ns() != expected_timestamp * 1e9
+    assert time.time_ns() != expected_timestamp * 1_000_000_000
 
 
 def test_compare_datetime_and_time_with_timezone(monkeypatch):
