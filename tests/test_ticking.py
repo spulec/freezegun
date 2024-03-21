@@ -64,6 +64,22 @@ def test_ticking_time():
 
 
 @utils.cpython_only
+def test_ticking_tick():
+    with freeze_time("Jan 14th, 2012, 23:59:59", tick=True) as ft:
+        ft.tick(60)
+        time.sleep(0.001)  # Deal with potential clock resolution problems
+        assert datetime.datetime.now().replace(
+            second=0, microsecond=0
+        ) == datetime.datetime(2012, 1, 15, 0, 1, 0)
+
+        ft.tick(delta=datetime.timedelta(minutes=2))
+        time.sleep(0.001)  # Deal with potential clock resolution problems
+        assert datetime.datetime.now().replace(
+            second=0, microsecond=0
+        ) == datetime.datetime(2012, 1, 15, 0, 3, 0)
+
+
+@utils.cpython_only
 def test_ticking_move_to():
     with freeze_time("Jan 14th, 2012, 23:59:59", tick=True) as ft:
         ft.move_to("Jan 15th, 2012, 00:59:59.999999")
