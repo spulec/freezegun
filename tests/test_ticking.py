@@ -66,7 +66,7 @@ def test_ticking_time():
 @utils.cpython_only
 def test_ticking_tick():
     with freeze_time("Jan 14th, 2012, 23:59:59", tick=True) as ft:
-        ft.tick(60)
+        ft.tick(61)
         time.sleep(0.001)  # Deal with potential clock resolution problems
         assert datetime.datetime.now().replace(
             second=0, microsecond=0
