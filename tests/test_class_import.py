@@ -22,24 +22,24 @@ import datetime
 
 
 @freeze_time("2012-01-14")
-def test_import_datetime_works():
+def test_import_datetime_works() -> None:
     assert fake_datetime_function().day == 14
 
 
 @freeze_time("2012-01-14")
-def test_import_date_works():
+def test_import_date_works() -> None:
     assert fake_date_function().day == 14
 
 
 @freeze_time("2012-01-14")
-def test_import_time():
+def test_import_time() -> None:
     local_time = datetime.datetime(2012, 1, 14)
     utc_time = local_time - datetime.timedelta(seconds=time.timezone)
     expected_timestamp = time.mktime(utc_time.timetuple())
     assert fake_time_function() == expected_timestamp
 
 
-def test_start_and_stop_works():
+def test_start_and_stop_works() -> None:
     freezer = freeze_time("2012-01-14")
 
     result = fake_datetime_function()
@@ -57,7 +57,7 @@ def test_start_and_stop_works():
     assert result.__class__ != FakeDatetime
 
 
-def test_isinstance_works():
+def test_isinstance_works() -> None:
     date = datetime.date.today()
     now = datetime.datetime.now()
 
@@ -70,7 +70,7 @@ def test_isinstance_works():
     freezer.stop()
 
 
-def test_issubclass_works():
+def test_issubclass_works() -> None:
     real_date = datetime.date
     real_datetime = datetime.datetime
 
@@ -81,7 +81,7 @@ def test_issubclass_works():
     freezer.stop()
 
 
-def test_fake_uses_real_when_ignored():
+def test_fake_uses_real_when_ignored() -> None:
     real_time_before = time.time()
     with freeze_time('2012-01-14', ignore=['tests.fake_module']):
         real_time = fake_time_function()
@@ -89,7 +89,7 @@ def test_fake_uses_real_when_ignored():
     assert real_time_before <= real_time <= real_time_after
 
 
-def test_can_ignore_email_module():
+def test_can_ignore_email_module() -> None:
     from email.utils import formatdate
     with freeze_time('2012-01-14'):
         faked_date_str = formatdate()
@@ -104,12 +104,12 @@ def test_can_ignore_email_module():
 
 
 @freeze_time('2011-01-01')
-def test_avoid_replacing_equal_to_anything():
+def test_avoid_replacing_equal_to_anything() -> None:
     assert fake_module.equal_to_anything.description == 'This is the equal_to_anything object'
 
 
 @freeze_time("2012-01-14 12:00:00")
-def test_import_localtime():
+def test_import_localtime() -> None:
     struct = fake_localtime_function()
     assert struct.tm_year == 2012
     assert struct.tm_mon == 1
@@ -118,7 +118,7 @@ def test_import_localtime():
 
 
 @freeze_time("2012-01-14 12:00:00")
-def test_fake_gmtime_function():
+def test_fake_gmtime_function() -> None:
     struct = fake_gmtime_function()
     assert struct.tm_year == 2012
     assert struct.tm_mon == 1
@@ -126,11 +126,11 @@ def test_fake_gmtime_function():
 
 
 @freeze_time("2012-01-14")
-def test_fake_strftime_function():
+def test_fake_strftime_function() -> None:
     assert fake_strftime_function() == '2012'
 
 
-def test_import_after_start():
+def test_import_after_start() -> None:
     with freeze_time('2012-01-14'):
         assert 'tests.another_module' not in sys.modules.keys()
         from tests import another_module
@@ -180,7 +180,7 @@ def test_import_after_start():
     assert another_module.get_fake_strftime() is fake_strftime
     del sys.modules['tests.another_module']
 
-def test_none_as_initial():
+def test_none_as_initial() -> None:
     with freeze_time() as ft:
         ft.move_to('2012-01-14')
         assert fake_strftime_function() == '2012'

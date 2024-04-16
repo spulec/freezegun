@@ -6,7 +6,7 @@ from tests import utils
 
 
 @mock.patch('platform.python_implementation', lambda: 'CPython')
-def test_should_not_skip_cpython():
+def test_should_not_skip_cpython() -> None:
     reload(api)
     reload(utils)
     function_mock = mock.MagicMock(__name__='function')
@@ -18,7 +18,7 @@ def test_should_not_skip_cpython():
 
 
 @mock.patch('platform.python_implementation', lambda: 'not-CPython')
-def test_should_skip_non_cpython():
+def test_should_skip_non_cpython() -> None:
     reload(api)
     reload(utils)
     function_mock = mock.MagicMock(__name__='function', skipped=False)
