@@ -163,7 +163,7 @@ def test_time_with_dst():
 
 def test_manual_increment():
     initial_datetime = datetime.datetime(year=1, month=7, day=12,
-                                        hour=15, minute=6, second=3)
+                                         hour=15, minute=6, second=3)
     with freeze_time(initial_datetime) as frozen_datetime:
         assert frozen_datetime() == initial_datetime
 
@@ -171,7 +171,11 @@ def test_manual_increment():
         assert frozen_datetime.tick() == expected
         assert frozen_datetime() == expected
 
-        expected = initial_datetime + datetime.timedelta(seconds=10)
+        expected = initial_datetime + datetime.timedelta(seconds=11)
+        assert frozen_datetime.tick(10) == expected
+        assert frozen_datetime() == expected
+
+        expected = initial_datetime + datetime.timedelta(seconds=21)
         assert frozen_datetime.tick(delta=datetime.timedelta(seconds=10)) == expected
         assert frozen_datetime() == expected
 
