@@ -183,7 +183,8 @@ if _TIME_NS_PRESENT:
     def fake_time_ns():
         if _should_use_real_time():
             return real_time_ns()
-        return int(int(fake_time()) * 1e9)
+        current_time = get_current_time()
+        return int(calendar.timegm(current_time.timetuple()) * 1_000_000_000 + current_time.microsecond * 1_000)
 
 
 def fake_localtime(t=None):
