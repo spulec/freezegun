@@ -502,6 +502,7 @@ class TickingDateTimeFactory:
             self.move_to(self.time_to_freeze + datetime.timedelta(seconds=delta))
         else:
             self.move_to(self.time_to_freeze + delta)
+        return self.time_to_freeze
 
     def move_to(self, target_datetime):
         """Moves frozen date to the given ``target_datetime``"""
@@ -523,6 +524,7 @@ class FrozenDateTimeFactory:
             self.time_to_freeze += datetime.timedelta(seconds=delta)
         else:
             self.time_to_freeze += delta
+        return self.time_to_freeze
 
     def move_to(self, target_datetime):
         """Moves frozen date to the given ``target_datetime``"""
@@ -546,6 +548,7 @@ class StepTickTimeFactory:
         if not delta:
             delta = datetime.timedelta(seconds=self.step_width)
         self.time_to_freeze += delta
+        return self.time_to_freeze
 
     def update_step_width(self, step_width):
         self.step_width = step_width
