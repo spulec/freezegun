@@ -1,10 +1,11 @@
 import datetime
 import uuid
+from typing import Any
 
 from freezegun import freeze_time
 
 
-def time_from_uuid(value):
+def time_from_uuid(value: Any) -> datetime.datetime:
     """
     Converts an UUID(1) to it's datetime value
     """
@@ -14,7 +15,7 @@ def time_from_uuid(value):
             datetime.timedelta(microseconds=uvalue.time // 10))
 
 
-def test_uuid1_future():
+def test_uuid1_future() -> None:
     """
     Test that we can go back in time after setting a future date.
     Normally UUID1 would disallow this, since it keeps track of
@@ -29,7 +30,7 @@ def test_uuid1_future():
         assert time_from_uuid(uuid.uuid1()) == past_target
 
 
-def test_uuid1_past():
+def test_uuid1_past() -> None:
     """
     Test that we can go forward in time after setting some time in the past.
     This is simply the opposite of test_uuid1_future()

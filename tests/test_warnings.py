@@ -3,6 +3,7 @@ import datetime
 import sys
 import types
 import warnings
+from typing import Iterator
 
 from freezegun import freeze_time
 
@@ -30,7 +31,7 @@ class ModuleWithWarning:
     counter = 0
 
     @property
-    def attribute_that_emits_a_warning(self):
+    def attribute_that_emits_a_warning(self) -> None:
         # Use unique warning messages to avoid messages being only reported once
         self.__class__.counter += 1
         warnings.warn(f'this is test warning #{self.__class__.counter}')
@@ -38,10 +39,10 @@ class ModuleWithWarning:
 
 
 @contextlib.contextmanager
-def assert_module_with_emitted_warning():
+def assert_module_with_emitted_warning() -> Iterator[None]:
     """Install a module that triggers warnings into sys.modules and ensure the
     warning was triggered in the with-block.  """
-    module = sys.modules['module_with_warning'] = ModuleWithWarning()
+    module = sys.modules['module_with_warning'] = ModuleWithWarning()  # type: ignore
 
     try:
         yield
@@ -52,7 +53,7 @@ def assert_module_with_emitted_warning():
 
 
 @contextlib.contextmanager
-def assert_no_warnings():
+def assert_no_warnings() -> Iterator[None]:
     """A context manager that makes sure no warnings was emitted."""
     with warnings.catch_warnings(record=True) as caught_warnings:
         warnings.filterwarnings('always')
@@ -60,7 +61,7 @@ def assert_no_warnings():
         assert not caught_warnings
 
 
-def test_ignore_warnings_in_start():
+def test_ignore_warnings_in_start() -> None:
     """Make sure that modules being introspected in start() does not emit warnings."""
     with assert_module_with_emitted_warning():
         freezer = freeze_time(datetime.datetime(2016, 10, 27, 9, 56))
@@ -73,7 +74,7 @@ def test_ignore_warnings_in_start():
             freezer.stop()
 
 
-def test_ignore_warnings_in_stop():
+def test_ignore_warnings_in_stop() -> None:
     """Make sure that modules that was loaded after start() does not trigger
     warnings in stop()"""
     freezer = freeze_time(datetime.datetime(2016, 10, 27, 9, 56))

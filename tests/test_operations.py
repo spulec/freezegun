@@ -3,10 +3,11 @@ from freezegun import freeze_time
 from dateutil.relativedelta import relativedelta
 from datetime import timedelta, tzinfo
 from tests import utils
+from typing import Any
 
 
 @freeze_time("2012-01-14")
-def test_addition():
+def test_addition() -> None:
     now = datetime.datetime.now()
     later = now + datetime.timedelta(days=1)
     other_later = now + relativedelta(days=1)
@@ -21,7 +22,7 @@ def test_addition():
 
 
 @freeze_time("2012-01-14")
-def test_subtraction():
+def test_subtraction() -> None:
     now = datetime.datetime.now()
     before = now - datetime.timedelta(days=1)
     other_before = now - relativedelta(days=1)
@@ -40,52 +41,52 @@ def test_subtraction():
 
 
 @freeze_time("2012-01-14")
-def test_datetime_timezone_none():
+def test_datetime_timezone_none() -> None:
     now = datetime.datetime.now(tz=None)
     assert now == datetime.datetime(2012, 1, 14)
 
 
 class GMT5(tzinfo):
-    def utcoffset(self, dt):
+    def utcoffset(self, dt: Any) -> timedelta:
         return timedelta(hours=5)
 
-    def tzname(self, dt):
+    def tzname(self, dt: Any) -> str:
         return "GMT +5"
 
-    def dst(self, dt):
+    def dst(self, dt: Any) -> timedelta:
         return timedelta(0)
 
 
 @freeze_time("2012-01-14 2:00:00")
-def test_datetime_timezone_real():
+def test_datetime_timezone_real() -> None:
     now = datetime.datetime.now(tz=GMT5())
     assert now == datetime.datetime(2012, 1, 14, 7, tzinfo=GMT5())
     assert now.utcoffset() == timedelta(0, 60 * 60 * 5)
 
 
 @freeze_time("2012-01-14 2:00:00", tz_offset=-4)
-def test_datetime_timezone_real_with_offset():
+def test_datetime_timezone_real_with_offset() -> None:
     now = datetime.datetime.now(tz=GMT5())
     assert now == datetime.datetime(2012, 1, 14, 3, tzinfo=GMT5())
     assert now.utcoffset() == timedelta(0, 60 * 60 * 5)
 
 
 @freeze_time("2012-01-14 00:00:00")
-def test_astimezone():
+def test_astimezone() -> None:
     now = datetime.datetime.now(tz=GMT5())
     converted = now.astimezone(GMT5())
     assert utils.is_fake_datetime(converted)
 
 
 @freeze_time("2012-01-14 00:00:00")
-def test_astimezone_tz_none():
+def test_astimezone_tz_none() -> None:
     now = datetime.datetime.now(tz=GMT5())
     converted = now.astimezone()
     assert utils.is_fake_datetime(converted)
 
 
 @freeze_time("2012-01-14 00:00:00")
-def test_replace():
+def test_replace() -> None:
     now = datetime.datetime.now()
     modified_time = now.replace(year=2013)
     assert utils.is_fake_datetime(modified_time)
@@ -96,7 +97,7 @@ def test_replace():
 
 
 @freeze_time("Jan 14th, 2020", auto_tick_seconds=15)
-def test_auto_tick():
+def test_auto_tick() -> None:
     first_time = datetime.datetime.now()
     auto_incremented_time = datetime.datetime.now()
     assert first_time + datetime.timedelta(seconds=15) == auto_incremented_time
