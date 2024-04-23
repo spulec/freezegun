@@ -749,12 +749,23 @@ def test_time_ns() -> None:
     utc_time = local_time - datetime.timedelta(seconds=time.timezone)
     expected_timestamp = time.mktime(utc_time.timetuple())
 
-    freezer.start()
-    assert time.time() == expected_timestamp
-    assert time.time_ns() == expected_timestamp * 1e9
-    freezer.stop()
+    with freezer:
+        assert time.time() == expected_timestamp
+        assert time.time_ns() == expected_timestamp * 1e9
+
     assert time.time() != expected_timestamp
     assert time.time_ns() != expected_timestamp * 1e9
+
+
+@pytest.mark.skipif(not HAS_TIME_NS,
+                    reason="time.time_ns is present only on 3.7 and above")
+def test_time_ns_with_microseconds() -> None:
+    freezer = freeze_time("2024-03-20 18:21:10.12345")
+
+    with freezer:
+        assert time.time_ns() == 1710958870123450112
+
+    assert time.time_ns() != 1710958870123450112
 
 
 def test_compare_datetime_and_time_with_timezone(monkeypatch: pytest.MonkeyPatch) -> None:
