@@ -1,6 +1,15 @@
 Freezegun Changelog
 ===================
 
+1.5.0
+----
+ * The default ignore list now contains the `queue`-package
+ * Added a missing `move_to`-function when calling `freeze_time(tick=True)`
+ * Fixes a rounding error in `time.time_ns()`
+ * Fixed a bug where the default ignore list could not be empty (`configure(default_ignore_list=[])`)
+ * All `tick()` methods now return the new datetime (instead of None)
+ * Type improvements
+
 1.4.0
 -----
  * `asyncio`-support from 1.3.x introduced quite a few  bugs, so that functionality is now hidden behind a flag:
