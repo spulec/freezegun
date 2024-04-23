@@ -8,6 +8,15 @@ jobs:
   mypy:
     name: mypy
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - '3.7'
+          - '3.8'
+          - '3.9'
+          - '3.10'
+          - '3.11'
+          - '3.12'
 
     steps:
       - uses: actions/checkout@master
@@ -15,11 +24,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
 
-      - name: Install tox
-        run: pip install tox
+      - name: Install dependencies
+        run: |
+          pip install mypy
+          pip install -r requirements.txt
 
-      - name: Run tests
-        run: pip install python-dateutil && tox -e mypy
+      - name: Run MyPy
+        run: mypy --install-types --non-interactive
 
   tests:
     name: Python ${{ matrix.implementation }}${{ matrix.python-version }}

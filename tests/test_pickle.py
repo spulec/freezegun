@@ -3,7 +3,7 @@ import pickle
 from freezegun import freeze_time
 
 
-def assert_pickled_datetimes_equal_original():
+def assert_pickled_datetimes_equal_original() -> None:
     min_datetime = datetime.datetime.min
     max_datetime = datetime.datetime.max
     min_date = datetime.date.min
@@ -20,7 +20,7 @@ def assert_pickled_datetimes_equal_original():
     assert pickle.loads(pickle.dumps(utc_now)) == utc_now
 
 
-def test_pickle():
+def test_pickle() -> None:
     freezer = freeze_time("2012-01-14")
 
     freezer.start()
@@ -30,7 +30,7 @@ def test_pickle():
     assert_pickled_datetimes_equal_original()
 
 
-def test_pickle_real_datetime():
+def test_pickle_real_datetime() -> None:
     real_datetime = datetime.datetime(1970, 2, 1)
     pickle.loads(pickle.dumps(real_datetime)) == real_datetime
 
@@ -45,7 +45,7 @@ def test_pickle_real_datetime():
     assert pickle.loads(pickle.dumps(real_datetime)) == real_datetime
 
 
-def test_pickle_real_date():
+def test_pickle_real_date() -> None:
     real_date = datetime.date(1970, 2, 1)
     assert pickle.loads(pickle.dumps(real_date)) == real_date
 
