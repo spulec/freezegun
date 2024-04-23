@@ -41,8 +41,8 @@ jobs:
         git config --local user.email "6058517+bblommers@users.noreply.github.com"
         git config --local user.name "FreezeGun Admin"
         git add freezegun/__init__.py
-        git commit -m "Increase version number"
-        git push
+        git commit -m "Increase version number" || echo "Nothing to commit"
+        git push || echo "Nothing to push"
     - name: Build Python
       run: python -m build
     - name: Publish to PyPI
