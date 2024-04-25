@@ -531,8 +531,8 @@ class FrozenDateTimeFactory:
     def __call__(self) -> datetime.datetime:
         return self.time_to_freeze
 
-    def tick(self, delta: Union[datetime.timedelta, int]=datetime.timedelta(seconds=1)) -> datetime.datetime:
-        if isinstance(delta, numbers.Real):
+    def tick(self, delta: Union[datetime.timedelta, float]=datetime.timedelta(seconds=1)) -> datetime.datetime:
+        if isinstance(delta, float):
             # noinspection PyTypeChecker
             self.time_to_freeze += datetime.timedelta(seconds=delta)
         else:
@@ -557,9 +557,11 @@ class StepTickTimeFactory:
         self.tick()
         return return_time
 
-    def tick(self, delta: Union[datetime.timedelta, int, None]=None) -> datetime.datetime:
+    def tick(self, delta: Union[datetime.timedelta, float, None]=None) -> datetime.datetime:
         if not delta:
             delta = datetime.timedelta(seconds=self.step_width)
+        elif isinstance(delta, float):
+            delta = datetime.timedelta(seconds=delta)
         self.time_to_freeze += delta  # type: ignore
         return self.time_to_freeze
 
