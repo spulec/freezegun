@@ -1,6 +1,7 @@
 import time
 import calendar
 import datetime
+import fractions
 import unittest
 import locale
 import sys
@@ -178,6 +179,17 @@ def test_manual_increment() -> None:
 
         expected = initial_datetime + datetime.timedelta(seconds=21)
         assert frozen_datetime.tick(delta=datetime.timedelta(seconds=10)) == expected
+        assert frozen_datetime() == expected
+
+        expected = initial_datetime + datetime.timedelta(seconds=22.5)
+        ticked_time = frozen_datetime.tick(
+            delta=fractions.Fraction(3, 2)  # type: ignore
+            # type hints follow the recommendation of
+            # https://peps.python.org/pep-0484/#the-numeric-tower
+            # which means for instance `Fraction`s work at runtime, but not
+            # during static type analysis
+        )
+        assert ticked_time == expected
         assert frozen_datetime() == expected
 
 

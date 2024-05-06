@@ -1,10 +1,11 @@
 import datetime
+import fractions
 import pytest
 from freezegun import freeze_time
 from dateutil.relativedelta import relativedelta
 from datetime import timedelta, tzinfo
 from tests import utils
-from typing import Any
+from typing import Any, Union
 
 
 @freeze_time("2012-01-14")
@@ -109,10 +110,20 @@ def test_auto_tick() -> None:
     (
         (datetime.timedelta(milliseconds=1500), 1.5),
         (1, 1),
-        (1.5, 1.5)
+        (1.5, 1.5),
+        (fractions.Fraction(3, 2), 1.5),
     )
 )
-def test_auto_and_manual_tick(tick, expected_diff) -> None:
+def test_auto_and_manual_tick(
+    tick: Union[
+        datetime.timedelta,
+        float,
+        # fractions.Fraction,
+        # Fraction works at runtime, but not at type-checking time
+        # cf. https://peps.python.org/pep-0484/#the-numeric-tower
+    ],
+    expected_diff: float
+) -> None:
     first_time = datetime.datetime(2020, 1, 14, 0, 0, 0, 1)
 
     with freeze_time(first_time, auto_tick_seconds=2) as frozen_time:
