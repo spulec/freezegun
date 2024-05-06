@@ -117,6 +117,7 @@ def test_auto_tick() -> None:
 def test_auto_and_manual_tick(
     tick: Union[
         datetime.timedelta,
+        int,
         float,
         # fractions.Fraction,
         # Fraction works at runtime, but not at type-checking time
