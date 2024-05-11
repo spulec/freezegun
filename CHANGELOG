@@ -1,6 +1,10 @@
 Freezegun Changelog
 ===================
 
+1.5.1
+-----
+ * Fix the typing of the `tick()` method, and improve it's behaviour.
+
 1.5.0
 ----
  * The default ignore list now contains the `queue`-package
