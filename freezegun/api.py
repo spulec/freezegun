@@ -384,12 +384,12 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
         return datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
 
     @classmethod
-    def fromtimestamp(cls, t: float, tz: Optional[datetime.tzinfo]=None) -> "FakeDatetime":
+    def fromtimestamp(cls, timestamp: float, tz: Optional[datetime.tzinfo]=None) -> "FakeDatetime":
         if tz is None:
             tz = dateutil.tz.tzoffset("freezegun", cls._tz_offset())
-            result = real_datetime.fromtimestamp(t, tz=tz).replace(tzinfo=None)
+            result = real_datetime.fromtimestamp(timestamp, tz=tz).replace(tzinfo=None)
         else:
-            result = real_datetime.fromtimestamp(t, tz)
+            result = real_datetime.fromtimestamp(timestamp, tz)
         return datetime_to_fakedatetime(result)
 
     def timestamp(self) -> float:
