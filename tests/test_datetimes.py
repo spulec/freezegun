@@ -534,17 +534,17 @@ class TestUnitTestMethodDecorator(unittest.TestCase):
     @freeze_time('2013-04-09', as_kwarg='frozen_time')
     def test_method_decorator_works_on_unittest_kwarg_frozen_time(self, frozen_time: Any) -> None:
         self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
-        self.assertEqual(datetime.date(2013, 4, 9), frozen_time.time_to_freeze.today())
+        self.assertEqual(datetime.date(2013, 4, 9), frozen_time.time_to_freeze.date())
 
     @freeze_time('2013-04-09', as_kwarg='hello')
     def test_method_decorator_works_on_unittest_kwarg_hello(self, **kwargs: Any) -> None:
         self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
-        self.assertEqual(datetime.date(2013, 4, 9), kwargs.get('hello').time_to_freeze.today())  # type: ignore
+        self.assertEqual(datetime.date(2013, 4, 9), kwargs.get('hello').time_to_freeze.date())  # type: ignore
 
     @freeze_time(lambda: datetime.date(year=2013, month=4, day=9), as_kwarg='frozen_time')
     def test_method_decorator_works_on_unittest_kwarg_frozen_time_with_func(self, frozen_time: Any) -> None:
         self.assertEqual(datetime.date(2013, 4, 9), datetime.date.today())
-        self.assertEqual(datetime.date(2013, 4, 9), frozen_time.time_to_freeze.today())
+        self.assertEqual(datetime.date(2013, 4, 9), frozen_time.time_to_freeze.date())
 
 
 @freeze_time('2013-04-09')
