@@ -16,7 +16,7 @@ jobs:
           - '3.10'
           - '3.11'
           - '3.12'
-          - '3.13.0-beta.2'
+          - '3.13'
 
     steps:
       - uses: actions/checkout@master
@@ -45,7 +45,7 @@ jobs:
           - '3.10'
           - '3.11'
           - '3.12'
-          - '3.13.0-beta.2'
+          - '3.13'
         implementation:
           - ''      # CPython
           - 'pypy'  # PyPy
@@ -55,7 +55,7 @@ jobs:
           - implementation: 'pypy'
             python-version: '3.12'
           - implementation: 'pypy'
-            python-version: '3.13.0-beta.2'
+            python-version: '3.13'
 
     steps:
       - uses: actions/checkout@master

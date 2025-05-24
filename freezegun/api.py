@@ -633,10 +633,6 @@ class _freeze_time:
         self.real_asyncio = real_asyncio
 
     @overload
-    def __call__(self, func: Type[T2]) -> Type[T2]:
-        ...
-
-    @overload
     def __call__(self, func: "Callable[P, Awaitable[Any]]") -> "Callable[P, Awaitable[Any]]":
         ...
 

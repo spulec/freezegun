@@ -1,6 +1,12 @@
 Freezegun Changelog
 ===================
 
+1.5.2
+-----
+ * Remove support for Python 3.7
+ * Explicitly marks support for Python 3.13
+ * Improved project documentation
+
 1.5.1
 -----
  * Fix the typing of the `tick()` method, and improve it's behaviour.
