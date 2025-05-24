@@ -32,5 +32,5 @@ def cpython_only(func: "Callable[P, T]") -> "Callable[P, T]":
     def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> T:
         if not _is_cpython:
             raise SkipTest("Requires CPython")
-        return func(*args)
+        return func(*args, **kwargs)
     return wrapper
