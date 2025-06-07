@@ -632,6 +632,13 @@ class _freeze_time:
         self.as_kwarg = as_kwarg
         self.real_asyncio = real_asyncio
 
+    # mypy objects to this because Type is Callable, but Pytype needs it because
+    # (unlike mypy's) its inference does not assume class decorators always leave
+    # the type unchanged.
+    @overload
+    def __call__(self, func: Type[T2]) -> Type[T2]:  # type: ignore[overload-overlap]
+        ...
+
     @overload
     def __call__(self, func: "Callable[P, Awaitable[Any]]") -> "Callable[P, Awaitable[Any]]":
         ...
