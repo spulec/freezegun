@@ -310,7 +310,8 @@ def datetime_to_fakedatetime(datetime: datetime.datetime) -> "FakeDatetime":
                         datetime.minute,
                         datetime.second,
                         datetime.microsecond,
-                        datetime.tzinfo)
+                        datetime.tzinfo,
+                        fold=datetime.fold)
 
 
 def date_to_fakedate(date: datetime.date) -> "FakeDate":
@@ -401,9 +402,14 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
     def now(cls, tz: Optional[datetime.tzinfo] = None) -> "FakeDatetime":
         now = cls._time_to_freeze() or real_datetime.now()
         if tz:
-            result = tz.fromutc(now.replace(tzinfo=tz)) + cls._tz_offset()
+            result = tz.fromutc(now.replace(tzinfo=tz))
         else:
-            result = now + cls._tz_offset()
+            result = now
+
+        # Add the _tz_offset only if it's non-zero to preserve fold
+        if cls._tz_offset():
+            result += cls._tz_offset()
+
         return datetime_to_fakedatetime(result)
 
     def date(self) -> "FakeDate":
