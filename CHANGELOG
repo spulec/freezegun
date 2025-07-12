@@ -1,6 +1,11 @@
 Freezegun Changelog
 ===================
 
+1.5.3
+-----
+ * Fix compatibility with pytest 8.4.0 when using fixtures
+ * Add (back) class-decorator overload to guarantee Pytype understands it
+
 1.5.2
 -----
  * Remove support for Python 3.7
