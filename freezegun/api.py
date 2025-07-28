@@ -652,6 +652,8 @@ class _freeze_time:
             return self.decorate_class(func)
         elif inspect.iscoroutinefunction(func):
             return self.decorate_coroutine(func)
+        elif inspect.isgeneratorfunction(func):
+            return self.decorate_generator_function(func) # type: ignore
         return self.decorate_callable(func)  # type: ignore
 
     def decorate_class(self, klass: Type[T2]) -> Type[T2]:
@@ -914,20 +916,33 @@ class _freeze_time:
     def decorate_coroutine(self, coroutine: "Callable[P, Awaitable[T]]") -> "Callable[P, Awaitable[T]]":
         return wrap_coroutine(self, coroutine)
 
+    def _call_with_time_factory(self, time_factory: Union[StepTickTimeFactory, TickingDateTimeFactory, FrozenDateTimeFactory], func: "Callable[P, T]", *args: "P.args", **kwargs: "P.kwargs") -> T:
+        if self.as_arg and self.as_kwarg:
+            assert False, "You can't specify both as_arg and as_kwarg at the same time. Pick one."
+        if self.as_arg:
+            result = func(time_factory, *args, **kwargs)  # type: ignore
+        if self.as_kwarg:
+            kwargs[self.as_kwarg] = time_factory
+            result = func(*args, **kwargs)
+        else:
+            result = func(*args, **kwargs)
+        return result
+
+    def decorate_generator_function(self, func: "Callable[P, Iterator[T]]") -> "Callable[P, Iterator[T]]":
+
+        @functools.wraps(func)
+        def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> Iterator[T]:
+            with self as time_factory:
+                yield from self._call_with_time_factory(time_factory, func, *args, **kwargs)
+
+        return wrapper
+
     def decorate_callable(self, func: "Callable[P, T]") -> "Callable[P, T]":
+
         @functools.wraps(func)
         def wrapper(*args: "P.args", **kwargs: "P.kwargs") -> T:
             with self as time_factory:
-                if self.as_arg and self.as_kwarg:
-                    assert False, "You can't specify both as_arg and as_kwarg at the same time. Pick one."
-                elif self.as_arg:
-                    result = func(time_factory, *args, **kwargs)  # type: ignore
-                elif self.as_kwarg:
-                    kwargs[self.as_kwarg] = time_factory
-                    result = func(*args, **kwargs)
-                else:
-                    result = func(*args, **kwargs)
-            return result
+                return self._call_with_time_factory(time_factory, func, *args, **kwargs)
 
         return wrapper
 
