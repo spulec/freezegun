@@ -1,6 +1,10 @@
 Freezegun Changelog
 ===================
 
+1.5.4
+----
+* Fix: Ability to yield fixtures (broken in 1.5.3)
+
 1.5.3
 -----
  * Fix compatibility with pytest 8.4.0 when using fixtures
