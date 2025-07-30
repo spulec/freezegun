@@ -1,5 +1,5 @@
 from datetime import datetime
-from unittest import TestCase
+from typing import Iterator
 
 import pytest
 from freezegun import freeze_time
@@ -11,9 +11,17 @@ class TestClassDecoratorWithFixture:
     def ff(self) -> datetime:
         return datetime.now()
 
+    @pytest.fixture
+    def yield_ff(self) -> Iterator[datetime]:
+        yield datetime.now()
+
     def test_with_fixture(self, ff: datetime) -> None:
         assert ff == FakeDatetime(2022, 10, 1, 0, 0)
         assert datetime.now() == FakeDatetime(2022, 10, 1, 0, 0)
 
     def test_without_fixture(self) -> None:
+        assert datetime.now() == FakeDatetime(2022, 10, 1, 0, 0)
+
+    def test_with_yield_fixture(self, yield_ff: datetime) -> None:
+        assert yield_ff == FakeDatetime(2022, 10, 1, 0, 0)
         assert datetime.now() == FakeDatetime(2022, 10, 1, 0, 0)
