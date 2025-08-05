@@ -1,3 +1,5 @@
+import datetime
+import sys
 from unittest import mock
 import pytest
 import freezegun
@@ -104,3 +106,22 @@ def test_extend_default_ignore_list_duplicate_items() -> None:
             auto_tick_seconds=0,
             real_asyncio=False,
         )
+
+FROZEN_DATETIME = datetime.datetime(2020, 2, 29, 0, 0, 0, tzinfo=datetime.timezone.utc)
+current = datetime.datetime.now(datetime.timezone.utc)
+
+
+def test_fakedatetime_is_ignored():
+    from . import another_module
+
+    with freezegun.freeze_time(FROZEN_DATETIME):
+
+        assert another_module.gmtime().tm_year == FROZEN_DATETIME.year
+        assert another_module.FakeDatetime.now().year == FROZEN_DATETIME.year
+
+    with freezegun.freeze_time(FROZEN_DATETIME, ignore=["tests.another_module"]):
+
+        assert another_module.gmtime().tm_year == current.year
+        assert another_module.FakeDatetime.now().year == current.year
+
+    del sys.modules["tests.another_module"]
