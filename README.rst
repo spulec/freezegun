@@ -1,4 +1,4 @@
-FreezeGun: Let your Python tests travel through time
+🥶🔫 FreezeGun: Let your Python tests travel through time
 ====================================================
 
 .. image:: https://img.shields.io/pypi/v/freezegun.svg
