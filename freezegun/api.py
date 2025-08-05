@@ -270,6 +270,10 @@ def fake_strftime(format: Any, time_to_format: Any=None) -> str:
     if time_to_format is None:
         return real_strftime(format)
     else:
+        y, m, d, hh, mm, ss = time_to_format[:6]
+        shifted_time = datetime.datetime(y, m, d, hh, mm, ss) \
+                       - datetime.timedelta(seconds=time.timezone)
+        time_to_format = shifted_time.utctimetuple()
         return real_strftime(format, time_to_format)
 
 if real_clock is not None:
