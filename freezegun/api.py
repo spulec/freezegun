@@ -98,52 +98,82 @@ except (AttributeError, ImportError):
 
 
 # keep a cache of module attributes otherwise freezegun will need to analyze too many modules all the time
-_GLOBAL_MODULES_CACHE: Dict[str, Tuple[str, List[Tuple[str, Any]]]] = {}
+_GLOBAL_MODULES_CACHE: Dict[int, Tuple[int, List[Tuple[str, Any]]]] = {}
+# Cache for module time-related attributes to avoid repeated expensive dir() calls
+# Unlike GLOBAL_MODULES_CACHE, this only stores attribute *names*, not their values
+_MODULE_TIME_ATTRS_CACHE: Dict[int, Set[str]] = {}
+
+
+def _get_module_time_attributes(module: types.ModuleType) -> Set[str]:
+    """Get time-related attributes for a module, using cache if possible."""
+    module_id = id(module)
+    cached_attrs = _MODULE_TIME_ATTRS_CACHE.get(module_id, None)
+
+    if cached_attrs is not None:
+        return cached_attrs
+
+    try:
+        module_dir = dir(module)
+
+        # Find attributes that match real time objects
+        time_attrs = set()
+        for attribute_name in module_dir:
+            try:
+                attribute_value = getattr(module, attribute_name)
+                if id(attribute_value) in _real_time_object_ids:
+                    time_attrs.add(attribute_name)
+            except (ImportError, AttributeError, TypeError):
+                continue
+
+        _MODULE_TIME_ATTRS_CACHE[module_id] = time_attrs
+        return time_attrs
+    except (ImportError, TypeError):
+        return set()
 
 
 def _get_module_attributes(module: types.ModuleType) -> List[Tuple[str, Any]]:
+    """Get all time-related attributes from a module."""
     result: List[Tuple[str, Any]] = []
-    try:
-        module_attributes = dir(module)
-    except (ImportError, TypeError):
-        return result
-    for attribute_name in module_attributes:
+
+    time_attributes = _get_module_time_attributes(module)
+    for attribute_name in time_attributes:
         try:
             attribute_value = getattr(module, attribute_name)
         except (ImportError, AttributeError, TypeError):
-            # For certain libraries, this can result in ImportError(_winreg) or AttributeError (celery)
             continue
         else:
             result.append((attribute_name, attribute_value))
     return result
 
 
-def _setup_module_cache(module: types.ModuleType) -> None:
-    date_attrs = []
-    all_module_attributes = _get_module_attributes(module)
-    for attribute_name, attribute_value in all_module_attributes:
-        if id(attribute_value) in _real_time_object_ids:
-            date_attrs.append((attribute_name, attribute_value))
-    _GLOBAL_MODULES_CACHE[module.__name__] = (_get_module_attributes_hash(module), date_attrs)
+def _get_module_attributes_hash(module: types.ModuleType) -> Tuple[int, List[Tuple[str, Any]]]:
+    """Get a hash of module's time-related attributes."""
+    module_attrs = _get_module_attributes(module)
+
+    if not module_attrs:
+        return 0, []
+
+    module_hash = hash(frozenset(name for name, _ in module_attrs))
+    return module_hash, module_attrs
 
 
-def _get_module_attributes_hash(module: types.ModuleType) -> str:
-    try:
-        module_dir = dir(module)
-    except (ImportError, TypeError):
-        module_dir = []
-    return f'{id(module)}-{hash(frozenset(module_dir))}'
+def _setup_module_cache(module: types.ModuleType) -> List[Tuple[str, Any]]:
+    module_hash, module_attrs = _get_module_attributes_hash(module)
+    _GLOBAL_MODULES_CACHE[id(module)] = module_hash, module_attrs
+    return module_attrs
 
 
 def _get_cached_module_attributes(module: types.ModuleType) -> List[Tuple[str, Any]]:
-    module_hash, cached_attrs = _GLOBAL_MODULES_CACHE.get(module.__name__, ('0', []))
-    if _get_module_attributes_hash(module) == module_hash:
+    module_id = id(module)
+    module_hash, cached_attrs = _GLOBAL_MODULES_CACHE.get(module_id, (0, []))
+
+    current_module_hash, _ = _get_module_attributes_hash(module)
+    if current_module_hash == module_hash:
         return cached_attrs
 
     # cache miss: update the cache and return the refreshed value
-    _setup_module_cache(module)
+    cached_attrs = _setup_module_cache(module)
     # return the newly cached value
-    module_hash, cached_attrs = _GLOBAL_MODULES_CACHE[module.__name__]
     return cached_attrs
 
 
