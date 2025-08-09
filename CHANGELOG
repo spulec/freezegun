@@ -1,6 +1,10 @@
 Freezegun Changelog
 ===================
 
+1.5.5
+-----
+ * Allow parametrized arguments called 'func' (Broken in 1.5.4)
+
 1.5.4
 ----
 * Fix: Ability to yield fixtures (broken in 1.5.3)
