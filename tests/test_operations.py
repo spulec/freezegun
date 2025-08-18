@@ -2,6 +2,7 @@ import datetime
 import fractions
 import pytest
 from freezegun import freeze_time
+from dateutil import tz
 from dateutil.relativedelta import relativedelta
 from datetime import timedelta, tzinfo
 from tests import utils
@@ -66,11 +67,30 @@ def test_datetime_timezone_real() -> None:
     assert now.utcoffset() == timedelta(0, 60 * 60 * 5)
 
 
+@freeze_time("2021-10-31 02:30:00+01:00")  # This will have fold set to 1
+def test_datetime_timezone_real_fold():
+    vienna = tz.gettz("Europe/Vienna")
+    now = datetime.datetime.now(tz=vienna)
+    assert now == datetime.datetime(2021, 10, 31, 2, 30, tzinfo=vienna)
+    assert now.utcoffset() == timedelta(0, 60 * 60 * 1)
+    assert now.fold == 1
+
+
 @freeze_time("2012-01-14 2:00:00", tz_offset=-4)
 def test_datetime_timezone_real_with_offset() -> None:
     now = datetime.datetime.now(tz=GMT5())
     assert now == datetime.datetime(2012, 1, 14, 3, tzinfo=GMT5())
     assert now.utcoffset() == timedelta(0, 60 * 60 * 5)
+
+
+@freeze_time("2021-10-31 06:30:00+01:00", tz_offset=-4)
+def test_datetime_timezone_real_with_offset_fold():
+    vienna = tz.gettz("Europe/Vienna")
+    now = datetime.datetime.now(tz=vienna)
+    assert now == datetime.datetime(2021, 10, 31, 2, 30, tzinfo=vienna)
+    # Because of adding the tz_offset timedelta, fold information is lost
+    assert now.utcoffset() == timedelta(0, 60 * 60 * 2)
+    assert now.fold == 0
 
 
 @freeze_time("2012-01-14 00:00:00")
