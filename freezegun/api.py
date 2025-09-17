@@ -335,6 +335,27 @@ class FakeDate(real_date, metaclass=FakeDateMeta):
         else:
             return result  # type: ignore
 
+    def __le__(self, other) -> bool:
+        if isinstance(other, real_date) and not isinstance(other, real_datetime):
+            return real_date.__le__(self, other)
+        return NotImplemented
+
+    def __lt__(self, other) -> bool:
+        if isinstance(other, real_date) and not isinstance(other, real_datetime):
+            return real_date.__lt__(self, other)
+        return NotImplemented
+
+    def __ge__(self, other) -> bool:
+        if isinstance(other, real_date) and not isinstance(other, real_datetime):
+            return real_date.__ge__(self, other)
+        return NotImplemented
+
+    def __gt__(self, other) -> bool:
+        if isinstance(other, real_date) and not isinstance(other, real_datetime):
+            return real_date.__gt__(self, other)
+        return NotImplemented
+
+
     @classmethod
     def today(cls: Type["FakeDate"]) -> "FakeDate":
         result = cls._date_to_freeze() + cls._tz_offset()
