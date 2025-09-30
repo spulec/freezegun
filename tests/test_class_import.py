@@ -180,7 +180,36 @@ def test_import_after_start() -> None:
     assert another_module.get_fake_strftime() is fake_strftime
     del sys.modules['tests.another_module']
 
+
 def test_none_as_initial() -> None:
     with freeze_time() as ft:
         ft.move_to('2012-01-14')
         assert fake_strftime_function() == '2012'
+
+
+def test_dynamic_module_reimported() -> None:
+    local_time = datetime.datetime(2012, 1, 14)
+    utc_time = local_time - datetime.timedelta(seconds=time.timezone)
+    expected_timestamp = time.mktime(utc_time.timetuple())
+
+    from . import dynamic_module
+    # Don't do anything else - just make sure it's in the cache
+    with freeze_time("2012-01-14"):
+        pass
+
+    # Now, load the module again. When we call freeze_time again it will be in
+    # the cache and we can start testing it
+    import importlib
+    importlib.reload(dynamic_module)
+
+    # Mutate the module to show the caching & invalidation
+    dynamic_module.add_after_start()
+
+    with freeze_time("2012-01-14"):
+        # This is NOT good - but was the previous behaviour of freezegun
+        assert dynamic_module.time_after_start != expected_timestamp
+        assert dynamic_module.dynamic_time != expected_timestamp  # type: ignore
+        # This is NEW broken behaviour - dynamic_time_func is an attribute that
+        # is dynamically added to the module, and is NOT picked up by the
+        # caching mechanism
+        assert dynamic_module.dynamic_time_func() != expected_timestamp  # type: ignore
