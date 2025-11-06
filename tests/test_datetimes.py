@@ -826,3 +826,11 @@ def test_datetime_in_timezone(monkeypatch: pytest.MonkeyPatch) -> None:
             assert datetime.datetime.now() == datetime.datetime(1970, 1, 1, 1, 0, 0)
     finally:
         time.tzset()  # set the timezone back to what is was before
+
+@freeze_time("2025-11-06T01:00:00Z")
+def test_datetime_combine() -> None:
+    now = datetime.datetime.now()
+    midnight = datetime.datetime.min.time()
+
+    assert now == datetime.datetime(2025, 11, 6, 1, 0, 0)
+    assert datetime.datetime.combine(now, midnight) == datetime.datetime(2025, 11, 6, 0, 0, 0)

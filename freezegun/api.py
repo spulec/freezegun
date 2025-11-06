@@ -436,6 +436,15 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
     def _tz_offset(cls) -> datetime.timedelta:
         return tz_offsets[-1]
 
+    @classmethod
+    def combine(cls, date, time, tzinfo=True) -> "FakeDatetime":
+        if tzinfo is True:
+            tzinfo = time.tzinfo
+
+        return cls(date.year, date.month, date.day,
+                   time.hour, time.minute, time.second, time.microsecond,
+                   tzinfo, fold=time.fold)
+
 
 FakeDatetime.min = datetime_to_fakedatetime(real_datetime.min)
 FakeDatetime.max = datetime_to_fakedatetime(real_datetime.max)
