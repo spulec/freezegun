@@ -826,3 +826,21 @@ def test_datetime_in_timezone(monkeypatch: pytest.MonkeyPatch) -> None:
             assert datetime.datetime.now() == datetime.datetime(1970, 1, 1, 1, 0, 0)
     finally:
         time.tzset()  # set the timezone back to what is was before
+
+
+
+def test_api_assigning_fake_perf_counter_to_class() -> None:
+    """The fontTools module assigns perf_counter to a class and calls it like a
+    bound method, check that this works.
+    """
+    class Foo:
+        perf_counter: Any
+
+    freezer = freeze_time("2012-01-14")
+    freezer.start()
+
+    Foo.perf_counter = time.perf_counter
+
+    f = Foo()
+    # Should not raise
+    f.perf_counter()
