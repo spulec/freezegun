@@ -239,7 +239,9 @@ def fake_monotonic() -> float:
 
     return _get_fake_monotonic()
 
-
+# This @staticmethod works around an issue in fontTools where perf_counter is
+# assigned to a class and treated as a bound method, see #558
+@staticmethod
 def fake_perf_counter() -> float:
     if _should_use_real_time():
         return real_perf_counter()
