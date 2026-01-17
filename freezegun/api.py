@@ -772,6 +772,7 @@ class _freeze_time:
             setattr(uuid, uuid_generate_time_attr, None)
         uuid._UuidCreate = None  # type: ignore[attr-defined]
         uuid._last_timestamp = None  # type: ignore[attr-defined]
+        uuid._last_timestamp_v7 = None  # type: ignore[attr-defined]
 
         copyreg.dispatch_table[real_datetime] = pickle_fake_datetime
         copyreg.dispatch_table[real_date] = pickle_fake_date
@@ -912,6 +913,7 @@ class _freeze_time:
                 setattr(uuid, uuid_generate_time_attr, real_uuid_generate_time)
             uuid._UuidCreate = real_uuid_create  # type: ignore[attr-defined]
             uuid._last_timestamp = None  # type: ignore[attr-defined]
+            uuid._last_timestamp_v7 = None  # type: ignore[attr-defined]
 
     def decorate_coroutine(self, coroutine: "Callable[P, Awaitable[T]]") -> "Callable[P, Awaitable[T]]":
         return wrap_coroutine(self, coroutine)
