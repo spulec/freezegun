@@ -811,12 +811,13 @@ class _freeze_time:
         add_change = self.undo_changes.append
 
         # Save the current loaded modules
-        self.modules_at_start = set(sys.modules.keys())
+        sys_modules_copy = sys.modules.copy()
+        self.modules_at_start = set(sys_modules_copy.keys())
 
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore')
 
-            for mod_name, module in list(sys.modules.items()):
+            for mod_name, module in sys_modules_copy.items():
                 if mod_name is None or module is None or mod_name == __name__:
                     continue
                 elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
