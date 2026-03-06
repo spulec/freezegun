@@ -7,6 +7,8 @@ FreezeGun: Let your Python tests travel through time
    :target: https://github.com/spulec/freezegun/actions
 .. image:: https://coveralls.io/repos/spulec/freezegun/badge.svg?branch=master
    :target: https://coveralls.io/r/spulec/freezegun
+.. image:: https://img.shields.io/badge/lang-es-red.svg
+   :target: https://github.com/spulec/freezegun/blob/master/README.es.rst
 
 FreezeGun is a library that allows your Python tests to travel through time by mocking the datetime module.
 
