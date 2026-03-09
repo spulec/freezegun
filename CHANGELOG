@@ -6,6 +6,7 @@ Freezegun Changelog
  * Add support for Python 3.14
  * Fix compatibility with Python 3.14's `calendar.timegm`, which now calls `datetime.date()` internally and conflicts with freezegun's patched `FakeDate`
  * Harden `uuid` internal attribute detection for forward compatibility
+ * Add explicit `__init__` to `FakeDate` and `FakeDatetime` to prevent `dataclasses.dataclass()` from corrupting them (fixes marshmallow_dataclass compatibility)
 
 1.5.5
 -----

@@ -1,9 +1,10 @@
+import dataclasses
 import datetime
 import fractions
 import pytest
 import typing
 from freezegun import freeze_time
-from freezegun.api import StepTickTimeFactory, TickingDateTimeFactory, FrozenDateTimeFactory
+from freezegun.api import FakeDate, StepTickTimeFactory, TickingDateTimeFactory, FrozenDateTimeFactory
 from dateutil.relativedelta import relativedelta
 from datetime import timedelta, tzinfo
 from tests import utils
@@ -163,4 +164,11 @@ def test_as_kwarg()->None:
         assert arg == 1
 
     as_arg(arg=1)
+
+
+def test_fake_date_survives_dataclass_introspection() -> None:
+    """dataclasses.dataclass() must not corrupt FakeDate.__init__."""
+    dataclasses.dataclass(FakeDate)
+    d = FakeDate(2024, 1, 1)  # must not raise TypeError
+    assert str(d) == "2024-01-01"
 

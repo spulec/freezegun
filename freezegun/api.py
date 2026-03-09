@@ -316,6 +316,12 @@ def date_to_fakedate(date: datetime.date) -> "FakeDate":
 
 
 class FakeDate(real_date, metaclass=FakeDateMeta):
+    def __init__(self, *args, **kwargs):
+        # Prevent dataclasses.dataclass() from generating a no-arg __init__
+        # when libraries like marshmallow_dataclass introspect this class.
+        # datetime.date is a C type: construction is handled in __new__.
+        pass
+
     def __add__(self, other: Any) -> "FakeDate":
         result = real_date.__add__(self, other)
         if result is NotImplemented:
@@ -359,6 +365,10 @@ class FakeDatetimeMeta(FakeDateMeta):
 
 
 class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
+    def __init__(self, *args, **kwargs):
+        # Same rationale as FakeDate: prevents dataclasses from overwriting __init__.
+        pass
+
     def __add__(self, other: Any) -> "FakeDatetime":  # type: ignore
         result = real_datetime.__add__(self, other)
         if result is NotImplemented:
