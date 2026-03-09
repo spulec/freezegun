@@ -17,6 +17,7 @@ jobs:
           - '3.11'
           - '3.12'
           - '3.13'
+          - '3.14'
 
     steps:
       - uses: actions/checkout@master
@@ -46,6 +47,7 @@ jobs:
           - '3.11'
           - '3.12'
           - '3.13'
+          - '3.14'
         implementation:
           - ''      # CPython
           - 'pypy'  # PyPy
@@ -56,6 +58,8 @@ jobs:
             python-version: '3.12'
           - implementation: 'pypy'
             python-version: '3.13'
+          - implementation: 'pypy'
+            python-version: '3.14'
 
     steps:
       - uses: actions/checkout@master

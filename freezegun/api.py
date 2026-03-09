@@ -50,6 +50,7 @@ real_perf_counter = time.perf_counter
 real_strftime = time.strftime
 real_date = datetime.date
 real_datetime = datetime.datetime
+real_timegm = calendar.timegm
 real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_perf_counter, real_strftime, real_date, real_datetime]
 
 if _TIME_NS_PRESENT:
@@ -74,21 +75,16 @@ tz_offsets: List[datetime.timedelta] = []
 ignore_lists: List[Tuple[str, ...]] = []
 tick_flags: List[bool] = []
 
-try:
-    # noinspection PyUnresolvedReferences
-    real_uuid_generate_time = uuid._uuid_generate_time  # type: ignore
-    uuid_generate_time_attr = '_uuid_generate_time'
-except AttributeError:
-    # noinspection PyUnresolvedReferences
-    if hasattr(uuid, '_load_system_functions'):
-        # A no-op after Python ~3.9, being removed in 3.13.
-        uuid._load_system_functions()
-    # noinspection PyUnresolvedReferences
-    real_uuid_generate_time = uuid._generate_time_safe  # type: ignore
-    uuid_generate_time_attr = '_generate_time_safe'
-except ImportError:
-    real_uuid_generate_time = None
-    uuid_generate_time_attr = None  # type: ignore
+real_uuid_generate_time = None
+uuid_generate_time_attr = None  # type: ignore
+for _attr in (
+    '_uuid_generate_time',  # Python <= 3.6 (dead code since python_requires >= 3.8)
+    '_generate_time_safe',  # Python 3.7 — 3.13+ (replaced _uuid_generate_time; _load_system_functions removed in 3.13)
+):
+    if hasattr(uuid, _attr):
+        real_uuid_generate_time = getattr(uuid, _attr)
+        uuid_generate_time_attr = _attr
+        break
 
 try:
     # noinspection PyUnresolvedReferences
@@ -189,7 +185,7 @@ def fake_time() -> float:
     if _should_use_real_time():
         return real_time()
     current_time = get_current_time()
-    return calendar.timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
+    return real_timegm(current_time.timetuple()) + current_time.microsecond / 1000000.0
 
 if _TIME_NS_PRESENT:
     def fake_time_ns() -> int:
@@ -219,7 +215,7 @@ def _get_fake_monotonic() -> float:
     # For monotonic timers like .monotonic(), .perf_counter(), etc
     current_time = get_current_time()
     return (
-        calendar.timegm(current_time.timetuple()) +
+        real_timegm(current_time.timetuple()) +
         current_time.microsecond / 1e6
     )
 
@@ -228,7 +224,7 @@ def _get_fake_monotonic_ns() -> int:
     # For monotonic timers like .monotonic(), .perf_counter(), etc
     current_time = get_current_time()
     return (
-        calendar.timegm(current_time.timetuple()) * 1000000 +
+        real_timegm(current_time.timetuple()) * 1000000 +
         current_time.microsecond
     ) * 1000
 
@@ -320,6 +316,12 @@ def date_to_fakedate(date: datetime.date) -> "FakeDate":
 
 
 class FakeDate(real_date, metaclass=FakeDateMeta):
+    def __init__(self, *args, **kwargs):
+        # Prevent dataclasses.dataclass() from generating a no-arg __init__
+        # when libraries like marshmallow_dataclass introspect this class.
+        # datetime.date is a C type: construction is handled in __new__.
+        pass
+
     def __add__(self, other: Any) -> "FakeDate":
         result = real_date.__add__(self, other)
         if result is NotImplemented:
@@ -363,6 +365,10 @@ class FakeDatetimeMeta(FakeDateMeta):
 
 
 class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
+    def __init__(self, *args, **kwargs):
+        # Same rationale as FakeDate: prevents dataclasses from overwriting __init__.
+        pass
+
     def __add__(self, other: Any) -> "FakeDatetime":  # type: ignore
         result = real_datetime.__add__(self, other)
         if result is NotImplemented:

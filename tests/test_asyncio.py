@@ -79,3 +79,41 @@ def test_asyncio_to_call_later_with_frozen_time() -> None:
 
     with freeze_time('1970-01-02', real_asyncio=True):
         asyncio.run(coroutine())
+
+
+def test_freeze_time_with_asyncio_run() -> None:
+    """Regression test for Python 3.14 where calendar.timegm calls
+    datetime.date() internally, which hits FakeDate and raises
+    TypeError: FakeDate.__init__() takes 1 positional argument but 4 were given.
+    """
+    @freeze_time("2026-03-06T10:20:30")
+    def run() -> int:
+        async def coro() -> int:
+            await asyncio.sleep(0)
+            return 42
+
+        return asyncio.run(coro())
+
+    assert run() == 42
+
+
+def test_freeze_time_with_asyncio_and_dataclass_schema() -> None:
+    """Regression: marshmallow_dataclass calls dataclasses.dataclass(FakeDate)
+    which corrupts FakeDate.__init__, causing calendar.timegm to fail when
+    asyncio calls time.monotonic() -> fake_monotonic() -> FakeDate(y, m, 1).
+    """
+    import dataclasses
+    from freezegun.api import FakeDate
+
+    @freeze_time("2026-03-06T10:20:30")
+    def run() -> int:
+        # Simulate what marshmallow_dataclass does
+        dataclasses.dataclass(FakeDate)
+
+        async def coro() -> int:
+            await asyncio.sleep(0)
+            return 42
+
+        return asyncio.run(coro())
+
+    assert run() == 42
