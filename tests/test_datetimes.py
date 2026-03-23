@@ -13,7 +13,7 @@ import pytest
 from tests import utils
 
 from freezegun import freeze_time
-from freezegun.api import FakeDatetime, FakeDate
+from freezegun.api import FakeDatetime, FakeDate, real_date_today, real_datetime_today
 
 try:
     import maya  # type: ignore
@@ -826,3 +826,41 @@ def test_datetime_in_timezone(monkeypatch: pytest.MonkeyPatch) -> None:
             assert datetime.datetime.now() == datetime.datetime(1970, 1, 1, 1, 0, 0)
     finally:
         time.tzset()  # set the timezone back to what is was before
+
+
+def test_real_date_today_bypasses_freeze_time() -> None:
+    """
+    real_date.today() calls time.time() at the C level, so it returns the
+    frozen date even though callers expect the genuine wall-clock date.
+    real_date_today() uses the saved pre-patch time.time (real_time) and must
+    therefore return a date that is NOT equal to the frozen date.
+    """
+    frozen_date = datetime.date(1981, 2, 1)
+    with freeze_time("1981-02-01"):
+        # The frozen date is in effect for the normal API.
+        assert datetime.date.today() == frozen_date
+        # real_date_today() must return the actual current date.
+        today = real_date_today()
+        assert isinstance(today, datetime.date)
+        assert today != frozen_date, (
+            "real_date_today() returned the frozen date; it must use the real clock"
+        )
+
+
+def test_real_datetime_today_bypasses_freeze_time() -> None:
+    """
+    real_datetime.today() calls time.time() at the C level, so it returns the
+    frozen datetime even though callers expect the genuine wall-clock datetime.
+    real_datetime_today() uses the saved pre-patch time.time (real_time) and
+    must therefore return a datetime that is NOT equal to the frozen datetime.
+    """
+    frozen_dt = datetime.datetime(1981, 2, 1)
+    with freeze_time("1981-02-01"):
+        # The frozen datetime is in effect for the normal API.
+        assert datetime.datetime.today() == frozen_dt
+        # real_datetime_today() must return the actual current datetime.
+        today = real_datetime_today()
+        assert isinstance(today, datetime.datetime)
+        assert today != frozen_dt, (
+            "real_datetime_today() returned the frozen datetime; it must use the real clock"
+        )
