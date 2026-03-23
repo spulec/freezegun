@@ -52,6 +52,31 @@ real_date = datetime.date
 real_datetime = datetime.datetime
 real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_perf_counter, real_strftime, real_date, real_datetime]
 
+# `datetime.date.today()` and `datetime.datetime.today()` call Python's
+# `time.time()` at the C level, which freezegun patches.  As a result,
+# `real_date.today()` and `real_datetime.today()` still return the frozen
+# time instead of the actual current time.  Use these helpers instead:
+def real_date_today() -> datetime.date:
+    """Return the real current date, bypassing any active freeze_time context.
+
+    ``real_date.today()`` cannot be used for this purpose because
+    ``datetime.date.today()`` calls ``time.time()`` at the C level, which
+    freezegun patches.  This function uses the saved pre-patch ``time.time``
+    (``real_time``) to obtain the genuine wall-clock date.
+    """
+    return real_date.fromtimestamp(real_time())
+
+
+def real_datetime_today() -> datetime.datetime:
+    """Return the real current datetime, bypassing any active freeze_time context.
+
+    ``real_datetime.today()`` cannot be used for this purpose because
+    ``datetime.datetime.today()`` calls ``time.time()`` at the C level, which
+    freezegun patches.  This function uses the saved pre-patch ``time.time``
+    (``real_time``) to obtain the genuine wall-clock datetime.
+    """
+    return real_datetime.fromtimestamp(real_time())
+
 if _TIME_NS_PRESENT:
     real_time_ns = time.time_ns
     real_date_objects.append(real_time_ns)
