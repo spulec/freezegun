@@ -143,6 +143,22 @@ def test_auto_and_manual_tick(
         assert incremented_time == expected_time
 
 
+def test_auto_tick_zero_delta_is_noop() -> None:
+    """tick(delta=timedelta(0)) must not advance the clock; previously falsy check
+    caused it to fall through to the default step_width advance."""
+    first_time = datetime.datetime(2020, 1, 14, 0, 0, 0)
+
+    with freeze_time(first_time, auto_tick_seconds=5) as frozen_time:
+        assert isinstance(frozen_time, StepTickTimeFactory)
+        before = frozen_time.time_to_freeze
+        frozen_time.tick(delta=datetime.timedelta(0))
+        after = frozen_time.time_to_freeze
+        assert before == after, (
+            f"tick(timedelta(0)) should be a no-op but advanced clock by "
+            f"{(after - before).total_seconds()}s"
+        )
+
+
 def test_as_arg()->None:
     @freeze_time("2012-01-14", as_arg=True)
     def as_arg(frozen: typing.Optional[TickingDateTimeFactory]=None,

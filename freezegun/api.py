@@ -560,7 +560,7 @@ class StepTickTimeFactory:
         return return_time
 
     def tick(self, delta: Union[datetime.timedelta, float, None]=None) -> datetime.datetime:
-        if not delta:
+        if delta is None:
             delta = datetime.timedelta(seconds=self.step_width)
         elif isinstance(delta, numbers.Integral):
             delta = datetime.timedelta(seconds=int(delta))
