@@ -754,7 +754,7 @@ def test_should_use_real_time() -> None:
 
 
 @pytest.mark.skipif(not HAS_TIME_NS,
-                    reason="time.time_ns is present only on 3.7 and above")
+                    reason="requires time.time_ns()")
 def test_time_ns() -> None:
     freezer = freeze_time("2012-01-14")
     local_time = datetime.datetime(2012, 1, 14)
@@ -770,7 +770,7 @@ def test_time_ns() -> None:
 
 
 @pytest.mark.skipif(not HAS_TIME_NS,
-                    reason="time.time_ns is present only on 3.7 and above")
+                    reason="requires time.time_ns()")
 def test_time_ns_with_microseconds() -> None:
     freezer = freeze_time("2024-03-20 18:21:10.12345")
 
