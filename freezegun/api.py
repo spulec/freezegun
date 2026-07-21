@@ -303,14 +303,17 @@ class FakeDateMeta(type):
 
 
 def datetime_to_fakedatetime(datetime: datetime.datetime) -> "FakeDatetime":
-    return FakeDatetime(datetime.year,
-                        datetime.month,
-                        datetime.day,
-                        datetime.hour,
-                        datetime.minute,
-                        datetime.second,
-                        datetime.microsecond,
-                        datetime.tzinfo)
+    return FakeDatetime(
+        datetime.year,
+        datetime.month,
+        datetime.day,
+        datetime.hour,
+        datetime.minute,
+        datetime.second,
+        datetime.microsecond,
+        datetime.tzinfo,
+        fold=getattr(datetime, "fold", 0),
+    )
 
 
 def date_to_fakedate(date: datetime.date) -> "FakeDate":
