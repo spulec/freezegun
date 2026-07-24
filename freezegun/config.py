@@ -12,6 +12,7 @@ DEFAULT_IGNORE_LIST = [
     'selenium',
     '_pytest.terminal.',
     '_pytest.runner.',
+    '_pytest.timing',
     'gi',
     'prompt_toolkit',
 ]
