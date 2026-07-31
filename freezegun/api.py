@@ -19,7 +19,6 @@ from typing import TYPE_CHECKING, overload
 from typing import Any, Awaitable, Callable, Dict, Iterator, List, Optional, Set, Type, TypeVar, Tuple, Union
 
 from dateutil import parser
-from dateutil.tz import tzlocal
 
 try:
     from maya import MayaDT  # type: ignore
@@ -379,8 +378,6 @@ class FakeDatetime(real_datetime, FakeDate, metaclass=FakeDatetimeMeta):
             return result  # type: ignore
 
     def astimezone(self, tz: Optional[datetime.tzinfo]=None) -> "FakeDatetime":
-        if tz is None:
-            tz = tzlocal()
         return datetime_to_fakedatetime(real_datetime.astimezone(self, tz))
 
     @classmethod

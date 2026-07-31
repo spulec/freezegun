@@ -696,6 +696,23 @@ def test_time_with_nested() -> None:
         assert time() == second
 
 
+@freeze_time("2025-04-01T00:00")
+def test_astimezone_without_arg_returns_fixed_offset_timezone() -> None:
+    """
+    datetime.astimezone() with no argument should behave like real Python:
+    resolve to a concrete, fixed-offset datetime.timezone for this instant,
+    not an ongoing "local zone" reference (e.g. dateutil's tzlocal()).
+    Consumers that call tzinfo.tzname(None), the same way the stdlib's own
+    fixed-offset timezone.tzname() ignores its argument, don't support that
+    on a tzlocal() instance.
+    """
+    frozen_now = datetime.datetime.now(datetime.timezone.utc)
+    localized = frozen_now.astimezone()
+
+    assert isinstance(localized.tzinfo, datetime.timezone)
+    assert localized.tzinfo.tzname(None) is not None
+
+
 @pytest.mark.parametrize("func_name",
     ("monotonic", "perf_counter")
 )
