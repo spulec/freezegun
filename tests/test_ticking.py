@@ -1,5 +1,4 @@
 import datetime
-import sys
 import time
 
 from unittest import mock
@@ -92,15 +91,9 @@ def test_ticking_move_to() -> None:
     ("monotonic", "monotonic_ns", "perf_counter", "perf_counter_ns"),
 )
 def test_ticking_monotonic(func_name: str) -> None:
-    if sys.version_info[0:2] >= (3, 7):
-        # All of these functions should exist in Python 3.7+, so this test helps
-        # avoid inappropriate skipping when we've accidentally typo-ed the name
-        # of one of these functions 😅
-        assert hasattr(time, func_name)
-    else:
-        if not hasattr(time, func_name):
-            pytest.skip(
-                "time.%s does not exist in the current Python version" % func_name)
+    # All supported runtimes should provide these functions, so a missing
+    # attribute likely means the parameterized name is wrong.
+    assert hasattr(time, func_name)
 
     func = getattr(time, func_name)
     with freeze_time("Jan 14th, 2012, 23:59:59", tick=True):
