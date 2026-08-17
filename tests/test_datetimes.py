@@ -302,6 +302,18 @@ def test_time_localtime() -> None:
     assert time.localtime().tm_year != 2012
 
 
+def test_time_mktime() -> None:
+    # Before this was fixed, time.mktime() fell straight through to the
+    # real implementation and ignored the frozen time entirely, so it did
+    # not round-trip with time.localtime() while frozen.
+    with modify_timezone(-3600):  # Set this for UTC-1
+        with freeze_time('2012-01-14 03:21:34'):
+            local_time = time.localtime()
+            assert local_time.tm_hour == 4  # offset of 1 hour due to time zone
+            assert time.mktime(local_time) == time.time()
+            assert time.mktime(tuple(local_time)) == time.time()
+
+
 def test_strftime() -> None:
     with modify_timezone(0):
         with freeze_time('1970-01-01'):

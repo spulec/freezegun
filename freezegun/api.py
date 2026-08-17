@@ -48,9 +48,10 @@ real_gmtime = time.gmtime
 real_monotonic = time.monotonic
 real_perf_counter = time.perf_counter
 real_strftime = time.strftime
+real_mktime = time.mktime
 real_date = datetime.date
 real_datetime = datetime.datetime
-real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_perf_counter, real_strftime, real_date, real_datetime]
+real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_perf_counter, real_strftime, real_mktime, real_date, real_datetime]
 
 if _TIME_NS_PRESENT:
     real_time_ns = time.time_ns
@@ -213,6 +214,19 @@ def fake_gmtime(t: Optional[float]=None) -> time.struct_time:
     if _should_use_real_time():
         return real_gmtime()
     return get_current_time().timetuple()
+
+
+def fake_mktime(t: Any) -> float:
+    if _should_use_real_time():
+        return real_mktime(t)
+    # time.mktime() is the inverse of time.localtime(): it takes a local
+    # time struct and returns the corresponding timestamp. fake_localtime()
+    # builds its "local" struct by shifting the frozen time by
+    # time.timezone, so undo that same shift here to get back to the
+    # frozen time before converting to a timestamp.
+    naive_local = datetime.datetime(*tuple(t)[:6])
+    shifted_back = naive_local + datetime.timedelta(seconds=time.timezone)
+    return calendar.timegm(shifted_back.timetuple())
 
 
 def _get_fake_monotonic() -> float:
@@ -768,6 +782,7 @@ class _freeze_time:
         time.localtime = fake_localtime  # type: ignore
         time.gmtime = fake_gmtime  # type: ignore
         time.strftime = fake_strftime  # type: ignore
+        time.mktime = fake_mktime  # type: ignore
         if uuid_generate_time_attr:
             setattr(uuid, uuid_generate_time_attr, None)
         uuid._UuidCreate = None  # type: ignore[attr-defined]
@@ -782,6 +797,7 @@ class _freeze_time:
             ('real_datetime', real_datetime, FakeDatetime),
             ('real_gmtime', real_gmtime, fake_gmtime),
             ('real_localtime', real_localtime, fake_localtime),
+            ('real_mktime', real_mktime, fake_mktime),
             ('real_monotonic', real_monotonic, fake_monotonic),
             ('real_perf_counter', real_perf_counter, fake_perf_counter),
             ('real_strftime', real_strftime, fake_strftime),
@@ -897,6 +913,7 @@ class _freeze_time:
             time.gmtime = real_gmtime
             time.localtime = real_localtime
             time.strftime = real_strftime
+            time.mktime = real_mktime
             time.clock = real_clock  # type: ignore[attr-defined]
 
             if _TIME_NS_PRESENT:
