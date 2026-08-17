@@ -149,6 +149,19 @@ def test_tz_offset_with_time() -> None:
     freezer.stop()
 
 
+def test_tz_offset_with_explicit_tz_now() -> None:
+    # tz_offset simulates what the local machine's naive now() would
+    # report, but must not shift an explicit tz-aware now() query -
+    # datetime.now(timezone.utc) should still return the true frozen
+    # instant regardless of tz_offset.
+    frozen_utc_instant = datetime.datetime(2012, 1, 14, 3, 21, 34, tzinfo=datetime.timezone.utc)
+    freezer = freeze_time(frozen_utc_instant, tz_offset=1)
+    freezer.start()
+    assert datetime.datetime.now(datetime.timezone.utc) == frozen_utc_instant
+    assert datetime.datetime.now() == datetime.datetime(2012, 1, 14, 4, 21, 34)
+    freezer.stop()
+
+
 def test_time_with_microseconds() -> None:
     freezer = freeze_time(datetime.datetime(1970, 1, 1, 0, 0, 1, 123456))
     freezer.start()
