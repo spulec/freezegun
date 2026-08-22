@@ -1,19 +1,20 @@
-import time
 import calendar
 import datetime
 import fractions
-import unittest
 import locale
 import sys
+import time
+import unittest
 from typing import Any, Callable
 from unittest import SkipTest
-from dateutil.tz import UTC
 
 import pytest
-from tests import utils
+from dateutil.tz import UTC
 
+import freezegun.api as api
 from freezegun import freeze_time
-from freezegun.api import FakeDatetime, FakeDate
+from freezegun.api import FakeDate, FakeDatetime
+from tests import utils
 
 try:
     import maya  # type: ignore
@@ -811,6 +812,49 @@ def test_timestamp_with_tzoffset() -> None:
 
         assert utcnow == datetime.datetime.utcfromtimestamp(time.time())
         assert utcnow == datetime.datetime.utcnow()
+
+
+def test_module_hash_cache_speedup() -> None:
+    """
+    freeze_time.start() re-scans every imported module's attribute names using
+    dir() + hashing. When the per-module attribute-name hash is cached, that
+    reflection work happens only once per module; without the cache it repeats on
+    every start. This asserts that many repeated start/stop cycles are
+    measurably faster with the cache enabled.
+    """
+
+    module_hash_cache = getattr(api, "_MODULE_HASH_CACHE", None)
+
+    cycles = 10
+    trials = 5
+
+    def run_cycles(clear_cache_each_cycle: bool = False) -> float:
+        # Use the fastest (minimum) of several trials to reduce scheduling noise.
+        best = float("inf")
+        for _ in range(trials):
+            start = time.perf_counter()
+            for _ in range(cycles):
+                if clear_cache_each_cycle and module_hash_cache is not None:
+                    # Simulate the uncached path: force a hash recompute per start.
+                    module_hash_cache.clear()
+                with freeze_time("2020-01-01"):
+                    pass
+            best = min(best, time.perf_counter() - start)
+        return best
+
+    # Warm up the caches so the timed runs are representative.
+    with freeze_time("2020-01-01"):
+        pass
+
+    cached_time = run_cycles()
+    uncached_time = run_cycles(clear_cache_each_cycle=True)
+
+    # The cached path must be substantially faster than the recompute path.
+    # The measured speedup is large (many-fold), so a 2x margin is safe.
+    assert cached_time * 2 < uncached_time, (
+        "freeze_time module-hash caching did not speed up repeated start/stop "
+        f"cycles (cached={cached_time:.4f}s, uncached={uncached_time:.4f}s)"
+    )
 
 @pytest.mark.skip("timezone handling is currently incorrect")
 def test_datetime_in_timezone(monkeypatch: pytest.MonkeyPatch) -> None:
