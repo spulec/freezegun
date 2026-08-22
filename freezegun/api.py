@@ -135,9 +135,26 @@ def _get_module_attributes_hash(module: types.ModuleType) -> str:
     return f'{id(module)}-{hash(frozenset(module_dir))}'
 
 
+# Cache of module attribute-name hashes keyed by (id(module), module.__name__).
+# This is computed fresh on a first lookup for module object. It's then reused
+# as long as that object live. This avoids executing `dir` repeatedly across
+# thousands of modules across many starts.
+_MODULE_HASH_CACHE: Dict[Tuple[int, str], str] = {}
+
+
+def _get_cached_module_hash(module: types.ModuleType) -> str:
+    key = (id(module), module.__name__)
+    cached = _MODULE_HASH_CACHE.get(key)
+    if cached is not None:
+        return cached
+    value = _get_module_attributes_hash(module)
+    _MODULE_HASH_CACHE[key] = value
+    return value
+
+
 def _get_cached_module_attributes(module: types.ModuleType) -> List[Tuple[str, Any]]:
     module_hash, cached_attrs = _GLOBAL_MODULES_CACHE.get(module.__name__, ('0', []))
-    if _get_module_attributes_hash(module) == module_hash:
+    if _get_cached_module_hash(module) == module_hash:
         return cached_attrs
 
     # cache miss: update the cache and return the refreshed value
