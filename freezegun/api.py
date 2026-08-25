@@ -48,9 +48,11 @@ real_gmtime = time.gmtime
 real_monotonic = time.monotonic
 real_perf_counter = time.perf_counter
 real_strftime = time.strftime
+real_asctime = time.asctime
+real_ctime = time.ctime
 real_date = datetime.date
 real_datetime = datetime.datetime
-real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_perf_counter, real_strftime, real_date, real_datetime]
+real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_perf_counter, real_strftime, real_asctime, real_ctime, real_date, real_datetime]
 
 if _TIME_NS_PRESENT:
     real_time_ns = time.time_ns
@@ -271,6 +273,26 @@ def fake_strftime(format: Any, time_to_format: Any=None) -> str:
         return real_strftime(format)
     else:
         return real_strftime(format, time_to_format)
+
+
+def fake_asctime(t: Any=None) -> str:
+    if t is None:
+        if not _should_use_real_time():
+            t = fake_localtime()
+
+    if t is None:
+        return real_asctime()
+    return real_asctime(t)
+
+
+def fake_ctime(secs: Optional[float]=None) -> str:
+    if secs is not None:
+        return real_ctime(secs)
+    if _should_use_real_time():
+        return real_ctime()
+    # time.ctime(secs) is documented as asctime(localtime(secs)), so build the
+    # frozen result from the faked local time rather than the real clock.
+    return real_asctime(fake_localtime())
 
 if real_clock is not None:
     def fake_clock() -> Any:
@@ -768,6 +790,8 @@ class _freeze_time:
         time.localtime = fake_localtime  # type: ignore
         time.gmtime = fake_gmtime  # type: ignore
         time.strftime = fake_strftime  # type: ignore
+        time.asctime = fake_asctime  # type: ignore
+        time.ctime = fake_ctime  # type: ignore
         if uuid_generate_time_attr:
             setattr(uuid, uuid_generate_time_attr, None)
         uuid._UuidCreate = None  # type: ignore[attr-defined]
@@ -785,6 +809,8 @@ class _freeze_time:
             ('real_monotonic', real_monotonic, fake_monotonic),
             ('real_perf_counter', real_perf_counter, fake_perf_counter),
             ('real_strftime', real_strftime, fake_strftime),
+            ('real_asctime', real_asctime, fake_asctime),
+            ('real_ctime', real_ctime, fake_ctime),
             ('real_time', real_time, fake_time),
         ]
 
@@ -897,6 +923,8 @@ class _freeze_time:
             time.gmtime = real_gmtime
             time.localtime = real_localtime
             time.strftime = real_strftime
+            time.asctime = real_asctime
+            time.ctime = real_ctime
             time.clock = real_clock  # type: ignore[attr-defined]
 
             if _TIME_NS_PRESENT:
