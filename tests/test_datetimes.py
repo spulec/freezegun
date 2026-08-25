@@ -315,6 +315,40 @@ def test_real_strftime_fall_through() -> None:
         assert time.strftime('%Y', (2001, 1, 1, 1, 1, 1, 1, 1, 1)) == '2001'
 
 
+def test_asctime() -> None:
+    with modify_timezone(0):
+        with freeze_time('2012-01-14 03:21:34'):
+            assert time.asctime() == 'Sat Jan 14 03:21:34 2012'
+            # An explicit struct_time argument is left untouched.
+            assert time.asctime(time.gmtime(0)) == 'Thu Jan  1 00:00:00 1970'
+
+
+def test_real_asctime_fall_through() -> None:
+    this_real_year = datetime.datetime.now().year
+    with freeze_time():
+        assert time.asctime().endswith(str(this_real_year))
+
+
+def test_ctime() -> None:
+    with modify_timezone(0):
+        with freeze_time('2012-01-14 03:21:34'):
+            assert time.ctime() == 'Sat Jan 14 03:21:34 2012'
+
+
+def test_ctime_arg() -> None:
+    # An explicit seconds argument is passed straight through, so the result
+    # matches the real time.ctime() regardless of the frozen time.
+    expected = time.ctime(0)
+    with freeze_time('2012-01-14 03:21:34'):
+        assert time.ctime(0) == expected
+
+
+def test_real_ctime_fall_through() -> None:
+    this_real_year = datetime.datetime.now().year
+    with freeze_time():
+        assert time.ctime().endswith(str(this_real_year))
+
+
 def test_date_object() -> None:
     frozen_date = datetime.date(year=2012, month=11, day=10)
     date_freezer = freeze_time(frozen_date)
