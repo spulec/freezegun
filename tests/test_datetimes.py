@@ -4,6 +4,7 @@ import datetime
 import fractions
 import unittest
 import locale
+import signal
 import sys
 from typing import Any, Callable
 from unittest import SkipTest
@@ -751,6 +752,31 @@ def test_should_use_real_time() -> None:
 
         assert calendar.timegm(time.gmtime()) != expected_frozen
         assert calendar.timegm(time_tuple) == timestamp_to_convert
+
+
+@pytest.mark.skipif(not hasattr(signal, "SIGALRM"),
+                    reason="SIGALRM is only available on Unix")
+def test_socketserver_handle_request_still_times_out_while_frozen() -> None:
+    import socketserver
+
+    server = socketserver.TCPServer(("localhost", 0), socketserver.BaseRequestHandler)
+    server.timeout = 0.1
+
+    def alarm_handler(signum: int, frame: Any) -> None:
+        raise AssertionError(
+            "handle_request() never returned; time frozen inside socketserver "
+            "prevents its own deadline from ever being reached"
+        )
+
+    previous_handler = signal.signal(signal.SIGALRM, alarm_handler)
+    signal.setitimer(signal.ITIMER_REAL, 2)
+    try:
+        with freeze_time("2020-01-01"):
+            server.handle_request()
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
+        server.server_close()
 
 
 @pytest.mark.skipif(not HAS_TIME_NS,

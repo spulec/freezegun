@@ -14,6 +14,7 @@ DEFAULT_IGNORE_LIST = [
     '_pytest.runner.',
     'gi',
     'prompt_toolkit',
+    'socketserver',
 ]
 
 

@@ -55,6 +55,7 @@ def test_extend_default_ignore_list(ignorelist: List[str]) -> None:
             '_pytest.runner.',
             'gi',
             'prompt_toolkit',
+            'socketserver',
         ] + ignorelist
 
         _freeze_time_init_mock.assert_called_once_with(
@@ -89,6 +90,7 @@ def test_extend_default_ignore_list_duplicate_items() -> None:
             '_pytest.runner.',
             'gi',
             'prompt_toolkit',
+            'socketserver',
             'tensorflow',
             'pymongo',
             'rabbitmq',
