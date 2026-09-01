@@ -579,6 +579,34 @@ class StepTickTimeFactory:
         self.tick(delta=delta)
 
 
+def _prefer_fork_start_method() -> bool:
+    """Set the ``fork`` start method while frozen, unless one was already chosen.
+
+    Python 3.14 switched the default Linux start method to ``forkserver``,
+    which starts a fresh interpreter and loses freezegun patches (#593).
+    ``fork`` children inherit the patched modules, restoring 3.13 behavior.
+
+    An explicitly configured start method is always respected.  Returns True
+    only when this call set the method itself, so stop() can restore the
+    previous unset state.
+    """
+    if sys.platform == "win32":
+        return False
+    try:
+        import multiprocessing as mp
+    except Exception:
+        return False
+    try:
+        if "fork" not in mp.get_all_start_methods():
+            return False
+        if mp.get_start_method(allow_none=True) is not None:
+            return False  # explicit user/framework choice: do not override
+        mp.set_start_method("fork")
+        return True
+    except Exception:
+        return False
+
+
 class _freeze_time:
     """
     A class to freeze time for testing purposes.
@@ -631,6 +659,7 @@ class _freeze_time:
         self.as_arg = as_arg
         self.as_kwarg = as_kwarg
         self.real_asyncio = real_asyncio
+        self._mp_fork_set_by_us: bool = False
 
     # mypy objects to this because Type is Callable, but Pytype needs it because
     # (unlike mypy's) its inference does not assume class decorators always leave
@@ -755,6 +784,11 @@ class _freeze_time:
         ignore_lists.append(self.ignore)
         tick_flags.append(self.tick)
 
+        if not is_already_started:
+            # Let Process children inherit frozen time on Unix (#593); a
+            # start method explicitly chosen by the caller stays untouched.
+            self._mp_fork_set_by_us = _prefer_fork_start_method()
+
         if is_already_started:
             return freeze_factory
 
@@ -856,6 +890,17 @@ class _freeze_time:
         tz_offsets.pop()
 
         if not freeze_factories:
+            if self._mp_fork_set_by_us:
+                try:
+                    import multiprocessing as mp
+
+                    # Restore the unset state we found, unless the caller
+                    # changed the start method while time was frozen.
+                    if mp.get_start_method(allow_none=True) == "fork":
+                        mp.set_start_method(None, force=True)
+                except Exception:
+                    pass
+                self._mp_fork_set_by_us = False
             datetime.datetime = real_datetime  # type: ignore[misc]
             datetime.date = real_date  # type: ignore[misc]
             copyreg.dispatch_table.pop(real_datetime)
