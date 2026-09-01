@@ -826,3 +826,41 @@ def test_datetime_in_timezone(monkeypatch: pytest.MonkeyPatch) -> None:
             assert datetime.datetime.now() == datetime.datetime(1970, 1, 1, 1, 0, 0)
     finally:
         time.tzset()  # set the timezone back to what is was before
+
+
+def test_fakedate_equals_datetime_date_components() -> None:
+    """Regression for #568: FakeDate == datetime on Python 3.13+."""
+    from freezegun.api import FakeDate
+
+    left = FakeDate(1912, 11, 2)
+    right = datetime.datetime(1912, 11, 2, 7, 16, 50)
+    assert left == right
+    assert right == left  # reflected order
+    assert not (left == datetime.datetime(1912, 11, 3, 7, 16, 50))
+    assert left != datetime.datetime(1912, 11, 3, 7, 16, 50)
+    # plain dates keep their normal comparison
+    assert left == datetime.date(1912, 11, 2)
+    assert not (left == datetime.date(1912, 11, 3))
+
+
+def test_fakedate_stays_hashable() -> None:
+    """Defining __eq__ must not make FakeDate unhashable (set/dict usage)."""
+    from freezegun.api import FakeDate
+
+    fd = FakeDate(1912, 11, 2)
+    assert hash(fd) == hash(datetime.date(1912, 11, 2))
+    assert len({fd, datetime.date(1912, 11, 2)}) == 1
+    lookup: dict[datetime.date, str] = {fd: "frozen"}
+    assert lookup[datetime.date(1912, 11, 2)] == "frozen"
+
+
+def test_fakedatetime_never_equals_fakedate() -> None:
+    """A datetime must not compare equal to a plain date (master semantics)."""
+    from freezegun.api import FakeDate, FakeDatetime
+
+    fdt = FakeDatetime(1912, 11, 2, 7, 16, 50)
+    fd = FakeDate(1912, 11, 2)
+    assert not (fdt == fd)
+    assert not (fd == fdt)
+    assert fdt != fd
+    assert hash(fdt)  # datetime side stays hashable too

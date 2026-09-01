@@ -320,6 +320,30 @@ def date_to_fakedate(date: datetime.date) -> "FakeDate":
 
 
 class FakeDate(real_date, metaclass=FakeDateMeta):
+    def __eq__(self, other: Any) -> bool:
+        """Match date/datetime equality semantics used before Python 3.13.
+
+        On 3.10–3.12, ``date == datetime`` compared the date components and
+        ignored the time fields. 3.13+ returns NotImplemented from date.__eq__
+        when other is a datetime subclass, so FakeDate lost that behavior.
+        Preserve the historical freezegun comparison for FakeDate only.
+        FakeDatetime is excluded: a datetime never equals a plain date.
+        NOTE: isinstance() cannot be used for the exclusion because the
+        FakeDateMeta/FakeDatetimeMeta metaclasses treat every date/datetime
+        as an instance; compare the exact type instead.
+        """
+        if isinstance(other, real_datetime) and type(other) is not FakeDatetime:
+            return (
+                self.year == other.year
+                and self.month == other.month
+                and self.day == other.day
+            )
+        return real_date.__eq__(self, other)
+
+    # Defining __eq__ would normally set __hash__ to None; FakeDate must stay
+    # hashable like the date it replaces.
+    __hash__ = real_date.__hash__  # type: ignore[assignment]
+
     def __add__(self, other: Any) -> "FakeDate":
         result = real_date.__add__(self, other)
         if result is NotImplemented:
