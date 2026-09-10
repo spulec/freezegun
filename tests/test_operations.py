@@ -68,10 +68,20 @@ def test_datetime_timezone_real() -> None:
     assert now.utcoffset() == timedelta(0, 60 * 60 * 5)
 
 
+@freeze_time("2025-11-03 03:00:00", tz_offset=11)
+def test_now_with_tz_uses_frozen_instant() -> None:
+    naive = datetime.datetime.now()
+    utc = datetime.datetime.now(datetime.timezone.utc)
+    assert naive == datetime.datetime(2025, 11, 3, 14, 0, 0)
+    assert utc == datetime.datetime(2025, 11, 3, 3, 0, 0, tzinfo=datetime.timezone.utc)
+
+
 @freeze_time("2012-01-14 2:00:00", tz_offset=-4)
 def test_datetime_timezone_real_with_offset() -> None:
+    # tz_offset shifts naive now(), not the frozen instant used by now(tz).
+    assert datetime.datetime.now() == datetime.datetime(2012, 1, 13, 22, 0, 0)
     now = datetime.datetime.now(tz=GMT5())
-    assert now == datetime.datetime(2012, 1, 14, 3, tzinfo=GMT5())
+    assert now == datetime.datetime(2012, 1, 14, 7, tzinfo=GMT5())
     assert now.utcoffset() == timedelta(0, 60 * 60 * 5)
 
 
