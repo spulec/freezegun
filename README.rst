@@ -74,6 +74,27 @@ Context manager
             assert datetime.datetime.now() == datetime.datetime(2012, 1, 14)
         assert datetime.datetime.now() != datetime.datetime(2012, 1, 14)
 
+Pytest Fixture
+~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    import pytest
+    from freezegun import freeze_time
+    import datetime
+
+    @pytest.fixture
+    def frozen_time():
+        with freeze_time("2024-01-01 12:00:00") as frozen:
+            yield frozen
+
+    def test_with_fixture(frozen_time):
+        assert datetime.datetime.now() == datetime.datetime(2024, 1, 1, 12, 0, 0)
+
+    def test_with_fixture_and_tick(frozen_time):
+        assert datetime.datetime.now() == datetime.datetime(2024, 1, 1, 12, 0, 0)
+        frozen_time.tick()
+        assert datetime.datetime.now() == datetime.datetime(2024, 1, 1, 12, 0, 1)
 Raw use
 ~~~~~~~
 
