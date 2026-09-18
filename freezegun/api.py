@@ -48,6 +48,15 @@ real_gmtime = time.gmtime
 real_monotonic = time.monotonic
 real_perf_counter = time.perf_counter
 real_strftime = time.strftime
+
+def _reject_bool_numeric(value: object, name: str) -> None:
+    """Raise TypeError if value is bool (bool subclasses int/Real)."""
+    if isinstance(value, bool):
+        raise TypeError(
+            f"{name} must be a number, not bool (got {value!r}; "
+            f"bool subclasses int so {value!r} would silently become {int(value)})"
+        )
+
 real_date = datetime.date
 real_datetime = datetime.datetime
 real_date_objects = [real_time, real_localtime, real_gmtime, real_monotonic, real_perf_counter, real_strftime, real_date, real_datetime]
@@ -510,6 +519,8 @@ class TickingDateTimeFactory:
         return self.time_to_freeze + (real_datetime.now() - self.start)
 
     def tick(self, delta: Union[datetime.timedelta, float]=datetime.timedelta(seconds=1)) -> datetime.datetime:
+        # bool subclasses numbers.Integral; True would silently become 1s
+        _reject_bool_numeric(delta, "delta")
         if isinstance(delta, numbers.Integral):
             self.move_to(self.time_to_freeze + datetime.timedelta(seconds=int(delta)))
         elif isinstance(delta, numbers.Real):
@@ -533,6 +544,8 @@ class FrozenDateTimeFactory:
         return self.time_to_freeze
 
     def tick(self, delta: Union[datetime.timedelta, float]=datetime.timedelta(seconds=1)) -> datetime.datetime:
+        # bool subclasses numbers.Integral; True would silently become 1s
+        _reject_bool_numeric(delta, "delta")
         if isinstance(delta, numbers.Integral):
             self.move_to(self.time_to_freeze + datetime.timedelta(seconds=int(delta)))
         elif isinstance(delta, numbers.Real):
@@ -560,6 +573,10 @@ class StepTickTimeFactory:
         return return_time
 
     def tick(self, delta: Union[datetime.timedelta, float, None]=None) -> datetime.datetime:
+        # bool subclasses numbers.Integral; True would silently become 1s;
+        # False is falsy and would incorrectly fall through to step_width.
+        if delta is not None:
+            _reject_bool_numeric(delta, "delta")
         if not delta:
             delta = datetime.timedelta(seconds=self.step_width)
         elif isinstance(delta, numbers.Integral):
@@ -570,6 +587,8 @@ class StepTickTimeFactory:
         return self.time_to_freeze
 
     def update_step_width(self, step_width: float) -> None:
+        # bool subclasses int/float; True would silently become step_width 1
+        _reject_bool_numeric(step_width, "step_width")
         self.step_width = step_width
 
     def move_to(self, target_datetime: _Freezable) -> None:
@@ -987,6 +1006,10 @@ def freeze_time(time_to_freeze: Optional[_Freezable]=None, tz_offset: Union[int,
                          'type {}.').format(type(time_to_freeze)))
     if tick and not _is_cpython:
         raise SystemError('Calling freeze_time with tick=True is only compatible with CPython')
+
+    # bool subclasses int; auto_tick_seconds=True would silently become 1s steps
+    if auto_tick_seconds is not None:
+        _reject_bool_numeric(auto_tick_seconds, "auto_tick_seconds")
 
     if isinstance(time_to_freeze, types.FunctionType):
         return freeze_time(time_to_freeze(), tz_offset, ignore, tick, as_arg, as_kwarg, auto_tick_seconds, real_asyncio=real_asyncio)
