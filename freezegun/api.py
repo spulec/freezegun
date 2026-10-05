@@ -156,6 +156,11 @@ _is_cpython = (
 call_stack_inspection_limit = 5
 
 
+def _is_ignored_module(module_name: str, ignore: Tuple[str, ...]) -> bool:
+    """Match ignore prefixes, including the root of the gi package."""
+    return module_name.startswith(ignore) or (module_name == 'gi' and 'gi.' in ignore)
+
+
 def _should_use_real_time() -> bool:
     if not call_stack_inspection_limit:
         return False
@@ -171,7 +176,7 @@ def _should_use_real_time() -> bool:
 
     for _ in range(call_stack_inspection_limit):
         module_name = frame.f_globals.get('__name__')  # type: ignore
-        if module_name and module_name.startswith(ignore_lists[-1]):
+        if module_name and _is_ignored_module(module_name, ignore_lists[-1]):
             return True
 
         frame = frame.f_back  # type: ignore
@@ -819,7 +824,7 @@ class _freeze_time:
             for mod_name, module in list(sys.modules.items()):
                 if mod_name is None or module is None or mod_name == __name__:
                     continue
-                elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
+                elif _is_ignored_module(mod_name, self.ignore) or mod_name.endswith('.six.moves'):
                     continue
                 elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
                     continue
@@ -873,7 +878,7 @@ class _freeze_time:
                     module = sys.modules.get(mod_name, None)
                     if mod_name is None or module is None:
                         continue
-                    elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
+                    elif _is_ignored_module(mod_name, self.ignore) or mod_name.endswith('.six.moves'):
                         continue
                     elif not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time'):
                         continue

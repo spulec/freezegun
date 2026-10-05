@@ -335,8 +335,13 @@ By default FreezeGun ignores following packages:
         'selenium',
         '_pytest.terminal.',
         '_pytest.runner.',
-        'gi',
+        'gi.',
     ]
+
+
+Ignore entries match module name prefixes. The ``gi.`` entry also covers the
+``gi`` root module, keeping PyGObject ignored without excluding unrelated packages
+such as ``gitlab`` or ``gig``. An explicit ``gi`` entry retains prefix matching.
 
 
 It's possible to set your own default ignore list:

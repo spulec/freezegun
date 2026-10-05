@@ -53,7 +53,7 @@ def test_extend_default_ignore_list(ignorelist: List[str]) -> None:
             'selenium',
             '_pytest.terminal.',
             '_pytest.runner.',
-            'gi',
+            'gi.',
             'prompt_toolkit',
         ] + ignorelist
 
@@ -87,7 +87,7 @@ def test_extend_default_ignore_list_duplicate_items() -> None:
             'selenium',
             '_pytest.terminal.',
             '_pytest.runner.',
-            'gi',
+            'gi.',
             'prompt_toolkit',
             'tensorflow',
             'pymongo',
