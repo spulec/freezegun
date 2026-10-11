@@ -79,3 +79,15 @@ def test_asyncio_to_call_later_with_frozen_time() -> None:
 
     with freeze_time('1970-01-02', real_asyncio=True):
         asyncio.run(coroutine())
+
+
+def test_coroutine_factory_as_kwarg() -> None:
+    @freeze_time('2000-01-01', as_kwarg='frozen_time')
+    async def frozen_coroutine(value: int, *, frozen_time: Any) -> int:
+        assert datetime.datetime.now() == datetime.datetime(2000, 1, 1)
+        frozen_time.tick(datetime.timedelta(seconds=2))
+        await asyncio.sleep(0)
+        assert datetime.datetime.now() == datetime.datetime(2000, 1, 1, 0, 0, 2)
+        return value
+
+    assert asyncio.run(frozen_coroutine(42)) == 42  # type: ignore
