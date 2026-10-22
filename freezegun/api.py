@@ -671,7 +671,10 @@ class _freeze_time:
             def setUpClass(cls: type) -> None:
                 self.start()
                 if orig_setUpClass is not None:
-                    orig_setUpClass()
+                    if isinstance(orig_setUpClass, types.MethodType) and orig_setUpClass.__self__ is klass:
+                        orig_setUpClass.__func__(cls)
+                    else:
+                        orig_setUpClass()
                 self.stop()
 
             # noinspection PyDecorator
@@ -679,7 +682,10 @@ class _freeze_time:
             def tearDownClass(cls: type) -> None:
                 self.start()
                 if orig_tearDownClass is not None:
-                    orig_tearDownClass()
+                    if isinstance(orig_tearDownClass, types.MethodType) and orig_tearDownClass.__self__ is klass:
+                        orig_tearDownClass.__func__(cls)
+                    else:
+                        orig_tearDownClass()
                 self.stop()
 
             klass.setUpClass = setUpClass  # type: ignore
