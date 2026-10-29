@@ -813,39 +813,46 @@ class _freeze_time:
         # Save the current loaded modules
         self.modules_at_start = set(sys.modules.keys())
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
+        try:
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore')
 
-            for mod_name, module in list(sys.modules.items()):
-                if mod_name is None or module is None or mod_name == __name__:
-                    continue
-                elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
-                    continue
-                elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
-                    continue
+                for mod_name, module in list(sys.modules.items()):
+                    if mod_name is None or module is None or mod_name == __name__:
+                        continue
+                    elif mod_name.startswith(self.ignore) or mod_name.endswith('.six.moves'):
+                        continue
+                    elif (not hasattr(module, "__name__") or module.__name__ in ('datetime', 'time')):
+                        continue
 
-                module_attrs = _get_cached_module_attributes(module)
-                for attribute_name, attribute_value in module_attrs:
-                    fake = fakes.get(id(attribute_value))
-                    if fake:
-                        setattr(module, attribute_name, fake)
-                        add_change((module, attribute_name, attribute_value))
+                    module_attrs = _get_cached_module_attributes(module)
+                    for attribute_name, attribute_value in module_attrs:
+                        fake = fakes.get(id(attribute_value))
+                        if fake:
+                            setattr(module, attribute_name, fake)
+                            add_change((module, attribute_name, attribute_value))
 
-        if self.real_asyncio:
-            # To avoid breaking `asyncio.sleep()`, let asyncio event loops see real
-            # monotonic time even though we've just frozen `time.monotonic()` which
-            # is normally used there. If we didn't do this, `await asyncio.sleep()`
-            # would be hanging forever breaking many tests that use `freeze_time`.
-            #
-            # Note that we cannot statically tell the class of asyncio event loops
-            # because it is not officially documented and can actually be changed
-            # at run time using `asyncio.set_event_loop_policy`. That's why we check
-            # the type by creating a loop here and destroying it immediately.
-            event_loop = asyncio.new_event_loop()
-            event_loop.close()
-            EventLoopClass = type(event_loop)
-            add_change((EventLoopClass, "time", EventLoopClass.time))  # type: ignore
-            EventLoopClass.time = lambda self: real_monotonic()  # type: ignore[method-assign]
+            if self.real_asyncio:
+                # To avoid breaking `asyncio.sleep()`, let asyncio event loops see real
+                # monotonic time even though we've just frozen `time.monotonic()` which
+                # is normally used there. If we didn't do this, `await asyncio.sleep()`
+                # would be hanging forever breaking many tests that use `freeze_time`.
+                #
+                # Note that we cannot statically tell the class of asyncio event loops
+                # because it is not officially documented and can actually be changed
+                # at run time using `asyncio.set_event_loop_policy`. That's why we check
+                # the type by creating a loop here and destroying it immediately.
+                event_loop = asyncio.new_event_loop()
+                event_loop.close()
+                EventLoopClass = type(event_loop)
+                add_change((EventLoopClass, "time", EventLoopClass.time))  # type: ignore
+                EventLoopClass.time = lambda self: real_monotonic()  # type: ignore[method-assign]
+
+        except BaseException:
+            # __exit__ is not called when __enter__ fails. Undo the patches
+            # already applied before propagating a module or event-loop error.
+            self.stop()
+            raise
 
         return freeze_factory
 
